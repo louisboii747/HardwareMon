@@ -92,7 +92,11 @@ Install pipx:
 sudo apt install pipx
 pipx ensurepath
 ```
+After running ensurepat, you MUST restar your terminal or run:
 
+```
+source ~/.bashrc
+```
 
 Then install HardwareMon:
 
