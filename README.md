@@ -92,7 +92,7 @@ Install pipx:
 sudo apt install pipx
 pipx ensurepath
 ```
-After running ensurepath, you MUST restar your terminal or run:
+After running ensurepath, you MUST restart your terminal OR run:
 
 ```
 source ~/.bashrc
