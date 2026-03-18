@@ -35,7 +35,7 @@ Ubuntu/Debian
 ```
 sudo apt update
 sudo apt install python3-pip 
-sudo apt install python3-tk (you only need this step if you recieve an error about tkinter missing)
+sudo apt install python3-tk
 sudo apt install pipx
 pip3 --version
 ```
