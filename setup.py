@@ -29,7 +29,7 @@ setup(
     ],
     python_requires='>=3.8',
     package_data={
-        "hardwaremon": ["icons/*"]
+        "hardwaremon": ["icons/*"]   # include all icons
     },
     include_package_data=True,
 )

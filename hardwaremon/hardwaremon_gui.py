@@ -38,14 +38,13 @@ theme_names = list(THEMES.keys())
 #########################
 # ICON LOADER
 #########################
-import importlib.resources
-
 def load_icon(name):
     try:
-        with importlib.resources.open_binary("hardwaremon.icons", name) as f:
-            img = Image.open(f).convert("RGBA")
-            img = img.resize((32, 32), Image.Resampling.LANCZOS)
-            return ImageTk.PhotoImage(img)
+        # __file__ is the path to this script
+        path = os.path.join(os.path.dirname(__file__), "icons", name)
+        img = Image.open(path).convert("RGBA")
+        img = img.resize((32, 32), Image.Resampling.LANCZOS)
+        return ImageTk.PhotoImage(img)
     except Exception as e:
         print(f"Error loading icon {name}: {e}")
         return None
