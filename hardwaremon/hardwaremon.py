@@ -9,7 +9,7 @@ import requests
 import psutil
 import tkinter.messagebox as messagebox
 
-VERSION = "v3.1.1"  # increment with each release
+VERSION = "3.1.1"  # increment with each release
 
 
 MAX_POINTS = 60  # last 60 seconds
@@ -907,7 +907,7 @@ def gui_app():
     summary_mode = tk.BooleanVar(value=True)
 
     # ---- Create widgets ---- #
-    version_label = tk.Label(root, text=f"HardwareMon {VERSION}",
+    version_label = tk.Label(root, text=f"HardwareMon v{VERSION}",
                              font=("monospace", 12, "bold"))
     version_label.pack(anchor="ne", padx=10, pady=5)
 
