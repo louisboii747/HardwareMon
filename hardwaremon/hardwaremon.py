@@ -907,7 +907,7 @@ def gui_app():
     summary_mode = tk.BooleanVar(value=True)
 
     # ---- Create widgets ---- #
-    version_label = tk.Label(root, text=f"HardwareMon v{VERSION}",
+    version_label = tk.Label(root, text=f"HardwareMon {VERSION}",
                              font=("monospace", 12, "bold"))
     version_label.pack(anchor="ne", padx=10, pady=5)
 
