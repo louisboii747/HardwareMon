@@ -155,7 +155,7 @@ I have still kept the instructions of Git cloning, if you prefer to install the 
 
 ## GUI vs CLI Versions
 
-Recently, I created a revamped version of HardwareMon, that seperates core hardware data into seperate pages, with icons to differentiate between them. It is recommended if you prefer a cleaner look, which supports themes and usage graphs. Now, when installing HardwareMon through Pip, you can launch the GUI by simply typing:
+Recently, I created a revamped version of HardwareMon, that seperates core hardware data into seperate pages, with icons to differentiate between them. More info is available in the Q&A section of this README.
 
 ```
 hardwaremon
@@ -185,7 +185,7 @@ The Windows .exe was generated from the PowerShell script but is not maintained 
 
 # Q&A #
 
-## What platforms is HardwareMon avialable for? ##
+## What platforms is HardwareMon available for? ##
 
 HardwareMon is available on Windows and Linux. Linux versions get more support and much more frequent updates.
 
