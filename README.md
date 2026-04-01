@@ -221,11 +221,10 @@ As mentioned, the GUI version will recieve the majority of my attention at the m
 
 ## What do the YAML workflows do? ##
 
-These files are there to ensure two things. Properly written scripts, and properly distributed scripts. One is used to "lint" and scan for errors (such as syntax errors) and the other script is used to distribute both GUI and CLI versions of HardwareMon as an easy to install Pip package on Linux.
-
+These files serve two main purposes: ensuring scripts are written correctly and handling their distribution. One script is used for linting which checks for errors (like syntax issues), while the other packages both the GUI and CLI versions of HardwareMon into an easy-to-install pip package for Linux. Both workflows only operate on the Linux versions of HardwareMon.
 ## Can I contribute? ##
 
-Absolutely! It would be great to see your ideas for features or changes for HardwareMon and its Workflows. Feel free to get fork the repo submit pull requests!
+Absolutely! It would be great to see your ideas for features or changes for HardwareMon and its Workflows. Feel free to fork the repo and submit pull requests!
 
 # Notes #
 
@@ -233,9 +232,9 @@ The Windows version relies on CIM/WMI queries and may have limitations on certai
 
 While the project can run as a standalone script or executable, it is recommended to use the scripts directly to ensure maximum compatibility and access to the latest updates.
 
-The .sh script is also much more basic compared to the .py script on linux, since the .py script relies on Tkinter for graph drawings which Bash cannot use, and has not had as much attention compared to the .py version.
+The .sh script is also much more basic compared to the .py script on Linux, since the .py script relies on Tkinter for graph drawings which Bash cannot use, and has not had as much attention compared to the .py version.
 
-The .yml script only runs on the .py script.
+The Workflows only run on the Linux versions.
 
 # Contribution #
 
