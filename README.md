@@ -57,7 +57,7 @@ pip --version
 ```
 
 
-If you see an output about python3-tk already installed, after running the install python3-tk command, that's okay. You can continue. I included it in the install instructions above to avoid it being missing, as it is required for features like live graph drawings and the GUI.
+If you see an output about python3-tk already being installed after running the install python3-tk command, that's okay. You can continue. I included it in the install instructions above to avoid it being missing, as it is required for features like live graph drawings and the GUI.
 
 
 ### Now, install hardwaremon: ###
