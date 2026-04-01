@@ -27,15 +27,16 @@ python3 hardware_mon.py
 
 ## Using Pip (Easier, Quicker) ##
 
-Recently, I have now made the Linux Python Script a pip package. This makes it even easier to install, with the command being:
+I have now made the Linux Python Script a pip package. This makes it even easier to install, heres the guide for Debian, Arch and RHEL based systems! 
 
-First, install Pip.
+As mentioned below in each guide, its worth running the install python3-tk command to ensure its installed. Its used as the GUI frontend and is also used for CPU usage graphs. If your terminal says its already installed, that's fine. 
+
 
 Ubuntu/Debian
 ```
 sudo apt update
 sudo apt install python3-pip 
-sudo apt install python3-tk
+sudo apt install python3-tk (Run this to ensure Tkinter installed)
 sudo apt install pipx
 pip3 --version
 ```
@@ -43,7 +44,7 @@ RHEL/Fedora
 ```
 sudo dnf install python3-pip
 sudo dnf install pipx
-sudo dnf install python3-tk (again, not ALWAYS required, see above)
+sudo dnf install python3-tk (Its worth running this so Tkinter is installed)
 pip3 --version
 ```
 
@@ -51,7 +52,7 @@ Arch Linux
 ```
 sudo pacman -S python-pip
 sudo pacman -S pipx
-sudo pacman -S python3-tk (again, not needed)
+sudo pacman -S python3-tk (You may already have this, just run it anyway to check)
 pip --version
 ```
 
