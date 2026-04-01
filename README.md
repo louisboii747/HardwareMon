@@ -36,7 +36,7 @@ Ubuntu/Debian
 ```
 sudo apt update
 sudo apt install python3-pip 
-sudo apt install python3-tk (Run this to ensure Tkinter installed)
+sudo apt install python3-tk # (Run this to ensure Tkinter installed)
 sudo apt install pipx
 pip3 --version
 ```
@@ -44,7 +44,7 @@ RHEL/Fedora
 ```
 sudo dnf install python3-pip
 sudo dnf install pipx
-sudo dnf install python3-tk (Its worth running this so Tkinter is installed)
+sudo dnf install python3-tk # (Its worth running this so Tkinter is installed)
 pip3 --version
 ```
 
