@@ -36,7 +36,7 @@ Ubuntu/Debian
 ```
 sudo apt update
 sudo apt install python3-pip 
-sudo apt install python3-tk # (Run this to ensure Tkinter installed)
+sudo apt install python3-tk
 sudo apt install pipx
 pip3 --version
 ```
@@ -44,7 +44,7 @@ RHEL/Fedora
 ```
 sudo dnf install python3-pip
 sudo dnf install pipx
-sudo dnf install python3-tk # (Its worth running this so Tkinter is installed)
+sudo dnf install python3-tk
 pip3 --version
 ```
 
@@ -52,16 +52,15 @@ Arch Linux
 ```
 sudo pacman -S python-pip
 sudo pacman -S pipx
-sudo pacman -S python3-tk (You may already have this, just run it anyway to check)
+sudo pacman -S python3-tk
 pip --version
 ```
 
 
+If you see an output about python3-tk already installed, after running the install python3-tk command, that's okay. You can continue. I included it in the install instructions above to avoid it being missing, as it is required for features like live graph drawings and the GUI.
 
 
-
-
-### Then, install hardwaremon: ###
+### Now, install hardwaremon: ###
 
 ```
 pip install hardwaremon
