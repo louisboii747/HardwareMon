@@ -187,7 +187,40 @@ The Windows .exe was generated from the PowerShell script but is not maintained 
 
 ## What platforms is HardwareMon avialable for? ##
 
-The
+HardwareMon is available on Windows and Linux. Linux versions get more support and much more frequent updates.
+
+## What is the difference between hardwaremon and hardwaremon_cli on Linux?
+
+HardwareMon initially started as a tiny program running solely in a terminal. It evolved into a much more feature-rich utility. Recently, work begun on a GUI version, offering clickable icons and seperate pages for hardware reports.
+
+## Which version should I use? ##
+
+That depends! If you want a fully ready-to-go experience, go with hardwaremon_cli. If you want to test out the GUI version, give hardwaremon a go! Both recieve updates, but i'll be working mostly with the GUI version to get it as feature-rich as possible.
+
+## Ok, how do I switch between versions? ##
+
+Easy! Assuming you installed HardwareMon on Linux through pip (or pipx) you can run
+
+```
+hardwaremon_cli # CLI version
+```
+
+OR
+
+```
+hardwaremon # GUI version, cleaner but less info
+```
+
+As mentioned, the GUI version will recieve the majority of my attention at the moment.
+
+
+## What do the YAML workflows do? ##
+
+These files are there to ensure two things. Properly written scripts, and properly distributed scripts. One is used to "lint" and scan for errors (such as syntax errors) and the other script is used to distribute both GUI and CLI versions of HardwareMon as an easy to install Pip package on Linux.
+
+## Can I contribute? ##
+
+Absolutely! It would be great to see your ideas for features or changes for HardwareMon and its Workflows. Feel free to get fork the repo submit pull requests!
 
 # Notes #
 
@@ -201,6 +234,6 @@ The .yml script only runs on the .py script.
 
 # Contribution #
 
-Contributions and suggestions are welcome. Please feel free to fork the repository and submit pull requests or report issues on the project’s issue tracker.
+Contributions and suggestions are welcome as mentioned in the Q&A. Please feel free to fork the repository and submit pull requests or report issues on the project’s issue tracker!
 
 Made with ❤️ by Louis
