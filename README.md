@@ -183,6 +183,12 @@ Run the script directly or use the provided .exe if available:
 
 The Windows .exe was generated from the PowerShell script but is not maintained as actively as the source script. It may lack the latest bug fixes or features and is provided primarily for convenience.
 
+# Q&A #
+
+## What platforms is HardwareMon avialable for? ##
+
+The
+
 # Notes #
 
 The Windows version relies on CIM/WMI queries and may have limitations on certain hardware or older operating systems. The Linux Python version provides more extensive monitoring capabilities, including GPU lane and VRAM information for NVIDIA and AMD cards, as well as real-time graphical representations.
