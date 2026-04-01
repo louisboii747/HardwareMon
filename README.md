@@ -107,7 +107,8 @@ pipx install hardwaremon
 Run it with:
 
 ```
-hardwaremon
+hardwaremon # GUI #
+hardwaremon_cli # CLI #
 ```
 
 This method avoids conflicts with your system Python and is strongly recommended.
