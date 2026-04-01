@@ -104,12 +104,16 @@ Then install HardwareMon:
 pipx install hardwaremon
 ```
 
-Run it with:
+Run it with either:
 
 ```
-hardwaremon # GUI #
-hardwaremon_cli # CLI #
+hardwaremon
 ```
+
+```
+hardwaremon_cli
+```
+More info about the difference between the two of these versions is available in the Q&A section.
 
 This method avoids conflicts with your system Python and is strongly recommended.
 
