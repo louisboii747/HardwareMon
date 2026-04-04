@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hardwaremon"
+dynamic = ["version"]
+description = "Hardware monitoring tool for Linux"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [{ name = "Louis" }]
+
+dependencies = [
+    "psutil",
+    "requests",
+    "Pillow"
+]
+
+[project.scripts]
+hardwaremon = "hardwaremon.hardwaremon_gui:gui"
+hardwaremon_cli = "hardwaremon.hardwaremon:main"
+
+[tool.setuptools]
+packages = ["hardwaremon"]
+
+[tool.setuptools.package-data]
+hardwaremon = ["icons/*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "hardwaremon.__version__"}

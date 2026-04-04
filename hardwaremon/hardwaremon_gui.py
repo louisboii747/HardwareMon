@@ -6,9 +6,14 @@ import platform
 import subprocess
 from PIL import Image, ImageTk, ImageOps
 import os
-import pkgutil
 
-VERSION = "v3.1.1" # increment with each release
+
+from importlib.metadata import version, PackageNotFoundError
+
+try:
+    VERSION = version("hardwaremon")
+except PackageNotFoundError:
+    VERSION = "dev"
 
 #########################
 ICON_FILES = {

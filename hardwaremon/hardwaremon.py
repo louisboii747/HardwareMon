@@ -9,7 +9,7 @@ import requests
 import psutil
 import tkinter.messagebox as messagebox
 
-VERSION = "3.1.1"  # increment with each release
+from hardwaremon import __version__ as VERSION
 
 
 MAX_POINTS = 60  # last 60 seconds
@@ -29,7 +29,7 @@ def check_for_updates():
         response = requests.get(url, timeout=5)
         if response.status_code == 200:
             latest_version = response.json()["tag_name"].lstrip("v")
-            if latest_version != VERSION:
+            if VERSION != "dev" and latest_version != VERSION:
                 return f"Update available: v{latest_version}"
         return None  # No update
     except Exception:
@@ -520,18 +520,19 @@ def top_processes(n=5):
 
 
 def motherboard_info():
+    lines = ["=== Motherboard Information ==="]
+
     if platform.system() == "Linux":
-        lines = ["=== Motherboard Information ==="]
         base_path = "/sys/devices/virtual/dmi/id/"
         info = {
             "Manufacturer": read_sys(base_path + "board_vendor"),
             "Product Name": read_sys(base_path + "board_name"),
             "Version": read_sys(base_path + "board_version"),
             "Serial Number": read_sys(base_path + "board_serial"),
-        
         }
-    for key , value in info.items():
-        lines.append(f"{key}: {value if value else 'N/A'}")
+
+        for key, value in info.items():
+            lines.append(f"{key}: {value if value else 'N/A'}")
 
     return lines
     
