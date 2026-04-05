@@ -1,4 +1,4 @@
-
+# GUI CODE FOR HARDWAREMON
 import tkinter as tk
 from tkinter import ttk
 import psutil
