@@ -36,12 +36,6 @@ jobs:
           fi
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      - name: Write version to __init__.py
-        run: |
-          INIT_FILE=hardwaremon/__init__.py
-          echo "__version__ = \"${VERSION}\"" > $INIT_FILE
-          cat $INIT_FILE
-
       - name: Verify Python version
         run: python --version
 
