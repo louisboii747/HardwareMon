@@ -25,7 +25,7 @@ jobs:
 
       - name: Run flake8
         run: |
-          flake8 hardwaremon/core.py hardwaremon/hardwaemon_gui.py \
+          flake8 hardwaremon/hardwaremon.py hardwaremon/hardwaremon_gui.py \
             --max-line-length=120 \
             --extend-ignore=E501,W503 \
             --count \
@@ -33,7 +33,7 @@ jobs:
 
       - name: Run pylint
         run: |
-          pylint hardwaremon/core.py hardwaremon/hardwaremon.py \
+          pylint hardwaremon/hardwaremon_gui.py hardwaremon/hardwaremon.py \
             --disable=C0114,C0115,C0116 \
             --max-line-length=120 \
             --fail-under=6.0
