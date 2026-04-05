@@ -1,2 +1,5 @@
 requests
 psutil
+gputil
+pyinstaller
+customtkinter
