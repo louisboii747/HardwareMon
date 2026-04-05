@@ -7,12 +7,7 @@ import subprocess
 from PIL import Image, ImageTk, ImageOps
 import os
 
-from importlib.metadata import version, PackageNotFoundError
-
-try:
-    VERSION = version("hardwaremon")
-except PackageNotFoundError:
-    VERSION = "dev"
+from hardwaremon.version import __version__ as VERSION
 
 #########################
 ICON_FILES = {
