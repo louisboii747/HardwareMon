@@ -1,126 +1,94 @@
 # HardwareMon #
-![HardwareMon Demo](assets/demo.gif)
 
 
-HardwareMon is a lightweight system monitoring tool designed to provide a detailed overview of your computer’s hardware and performance metrics. It can display CPU, memory, disk, GPU, battery, network, and peripheral information in real time. The project includes two main implementations: a Python version for Linux systems and a PowerShell version for Windows.
+HardwareMon is a lightweight system monitoring tool designed to provide a detailed overview of your computer's hardware and performance metrics. It can display CPU, memory, disk, GPU, battery, network, and peripheral information in real time. The project includes a Python GUI version for Linux and a modern Windows GUI application.
 
-## Features ##
+## Features
 
-HardwareMon gathers and presents information such as CPU usage, memory usage, disk activity, top running processes, GPU specifications and temperatures, battery status, and peripheral details. On Linux, the Python version uses the psutil library and native system commands to extract detailed system information. On Windows, the PowerShell version leverages CIM/WMI queries to report similar statistics.
+HardwareMon gathers and presents information such as CPU usage, memory usage, disk activity, top running processes, GPU specifications and temperatures, battery status, and peripheral details. On Linux, the Python version uses the psutil library and native system commands to extract detailed system information. On Windows, both the new Python GUI and the PowerShell version leverage CIM/WMI queries to report similar statistics.
 
-The Linux version also includes a GUI mode built with Tkinter, offering a modern and configurable interface with light, dark, and hacker-style themes. To cycle themes, press F2. Graphs for CPU, memory, and disk usage are updated in real time, providing a quick visual snapshot of system performance.
+The Linux version includes a GUI mode built with Tkinter, offering a modern and configurable interface with light, dark, and hacker-style themes. To cycle themes, press F2. Graphs for CPU, memory, and disk usage are updated in real time, providing a quick visual snapshot of system performance.
 
-## Installation (Linux version) ##
+The Windows GUI version is built with CustomTkinter and features a Windows 11 Fluent Design-inspired interface with animated arc gauges, live sparkline graphs, per-core CPU bars, a real-time process table, and a full system information page.
+
+---
+
+## Windows (Python GUI — Recommended)
+
+The new Windows GUI is a modern, standalone application built with Python and CustomTkinter. It includes six pages which may change: Overview, CPU, Memory, Disk, Network, and System.
+
+Just download the .exe from this repo.
+
+That's literally it.
 
 
-## Using Git ##
+### Notes
 
+- Run as Administrator for complete process visibility.
+- The `.exe` is fully self-contained — no Python required on the target machine.
+- Tested on Windows 10 and Windows 11.
 
-Ensure Python 3 and the psutil library are installed.
+---
 
-Clone the repository or download the Python script.
+## Installation (Linux version)
 
-Run the script from a terminal:
+### Using Git
+
+Ensure Python 3 and the psutil library are installed, then clone the repository and run:
 
 ```
 python3 hardware_mon.py
 ```
 
-## Using Pip (Easier, Quicker) ##
+### Using Pip (Easier, Quicker)
 
-I have now made the Linux Python Script a pip package. This makes it even easier to install, heres the guide for Debian, Arch and RHEL based systems! 
+Ubuntu/Debian:
 
-As mentioned below in each guide, its worth running the install python3-tk command to ensure its installed. Its used as the GUI frontend and is also used for CPU usage graphs. If your terminal says its already installed, that's fine. 
-
-
-Ubuntu/Debian
 ```
 sudo apt update
-sudo apt install python3-pip 
-sudo apt install python3-tk
-sudo apt install pipx
-pip3 --version
-```
-RHEL/Fedora
-```
-sudo dnf install python3-pip
-sudo dnf install pipx
-sudo dnf install python3-tk
+sudo apt install python3-pip python3-tk pipx
 pip3 --version
 ```
 
-Arch Linux
+RHEL/Fedora:
+
 ```
-sudo pacman -S python-pip
-sudo pacman -S pipx
-sudo pacman -S python3-tk
+sudo dnf install python3-pip pipx python3-tk
+pip3 --version
+```
+
+Arch Linux:
+
+```
+sudo pacman -S python-pip pipx python3-tk
 pip --version
-```
-
-
-If you see an output about python3-tk already being installed after running the install python3-tk command, that's okay. You can continue. I included it in the install instructions above to avoid it being missing, as it is required for features like live graph drawings and the GUI.
-
-
-### Now, install hardwaremon: ###
-
-```
-pip install hardwaremon
-```
-
-## Fixing the “Externally Managed Environment” Error ##
-
-On some Linux distributions (especially Ubuntu and Debian-based systems), you may see an error like this when running:
-
-```
-pip install hardwaremon
-```
-
-Example:
-
-```
-error: externally-managed-environment
-```
-
-This happens because modern Linux systems protect the system Python installation to prevent accidental damage. Fortunately, there are several easy ways to work around this.
-
-Recommended Method (Best Option): Use pipx
-
-pipx installs applications in isolated environments and is the safest way to install HardwareMon.
-
-Install pipx:
-
-```
-sudo apt install pipx
-pipx ensurepath
-```
-After running ensurepath, you MUST restart your terminal OR run:
-
-```
-source ~/.bashrc
 ```
 
 Then install HardwareMon:
 
 ```
+pip install hardwaremon
+```
+
+### Fixing the "Externally Managed Environment" Error
+
+On Ubuntu and Debian-based systems you may see `error: externally-managed-environment`. The recommended fix is pipx:
+
+```
+sudo apt install pipx
+pipx ensurepath
+source ~/.bashrc
 pipx install hardwaremon
 ```
 
-Run it with either:
+Run with either:
 
 ```
 hardwaremon
-```
-
-```
 hardwaremon_cli
 ```
-More info about the difference between the two of these versions is available in the Q&A section.
 
-This method avoids conflicts with your system Python and is strongly recommended.
-
-## Option 2: Use a Virtual Environment ##
-
-You can install HardwareMon inside a Python virtual environment:
+**Option 2 — Virtual environment:**
 
 ```
 python3 -m venv hardwaremon-env
@@ -128,117 +96,55 @@ source hardwaremon-env/bin/activate
 pip install hardwaremon
 ```
 
-Run with:
+**Option 3 — Force install (not recommended):**
 
 ```
-hardwaremon
+pip install hardwaremon --break-system-packages
 ```
 
-Deactivate later with:
+---
+
+## GUI vs CLI Versions (Linux)
+
+HardwareMon on Linux comes in two flavours. The GUI version separates hardware data into separate pages with clickable icons, while the CLI version displays everything in the terminal.
 
 ```
-deactivate
+hardwaremon      # GUI version
+hardwaremon_cli  # CLI version
 ```
 
-## Option 3: Force Installation (Not Recommended) ##
+The GUI version receives the majority of active development, hoping to enhance its functionality.
 
-You can override the restriction with:
+---
 
-```
-pip install hardwaremon –break-system-packages
-```
+## Q&A
 
-This installs directly into the system Python.
+**What platforms is HardwareMon available for?**
+Windows and Linux. Linux versions receive more frequent updates. Windows now has a fully featured Python GUI.
 
-## Warning: This can potentially break system tools that depend on Python. Only use this if you understand the risks. ##
+**What is the difference between hardwaremon and hardwaremon_cli on Linux?**
+`hardwaremon` is the GUI version for Linux with separate pages and clickable icons. `hardwaremon_cli` is the original terminal-based version, with much deeper insight into hardware compared to the GUI version. (this will change, it's quite bare-bones at the moment.)
 
-If you’re unsure which method to use:
+**Which version should I use?**
+On Linux, use `hardwaremon_cli` for the best experience and advanced performance metrics. If you want a "cleaner" version for Linux that receives more development than the GUI version of HardwareMon Linux, use `hardwaremon`. On Windows, use the  GUI `.exe` for a modern, feature-rich interface.
 
-Use pipx — it’s the safest and easiest option.
+**What do the YAML workflows do?**
+One workflow lints the scripts for errors, and the other packages the GUI and CLI versions into a pip package for Linux. Both workflows only operate on the Linux versions.
 
+**Can I contribute?**
+Absolutely! Feel free to fork the repo and submit pull requests or report issues on the issue tracker.
 
-I have still kept the instructions of Git cloning, if you prefer to install the script that way.
+---
 
-## GUI vs CLI Versions
-
-Recently, I created a revamped version of HardwareMon, that seperates core hardware data into seperate pages, with icons to differentiate between them. More info is available in the Q&A section of this README.
-
-```
-hardwaremon
-```
-
-But, if you prefer to check the CLI release out, that can be ran with:
-
-```
-hardwaremon_cli
-```
-
-The CLI version will still recieve updates, but not as heavily as the revamped HardwareMon, which im calling the GUI version, spending more time with it.
+## Notes
 
 
+The `.sh` script is more basic than the `.py` script on Linux, as it cannot use Tkinter for graph drawing.
 
-## Windows (PowerShell version) ##
+The GitHub Actions workflows only run on the Linux versions.
 
-Open PowerShell.
+I have packaged each version into their own folder, so you don't get confused and run the wrong script for your OS.
 
-Run the script directly or use the provided .exe if available:
-
-```
-.\hardware-info.ps1
-```
-
-The Windows .exe was generated from the PowerShell script but is not maintained as actively as the source script. It may lack the latest bug fixes or features and is provided primarily for convenience.
-
-# Q&A #
-
-## What platforms is HardwareMon available for? ##
-
-HardwareMon is available on Windows and Linux. Linux versions get more support and much more frequent updates.
-
-## What is the difference between hardwaremon and hardwaremon_cli on Linux?
-
-HardwareMon initially started as a tiny program running solely in a terminal. It evolved into a much more feature-rich utility. Recently, work begun on a GUI version, offering clickable icons and seperate pages for hardware reports.
-
-## Which version should I use? ##
-
-That depends! If you want a fully ready-to-go experience, go with hardwaremon_cli. If you want to test out the GUI version, give hardwaremon a go! Both recieve updates, but i'll be working mostly with the GUI version to get it as feature-rich as possible.
-
-## Ok, how do I switch between versions? ##
-
-Easy! Assuming you installed HardwareMon on Linux through pip (or pipx) you can run
-
-```
-hardwaremon_cli # CLI version
-```
-
-OR
-
-```
-hardwaremon # GUI version, cleaner but less info
-```
-
-As mentioned, the GUI version will recieve the majority of my attention at the moment.
-
-
-## What do the YAML workflows do? ##
-
-These files serve two main purposes: ensuring scripts are written correctly and handling their distribution. One script is used for linting which checks for errors (like syntax issues), while the other packages both the GUI and CLI versions of HardwareMon into an easy-to-install pip package for Linux. Both workflows only operate on the Linux versions of HardwareMon.
-## Can I contribute? ##
-
-Absolutely! It would be great to see your ideas for features or changes for HardwareMon and its Workflows. Feel free to fork the repo and submit pull requests!
-
-# Notes #
-
-The Windows version relies on CIM/WMI queries and may have limitations on certain hardware or older operating systems. The Linux Python version provides more extensive monitoring capabilities, including GPU lane and VRAM information for NVIDIA and AMD cards, as well as real-time graphical representations.
-
-While the project can run as a standalone script or executable, it is recommended to use the scripts directly to ensure maximum compatibility and access to the latest updates.
-
-The .sh script is also much more basic compared to the .py script on Linux, since the .py script relies on Tkinter for graph drawings which Bash cannot use, and has not had as much attention compared to the .py version.
-
-The Workflows only run on the Linux versions.
-
-# Contribution #
-
-Contributions and suggestions are welcome as mentioned in the Q&A. Please feel free to fork the repository and submit pull requests or report issues on the project’s issue tracker!
+---
 
 Made with ❤️ by Louis
