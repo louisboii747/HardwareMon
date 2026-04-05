@@ -26,7 +26,6 @@ packages = ["hardwaremon"]
 [tool.setuptools.package-data]
 hardwaremon = ["icons/*"]
 
-# 👇 THIS is the magic
 [tool.setuptools_scm]
 version_scheme = "no-guess-dev"
 local_scheme = "no-local-version"

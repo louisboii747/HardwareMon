@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # IMPORTANT for tags
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
