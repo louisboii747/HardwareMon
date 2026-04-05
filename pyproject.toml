@@ -13,19 +13,18 @@ authors = [{ name = "Louis" }]
 dependencies = [
     "psutil",
     "requests",
-    "Pillow"
+    "Pillow",
+    "gputil",
+    "pyinstaller",
+    "customtkinter"
 ]
 
 [project.scripts]
 hardwaremon = "hardwaremon.hardwaremon_gui:gui"
 hardwaremon_cli = "hardwaremon.hardwaremon:main"
 
-[tool.setuptools]
-packages = ["hardwaremon"]
+[tool.setuptools.packages.find]
+where = ["."]
 
 [tool.setuptools.package-data]
 hardwaremon = ["icons/*"]
-
-[tool.setuptools_scm]
-version_scheme = "no-guess-dev"
-local_scheme = "no-local-version"
