@@ -12,3 +12,6 @@ dist/
 __pycache__/
 *.py[cod]
 *$py.class
+Windows/build/
+Windows/dist/
+Windows/*.spec
