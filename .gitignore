@@ -16,3 +16,5 @@ Windows/build/
 Windows/dist/
 Windows/*.spec
 Windows/build.bat
+Windows/*.svg
+
