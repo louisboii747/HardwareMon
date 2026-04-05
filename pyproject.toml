@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0", "setuptools_scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -26,5 +26,7 @@ packages = ["hardwaremon"]
 [tool.setuptools.package-data]
 hardwaremon = ["icons/*"]
 
-[tool.setuptools.dynamic]
-version = {attr = "hardwaremon.__version__"}
+# 👇 THIS is the magic
+[tool.setuptools_scm]
+version_scheme = "no-guess-dev"
+local_scheme = "no-local-version"

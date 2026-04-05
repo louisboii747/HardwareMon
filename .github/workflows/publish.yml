@@ -2,49 +2,29 @@ name: Build & Publish HardwareMon
 
 on:
   push:
-    branches:
-      - main
     tags:
       - 'v*.*.*'
 
 jobs:
   build-and-publish:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v3
         with:
-          python-version: 3.11.7
+          fetch-depth: 0  # IMPORTANT for tags
 
-      - name: Upgrade pip and install build tools
-        run: |
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+
+      - run: |
           python -m pip install --upgrade pip
-          pip install build twine
+          pip install build twine setuptools_scm
 
-      - name: Set version
-        run: |
-          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            # Release build: strip leading 'v'
-            VERSION="${GITHUB_REF#refs/tags/v}"
-          else
-            # Dev build: use workflow run number
-            VERSION="0.0.0-dev-${GITHUB_RUN_NUMBER}"
-          fi
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
+      - run: python -m build
 
-      - name: Verify Python version
-        run: python --version
-
-      - name: Build package
-        run: python -m build
-
-      - name: Publish to PyPI
-        if: startsWith(github.ref, 'refs/tags/v')
+      - run: python -m twine upload dist/*
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: python -m twine upload dist/*
