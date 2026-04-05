@@ -17,4 +17,4 @@ Windows/dist/
 Windows/*.spec
 Windows/build.bat
 Windows/*.svg
-
+Windows/*make_icon.py
