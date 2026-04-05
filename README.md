@@ -1,4 +1,5 @@
 # HardwareMon #
+![HardwareMon Demo](assets/demo.gif)
 
 
 HardwareMon is a lightweight system monitoring tool designed to provide a detailed overview of your computer's hardware and performance metrics. It can display CPU, memory, disk, GPU, battery, network, and peripheral information in real time. The project includes a Python GUI version for Linux and a modern Windows GUI application.
