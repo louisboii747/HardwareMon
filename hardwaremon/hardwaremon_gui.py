@@ -155,10 +155,13 @@ def gui():
     # Animated text
     def animate_text(lines):
         text.delete("1.0", tk.END)
+
         def step(i):
-            if i >= len(lines): return
+            if i >= len(lines): 
+                return
             text.insert(tk.END, lines[i] + "\n")
             root.after(20, lambda: step(i+1))
+
         step(0)
 
     # CPU Graph
@@ -193,6 +196,7 @@ def gui():
 
     # Section switching
     active_section = "CPU"
+
     def switch_section(name):
         nonlocal active_section
         active_section = name
