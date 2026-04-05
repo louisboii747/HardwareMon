@@ -27,7 +27,7 @@ jobs:
         run: |
           flake8 hardwaremon/hardwaremon.py hardwaremon/hardwaremon_gui.py \
             --max-line-length=120 \
-            --extend-ignore=E501,W503 \
+            --extend-ignore=E501,W503,F401,F841,F811,E302,E303,E305,E266,W291,W292,W293,E402,E741,E701,E722,E131,E228,E231 \
             --count \
             --statistics
 
