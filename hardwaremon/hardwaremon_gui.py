@@ -40,7 +40,7 @@ current_theme = "dark"
 theme_names = list(THEMES.keys())
 
 #########################
-# ICON LOADER
+# ICON LOADER #
 #########################
 def load_icon(name):
     try:
