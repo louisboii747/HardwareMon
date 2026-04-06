@@ -14,7 +14,7 @@ try:
 except PackageNotFoundError:
     VERSION = "dev"
 
-#########################
+#######################
 ICON_FILES = {
     "CPU": "cpu.png",
     "RAM": "ram.png",
@@ -26,9 +26,9 @@ ICON_FILES = {
 
 ICON_SIZE = (32, 32)
 
-#########################
+#######################
 # THEMES
-#########################
+#######################
 THEMES = {
     "dark": {"bg": "#000000", "fg": "#ffffff", "sidebar": "#181818", "highlight": "#ffffff"},
     "blue": {"bg": "#000000", "fg": "#0080FF", "sidebar": "#000000", "highlight": "#0080FF"},
