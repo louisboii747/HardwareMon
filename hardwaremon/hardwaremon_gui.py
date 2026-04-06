@@ -54,7 +54,7 @@ def load_icon(name):
         return None
 
 #########################
-# HARDWARE FUNCTIONS
+# HARDWARE FUNCTIONS #
 #########################
 def cpu_info():
     return [
