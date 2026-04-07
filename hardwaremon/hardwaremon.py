@@ -124,7 +124,7 @@ def gpu_info() -> list[str]:
         if platform.system() != "Linux":
             return ["GPU info not implemented for this OS."]
 
-        # 1. Find dedicated AMD / NVIDIA GPUs (exclude APUs)
+        # 1. Find dedicated AMD / NVIDIA GPUs
         cmd = (
             "lspci | grep -Ei '(NVIDIA Corporation|Advanced Micro Devices, Inc.)' | "
             "grep -E '(VGA|3D)' | grep -vi 'APU'"
