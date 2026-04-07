@@ -8,6 +8,8 @@ import re
 import requests
 import psutil
 import tkinter.messagebox as messagebox
+import subprocess
+from subprocess import run, PIPE
 
 from importlib.metadata import version, PackageNotFoundError
 
@@ -115,21 +117,19 @@ def check_alerts():
     return alerts
 
 
-def gpu_info():
+def gpu_info() -> list[str]:
     lines = ["=== GPU Information ==="]
 
     try:
         if platform.system() != "Linux":
             return ["GPU info not implemented for this OS."]
 
-        # 1. Find ONLY dedicated AMD / NVIDIA GPUs
+        # 1. Find dedicated AMD / NVIDIA GPUs (exclude APUs)
         cmd = (
-            "lspci | grep -Ei "
-            "'(NVIDIA Corporation|Advanced Micro Devices, Inc.)' | "
-            "grep -E '(VGA|3D)' | "
-            "grep -vi 'APU'"
+            "lspci | grep -Ei '(NVIDIA Corporation|Advanced Micro Devices, Inc.)' | "
+            "grep -E '(VGA|3D)' | grep -vi 'APU'"
         )
-        gpus = [l for l in os.popen(cmd).read().splitlines() if l]
+        gpus = [l for l in run(cmd).splitlines() if l]
 
         if not gpus:
             return ["No dedicated AMD or NVIDIA GPU found."]
@@ -141,13 +141,12 @@ def gpu_info():
             bus_id = gpu.split()[0]
 
             # 2. PCIe lane width (current + max)
-            pcie_info = os.popen(f"lspci -s {bus_id} -vv").read()
+            pcie_info = run(f"lspci -s {bus_id} -vv")
             lane_match = re.search(
-                r"LnkSta:\s+Speed\s+[^,]+,\s+Width\s+x(\d+).*?\n.*?LnkCap:\s+Speed\s+[^,]+,\s+Width\s+x(\d+)",
+                r"LnkSta:\s+Speed\s+[^,]+,\s+Width\s+x(\d+).*?LnkCap:\s+Speed\s+[^,]+,\s+Width\s+x(\d+)",
                 pcie_info,
-                re.S
+                re.S,
             )
-
             if lane_match:
                 current, maximum = lane_match.groups()
                 lines.append(f"  PCIe: x{current} (max x{maximum})")
@@ -156,32 +155,28 @@ def gpu_info():
 
             # 3. VRAM detection
             if "NVIDIA" in gpu:
-                vram = os.popen(
-                    "nvidia-smi --query-gpu=memory.total "
-                    "--format=csv,noheader,nounits"
-                ).read().strip()
-                if vram:
-                    lines.append(f"  VRAM: {vram} MB")
-                else:
-                    lines.append("  VRAM: Unknown")
+                vram = run(
+                    "nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits"
+                )
+                lines.append(f"  VRAM: {vram} MB" if vram else "  VRAM: Unknown")
 
             elif "Advanced Micro Devices" in gpu:
-                vram = os.popen(
-                    "grep -i 'VRAM' /var/log/Xorg.0.log 2>/dev/null | head -n1"
-                ).read().strip()
-                if vram:
-                    lines.append(f"  VRAM: {vram}")
+                # Try sysfs first (works without Xorg / on Wayland)
+                vram_bytes = run(
+                    f"cat /sys/bus/pci/devices/0000:{bus_id}/mem_info_vram_total 2>/dev/null"
+                )
+                if vram_bytes and vram_bytes.isdigit():
+                    vram_mb = int(vram_bytes) // (1024 ** 2)
+                    lines.append(f"  VRAM: {vram_mb} MB")
                 else:
-                    lines.append("  VRAM: Unknown (AMD userspace tools vary)")
-
-        return lines
+                    # Fallback: rocm-smi
+                    vram = run("rocm-smi --showmeminfo vram 2>/dev/null | grep 'Total Memory'")
+                    lines.append(f"  VRAM: {vram}" if vram else "  VRAM: Unknown")
 
     except Exception as e:
-        return [f"GPU info error: {e}"] 
-    mem = psutil.virtual_memory().percent
-    if mem > ALERTS["memory"]:
-        alerts = []
-        alerts.append(f"⚠️ Memory Usage High: {mem:.1f}%")
+        lines.append(f"Error retrieving GPU info: {e}")
+
+    return lines
     
     # GPU temp (if available)
     temps = psutil.sensors_temperatures()
