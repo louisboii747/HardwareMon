@@ -117,65 +117,32 @@ def check_alerts():
     return alerts
 
 
-def gpu_info() -> list[str]:
-    lines = ["=== GPU Information ==="]
-
+def gpu_info():
+    lines = ["=== GPU INFORMATION ===", ""]
     try:
-        if platform.system() != "Linux":
-            return ["GPU info not implemented for this OS."]
+        # Try NVIDIA first
+        nvidia = subprocess.getoutput("nvidia-smi --query-gpu=name,memory.total --format=csv,noheader")
+        if nvidia and "error" not in nvidia.lower() and "not found" not in nvidia.lower():
+            for line in nvidia.strip().split("\n"):
+                lines.append(line.strip())
+            return lines
 
-        # 1. Find dedicated AMD / NVIDIA GPUs
-        cmd = (
-            "lspci | grep -Ei '(NVIDIA Corporation|Advanced Micro Devices, Inc.)' | "
-            "grep -E '(VGA|3D)' | grep -vi 'APU'"
-        )
-        gpus = [l for l in run(cmd).splitlines() if l]
+        # Try AMD via rocm-smi
+        amd = subprocess.getoutput("rocm-smi --showproductname 2>/dev/null")
+        if amd and "not found" not in amd.lower() and "error" not in amd.lower():
+            for line in amd.strip().split("\n"):
+                lines.append(line.strip())
+            return lines
 
-        if not gpus:
-            return ["No dedicated AMD or NVIDIA GPU found."]
-
-        for gpu in gpus:
-            lines.append(gpu)
-
-            # Extract PCI bus ID (e.g. 01:00.0)
-            bus_id = gpu.split()[0]
-
-            # 2. PCIe lane width (current + max)
-            pcie_info = run(f"lspci -s {bus_id} -vv")
-            lane_match = re.search(
-                r"LnkSta:\s+Speed\s+[^,]+,\s+Width\s+x(\d+).*?LnkCap:\s+Speed\s+[^,]+,\s+Width\s+x(\d+)",
-                pcie_info,
-                re.S,
-            )
-            if lane_match:
-                current, maximum = lane_match.groups()
-                lines.append(f"  PCIe: x{current} (max x{maximum})")
-            else:
-                lines.append("  PCIe: Unknown")
-
-            # 3. VRAM detection
-            if "NVIDIA" in gpu:
-                vram = run(
-                    "nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits"
-                )
-                lines.append(f"  VRAM: {vram} MB" if vram else "  VRAM: Unknown")
-
-            elif "Advanced Micro Devices" in gpu:
-                # Try sysfs first (works without Xorg / on Wayland)
-                vram_bytes = run(
-                    f"cat /sys/bus/pci/devices/0000:{bus_id}/mem_info_vram_total 2>/dev/null"
-                )
-                if vram_bytes and vram_bytes.isdigit():
-                    vram_mb = int(vram_bytes) // (1024 ** 2)
-                    lines.append(f"  VRAM: {vram_mb} MB")
-                else:
-                    # Fallback: rocm-smi
-                    vram = run("rocm-smi --showmeminfo vram 2>/dev/null | grep 'Total Memory'")
-                    lines.append(f"  VRAM: {vram}" if vram else "  VRAM: Unknown")
+        # Fall back to lspci
+        out = subprocess.getoutput("lspci | grep -Ei 'vga|3d|display'")
+        if out:
+            lines.extend(out.strip().split("\n"))
+        else:
+            lines.append("GPU info not available")
 
     except Exception as e:
-        lines.append(f"Error retrieving GPU info: {e}")
-
+        lines.append(f"GPU info error: {e}")
     return lines
     
     # GPU temp (if available)
@@ -399,74 +366,6 @@ def memory_temperature():
     return lines if len(lines) > 1 else ["===No Memory temperature data found==="]
 
 
-def gpu_info():
-    lines = ["=== GPU Information ==="]
-
-    try:
-        if platform.system() != "Linux":
-            return ["GPU info not implemented for this OS."]
-
-        # 1. Find ONLY dedicated AMD / NVIDIA GPUs
-        cmd = (
-            "lspci | grep -Ei "
-            "'(NVIDIA Corporation|Advanced Micro Devices, Inc.)' | "
-            "'(VGA|3D)' | "
-            "'(APU)' -vi"
-            "grep -E '(VGA|3D)' | "
-            "grep -vi 'APU'"
-        )
-        gpus = [l for l in os.popen(cmd).read().splitlines() if l]
-
-        if not gpus:
-            return ["No dedicated AMD or NVIDIA GPU found."]
-
-        for gpu in gpus:
-            lines.append(gpu)
-
-            # Extract PCI bus ID (e.g. 01:00.0)
-            bus_id = gpu.split()[0]
-
-            # 2. PCIe lane width (current + max)
-            pcie_info = os.popen(f"lspci -s {bus_id} -vv").read()
-            lane_match = re.search(
-                r"LnkSta:\s+Speed\s+[^,]+,\s+Width\s+x(\d+).*?\n.*?LnkCap:\s+Speed\s+[^,]+,\s+Width\s+x(\d+)",
-                pcie_info,
-                re.S
-            )
-
-            if lane_match:
-                current, maximum = lane_match.groups()
-                lines.append(f"  PCIe: x{current} (max x{maximum})")
-            else:
-                lines.append("  PCIe: Unknown")
-
-            # 3. VRAM detection
-            if "NVIDIA" in gpu:
-                vram = os.popen(
-                    "nvidia-smi --query-gpu=memory.total "
-                    "--format=csv,noheader,nounits"
-                ).read().strip()
-                if vram:
-                    lines.append(f"  VRAM: {vram} MB")
-                else:
-                    lines.append("  VRAM: Unknown")
-
-            elif "Advanced Micro Devices" in gpu:
-                vram = os.popen(
-                    "grep -i 'VRAM' /var/log/Xorg.0.log 2>/dev/null | head -n1"
-                ).read().strip()
-                if vram:
-                    lines.append(f"  VRAM: {vram}")
-                else:
-                    lines.append("  VRAM: Unknown (AMD userspace tools vary)")
-
-        return lines
-
-    except Exception as e:
-        return [f"GPU info error: {e}"]
-
-
-
 
 
 def intel_gpu_info():
@@ -588,36 +487,110 @@ def drive_info():
 
 def gpu_temperature():
     lines = ["=== GPU Temperature ==="]
-    temps = psutil.sensors_temperatures()
-    if not temps:
-        return ["GPU temperature sensors not available"]
+    found = False
 
-    for name, entries in temps.items():
-        for entry in entries:
-            if "gpu" in entry.label.lower() or "nvidia" in name.lower() or "amdgpu" in name.lower():
-                if entry.label:
-                    lines.append(f"{entry.label}: {entry.current} °C")
-                else:
-                    lines.append(f"{name}: {entry.current} °C")
+    # NVIDIA
+    nvidia = subprocess.getoutput("nvidia-smi --query-gpu=name,temperature.gpu --format=csv,noheader 2>/dev/null")
+    if nvidia and "not found" not in nvidia.lower() and "error" not in nvidia.lower() and "failed" not in nvidia.lower():
+        for line in nvidia.strip().split("\n"):
+            parts = line.split(",")
+            if len(parts) == 2:
+                name, temp = parts[0].strip(), parts[1].strip()
+                lines.append(f"{name}: {temp} °C")
+                found = True
 
-    return lines if len(lines) > 1 else ["===No GPU temperature data found==="]
+    # AMD via rocm-smi
+    amd = subprocess.getoutput("rocm-smi --showtemp 2>/dev/null")
+    if amd and "not found" not in amd.lower() and "error" not in amd.lower():
+        for line in amd.strip().split("\n"):
+            if "temperature" in line.lower() or "°c" in line.lower() or "temp" in line.lower():
+                lines.append(line.strip())
+                found = True
 
+    # AMD fallback via hwmon (works without rocm-smi)
+    if not found:
+        hwmon_base = "/sys/class/hwmon"
+        if os.path.exists(hwmon_base):
+            for hw in os.listdir(hwmon_base):
+                hw_path = os.path.join(hwmon_base, hw)
+                name = read_sys(os.path.join(hw_path, "name")) or ""
+                if "amdgpu" in name.lower():
+                    for f in os.listdir(hw_path):
+                        if f.startswith("temp") and f.endswith("_input"):
+                            raw = read_sys(os.path.join(hw_path, f))
+                            label_file = f.replace("_input", "_label")
+                            label = read_sys(os.path.join(hw_path, label_file)) or f
+                            if raw and raw.isdigit():
+                                lines.append(f"AMD ({label}): {int(raw) // 1000} °C")
+                                found = True
+
+    return lines if found else ["=== No GPU temperature data found ==="]
+
+
+def get_package_manager():
+    for pm, cmd in [("apt", "sudo apt install i2c-tools"),
+                    ("dnf", "sudo dnf install i2c-tools"),
+                    ("pacman", "sudo pacman -S i2c-tools"),
+                    ("zypper", "sudo zypper install i2c-tools")]:
+        if subprocess.getoutput(f"which {pm} 2>/dev/null").strip():
+            return cmd
+    return "install i2c-tools via your package manager"
 
 def memory_temperature():
     lines = ["=== Memory Temperature ==="]
-    temps = psutil.sensors_temperatures()
-    if not temps:
-        return ["Memory temperature sensors not available"]
+    found = False
 
-    for name, entries in temps.items():
-        for entry in entries:
-            if "memory" in entry.label.lower() or "ram" in name.lower():
-                if entry.label:
-                    lines.append(f"{entry.label}: {entry.current} °C")
-                else:
-                    lines.append(f"{name}: {entry.current} °C")
+    i2c_available = subprocess.getoutput("which decode-dimms 2>/dev/null").strip()
+    eeprom_loaded = "eeprom" in subprocess.getoutput("lsmod 2>/dev/null")
 
-    return lines if len(lines) > 1 else ["===No Memory temperature data found==="]
+    if not i2c_available or not eeprom_loaded:
+        lines.append("DIMM Memory temperature unavailable.")
+        lines.append("")
+        if not i2c_available:
+            lines.append("  → Install i2c-tools:")
+            lines.append(f"    {get_package_manager()}")
+        if not eeprom_loaded:
+            lines.append("  → Load the eeprom kernel module:")
+            lines.append("    sudo modprobe eeprom")
+            lines.append("    (Add 'eeprom' to /etc/modules to persist across reboots)")
+        return lines
+
+    # Try decode-dimms
+    decode = subprocess.getoutput("decode-dimms 2>/dev/null")
+    if decode and "not found" not in decode.lower() and "command not found" not in decode.lower():
+        for line in decode.split("\n"):
+            if "temperature" in line.lower():
+                lines.append(line.strip())
+                found = True
+
+    # Try hwmon
+    if not found:
+        hwmon_base = "/sys/class/hwmon"
+        if os.path.exists(hwmon_base):
+            for hw in os.listdir(hwmon_base):
+                hw_path = os.path.join(hwmon_base, hw)
+                name = read_sys(os.path.join(hw_path, "name")) or ""
+                if any(k in name.lower() for k in ("dimm", "ddr", "ram", "memory", "spd")):
+                    for f in os.listdir(hw_path):
+                        if f.startswith("temp") and f.endswith("_input"):
+                            raw = read_sys(os.path.join(hw_path, f))
+                            label_file = f.replace("_input", "_label")
+                            label = read_sys(os.path.join(hw_path, label_file)) or f
+                            if raw and raw.isdigit():
+                                lines.append(f"{name} ({label}): {int(raw) // 1000} °C")
+                                found = True
+
+    # psutil fallback
+    if not found:
+        temps = psutil.sensors_temperatures()
+        if temps:
+            for name, entries in temps.items():
+                for entry in entries:
+                    if "memory" in entry.label.lower() or "ram" in name.lower() or "dimm" in name.lower():
+                        lines.append(f"{entry.label or name}: {entry.current} °C")
+                        found = True
+
+    return lines if found else ["=== No memory temperature data found ==="]
 
 
 def cpu_temperature():
@@ -854,8 +827,6 @@ def system_summary():
 
     return lines
 
-# ---------- Full Sections Placeholder ----------
-# Replace this with your actual SECTIONS list from your app
 SECTIONS = [ 
     system_info,
     swap_memory,
