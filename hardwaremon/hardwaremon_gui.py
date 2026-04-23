@@ -75,6 +75,21 @@ def cpu_info():
         f"Usage: {psutil.cpu_percent()} %"
     ]
 
+
+def cpu_temperature():
+    temps = psutil.sensors_temperatures()
+    if not temps:
+        return ["CPU Temperature: Not available"]
+
+    lines = ["=== CPU TEMPERATURE ===", ""]
+    for name, entries in temps.items():
+        for entry in entries:
+            if "cpu" in entry.label.lower() or "package" in entry.label.lower():
+                lines.append(f"{entry.label}: {entry.current} °C")
+    return lines
+
+
+
 def ram_info():
     mem = psutil.virtual_memory()
     return [
@@ -88,17 +103,28 @@ def ram_info():
 def disk_info():
     d = psutil.disk_usage("/")
     return [
-        "=== DISK INFORMATION ===", "",
+        "=== DISK INFORMATION (ROOT PARTITION) ===", "",
         f"Total: {round(d.total/1e9,2)} GB",
         f"Used: {round(d.used/1e9,2)} GB",
         f"Free: {round(d.free/1e9,2)} GB",
         f"Percent Used: {d.percent} %"
     ]
 
+def partitions_info():
+    SKIP_FS = {"tmpfs", "devtmpfs", "squashfs"}
+
+
+    lines = ["=== ALL PARTITIONS ===", ""]
+    for part in psutil.disk_partitions():
+        if part.fstype not in SKIP_FS:
+            lines.append(f"{part.device} - {part.mountpoint} ({part.fstype})")
+    return lines
+
 def gpu_info():
     lines = ["=== GPU INFORMATION ===", ""]
+    
     try:
-        nvidia = subprocess.getoutput("nvidia-smi --query-gpu=name,memory.total --format=csv,noheader")
+        nvidia = subprocess.getoutput("nvidia-smi --query-gpu=name,memory.total, --format=csv,noheader")
         if nvidia:
             for line in nvidia.strip().split("\n"):
                 lines.append(line.strip())
@@ -109,13 +135,50 @@ def gpu_info():
             else:
                 lines.append("GPU info not available")
     except Exception as e:
-        lines.append(f"GPU info error: {e}")
+        lines.append("GPU info not available")
     return lines
+
+def vram_info():
+    lines = ["=== VRAM INFORMATION ===", ""]
+    try:
+        nvidia = subprocess.getoutput("nvidia-smi --query-gpu=memory.total --format=csv,noheader")
+        if nvidia:
+            for line in nvidia.strip().split("\n"):
+                lines.append(line.strip())
+        else:
+            lines.append("VRAM info not available")
+    except Exception as e:
+        lines.append("VRAM info not available")
+    return lines
+
+def gpu_temperature_info():
+    lines = ["=== GPU TEMPERATURE ===", ""]
+    try:
+        nvidia = subprocess.getoutput("nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader")
+        if nvidia:
+            for line in nvidia.strip().split("\n"):
+                lines.append(line.strip() + " °C")
+        else:
+            lines.append("GPU temperature not available")
+    except Exception as e:
+        lines.append("GPU temperature not available")
+    return lines
+
+
 
 def motherboard_info():
     lines = ["=== MOTHERBOARD ===", ""]
     try:
         out = subprocess.getoutput("cat /sys/devices/virtual/dmi/id/board_name")
+        lines.append(out.strip() if out else "Unknown")
+    except:
+        lines.append("Unknown")
+    return lines
+
+def secure_boot():
+    lines = ["=== SECURE BOOT STATE ===", ""]
+    try:
+        out = subprocess.getoutput("mokutil --sb-state")
         lines.append(out.strip() if out else "Unknown")
     except:
         lines.append("Unknown")
@@ -129,16 +192,22 @@ def os_info():
         f"Version: {platform.version()}"
     ]
 
+def current_user():
+    return [
+        "=== CURRENT USER ===", "",
+        f"User: {os.getlogin()}"
+    ]
+
 #########################
 # SECTIONS
 #########################
 SECTIONS = {
-    "CPU": cpu_info,
+    "CPU": lambda: cpu_info() + [""] + cpu_temperature(),
     "RAM": ram_info,
-    "DISK": disk_info,
-    "GPU": gpu_info,
-    "BOARD": motherboard_info,
-    "OS": os_info
+    "DISK": lambda: disk_info() + [""] + partitions_info(),
+    "GPU": lambda: gpu_info() + [""] + vram_info() + [""] + gpu_temperature_info(),
+    "BOARD": lambda: motherboard_info() + [""] + secure_boot(),
+    "OS": lambda: os_info() + [""] + current_user()
 }
 
 #########################
