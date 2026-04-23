@@ -57,9 +57,19 @@ def load_icon(name):
 # HARDWARE FUNCTIONS #
 #########################
 def cpu_info():
+    cpu_name = "Unknown"
+    try:
+        with open("/proc/cpuinfo") as f:
+            for line in f:
+                if line.startswith("model name"):
+                    cpu_name = line.split(":")[1].strip()
+                    break
+    except FileNotFoundError:
+        cpu_name = platform.processor()  # fallback for non-Linux
+
     return [
         "=== CPU INFORMATION ===", "",
-        f"Processor: {platform.processor()}",
+        f"Processor: {cpu_name}",
         f"Cores: {psutil.cpu_count(logical=False)}",
         f"Threads: {psutil.cpu_count(logical=True)}",
         f"Usage: {psutil.cpu_percent()} %"
