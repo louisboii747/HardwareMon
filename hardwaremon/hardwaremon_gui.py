@@ -233,11 +233,14 @@ def gui():
 
     # Animated text
     def animate_text(lines):
+        text.configure(state="normal")
         text.delete("1.0", tk.END)
 
         def step(i):
             if i >= len(lines): 
+                text.configure(state="disabled")
                 return
+            text.configure(state="normal")
             text.insert(tk.END, lines[i] + "\n")
             root.after(20, lambda: step(i+1))
 
