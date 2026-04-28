@@ -28,3 +28,38 @@ jobs:
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+
+      - name: Set version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+
+      - name: Install package into staging
+        run: |
+          mkdir -p pkg
+          pip install dist/*.whl --target pkg
+
+      - name: Create CLI wrapper
+        run: |
+          mkdir -p pkg/bin
+          cat <<EOF > pkg/bin/hardwaremon
+          #!/usr/bin/env python3
+          from hardwaremon.cli import main
+          main()
+          EOF
+          chmod +x pkg/bin/hardwaremon
+
+      - name: Install nfpm
+        run: |
+          curl -sL https://github.com/goreleaser/nfpm/releases/latest/download/nfpm_$(uname -s)_$(uname -m).tar.gz | tar -xz
+          sudo mv nfpm /usr/local/bin/
+
+      - name: Build Linux packages
+        run: |
+          nfpm pkg --config nfpm.yaml --target hardwaremon.deb
+          nfpm pkg --config nfpm.yaml --target hardwaremon.rpm
+
+      - name: Create GitHub Release + upload packages
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            *.deb
+            *.rpm
