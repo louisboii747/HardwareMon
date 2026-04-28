@@ -54,6 +54,15 @@ jobs:
           EOF
           chmod +x pkg/bin/hardwaremon
 
+          cat <<'EOF' > pkg/bin/hardwaremon-gui
+          #!/usr/bin/env python3
+          import sys
+          sys.path.insert(0, '/opt/')
+          from hardwaremon.hardwaremon_gui import gui
+          gui()
+          EOF
+          chmod +x pkg/bin/hardwaremon-gui
+
       - name: Install nfpm
         run: |
           echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list
