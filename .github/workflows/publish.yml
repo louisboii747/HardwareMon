@@ -12,19 +12,23 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.11
+          python-version: "3.11"
 
-      - run: |
+      - name: Install Python tools
+        run: |
           python -m pip install --upgrade pip
           pip install build twine setuptools_scm
 
-      - run: python -m build
+      - name: Build Python package
+        run: python -m build
 
       - name: Upload to PyPI
         run: python -m twine upload dist/*
@@ -39,27 +43,29 @@ jobs:
         run: |
           mkdir -p pkg/hardwaremon
           pip install dist/*.whl --target pkg/hardwaremon --no-deps
-          rm -rf pkg/hardwaremon/*.dist-info pkg/hardwaremon/*.data    
+          rm -rf pkg/hardwaremon/*.dist-info pkg/hardwaremon/*.data
 
+      # =========================
+      # CLI WRAPPERS (NO HEREDOC VERSION)
+      # =========================
       - name: Create CLI wrapper
         run: |
           mkdir -p pkg/bin
-          cat <<'EOF' > pkg/bin/hardwaremon
-          #!/usr/bin/env python3
-          import sys
-          sys.path.insert(0, '/opt/')
-          from hardwaremon.hardwaremon import main
-          main()
-          EOF
+
+          echo '#!/usr/bin/env python3' > pkg/bin/hardwaremon
+          echo 'import sys' >> pkg/bin/hardwaremon
+          echo "sys.path.insert(0, '/opt/')" >> pkg/bin/hardwaremon
+          echo 'from hardwaremon.hardwaremon import main' >> pkg/bin/hardwaremon
+          echo 'main()' >> pkg/bin/hardwaremon
+
           chmod +x pkg/bin/hardwaremon
 
-          cat <<'EOF' > pkg/bin/hardwaremon-gui
-          #!/usr/bin/env python3
-          import sys
-          sys.path.insert(0, '/opt/')
-          from hardwaremon.hardwaremon_gui import gui
-          gui()
-          EOF
+          echo '#!/usr/bin/env python3' > pkg/bin/hardwaremon-gui
+          echo 'import sys' >> pkg/bin/hardwaremon-gui
+          echo "sys.path.insert(0, '/opt/')" >> pkg/bin/hardwaremon-gui
+          echo 'from hardwaremon.hardwaremon_gui import gui' >> pkg/bin/hardwaremon-gui
+          echo 'gui()' >> pkg/bin/hardwaremon-gui
+
           chmod +x pkg/bin/hardwaremon-gui
 
       - name: Install nfpm
@@ -70,26 +76,34 @@ jobs:
 
       - name: Build Linux packages
         run: |
-          nfpm pkg --config nfpm.yaml --target hardwaremon.deb
-          nfpm pkg --config nfpm.yaml --target hardwaremon.rpm
+          nfpm pkg --config nfpm.yaml --target ./hardwaremon.deb
+          nfpm pkg --config nfpm.yaml --target ./hardwaremon.rpm
+
+          echo "📦 Built files:"
+          ls -lah *.deb *.rpm
+
+      - name: Verify artifacts exist
+        run: ls -lah
 
       # =========================
-      # 🆕 NEXUS UPLOAD SECTION
+      # NEXUS UPLOAD (APT)
       # =========================
-
-      - name: Upload DEB to Nexus (APT repo)
+      - name: Upload DEB to Nexus
         run: |
-          curl -u ${{ secrets.NEXUS_USER }}:${{ secrets.NEXUS_PASS }} \
-          --upload-file hardwaremon.deb \
+          curl -v --fail-with-body -u ${{ secrets.NEXUS_USER }}:${{ secrets.NEXUS_PASS }} \
+          --upload-file ./hardwaremon.deb \
           ${{ secrets.NEXUS_URL }}/repository/hardwaremon-apt/
 
-      - name: Upload RPM to Nexus (YUM repo)
+      # =========================
+      # NEXUS UPLOAD (YUM)
+      # =========================
+      - name: Upload RPM to Nexus
         run: |
-          curl -u ${{ secrets.NEXUS_USER }}:${{ secrets.NEXUS_PASS }} \
-          --upload-file hardwaremon.rpm \
+          curl -v --fail-with-body -u ${{ secrets.NEXUS_USER }}:${{ secrets.NEXUS_PASS }} \
+          --upload-file ./hardwaremon.rpm \
           ${{ secrets.NEXUS_URL }}/repository/hardwaremon-yum/
 
-      - name: Create GitHub Release + upload packages
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
