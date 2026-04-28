@@ -36,11 +36,11 @@ jobs:
       # -------------------------
       # Clean
       # -------------------------
-      - name: Clean previous builds
+      - name: Clean workspace
         run: rm -rf dist build *.egg-info repo
 
       # -------------------------
-      # Build Python package (FIXED VERSIONING)
+      # Build Python package
       # -------------------------
       - name: Build Python package
         env:
@@ -48,13 +48,7 @@ jobs:
         run: python -m build
 
       # -------------------------
-      # Debug dist
-      # -------------------------
-      - name: Inspect dist
-        run: ls -lah dist/
-
-      # -------------------------
-      # PyPI upload (optional but kept)
+      # PyPI upload
       # -------------------------
       - name: Upload to PyPI
         run: python -m twine upload dist/*
@@ -83,7 +77,6 @@ jobs:
           echo "sys.path.insert(0, '/opt/')" >> pkg/bin/hardwaremon
           echo 'from hardwaremon.hardwaremon import main' >> pkg/bin/hardwaremon
           echo 'main()' >> pkg/bin/hardwaremon
-
           chmod +x pkg/bin/hardwaremon
 
           echo '#!/usr/bin/env python3' > pkg/bin/hardwaremon-gui
@@ -91,32 +84,48 @@ jobs:
           echo "sys.path.insert(0, '/opt/')" >> pkg/bin/hardwaremon-gui
           echo 'from hardwaremon.hardwaremon_gui import gui' >> pkg/bin/hardwaremon-gui
           echo 'gui()' >> pkg/bin/hardwaremon-gui
-
           chmod +x pkg/bin/hardwaremon-gui
 
       # -------------------------
-      # Install repo tools
+      # Install repo tools (APT + YUM metadata)
       # -------------------------
       - name: Install repo tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y dpkg-dev createrepo-c
+          sudo apt-get install -y dpkg-dev createrepo-c curl
 
+      # -------------------------
+      # Install nfpm
+      # -------------------------
       - name: Install nfpm
         run: |
-          curl -sSL https://github.com/goreleaser/nfpm/releases/latest/download/nfpm_amd64.deb -o nfpm.deb
+          set -e
+
+          VERSION=$(curl -s https://api.github.com/repos/goreleaser/nfpm/releases/latest \
+            | grep '"tag_name"' \
+            | cut -d '"' -f4)
+
+          echo "Using nfpm version: $VERSION"
+
+          URL="https://github.com/goreleaser/nfpm/releases/download/${VERSION}/nfpm_${VERSION#v}_linux_amd64.deb"
+
+          curl -L --fail -o nfpm.deb "$URL"
+
+          ls -lah nfpm.deb
+          file nfpm.deb
+
           sudo dpkg -i nfpm.deb
+
           nfpm version
 
       # -------------------------
-      # Build Linux packages
+      # Build DEB + RPM
       # -------------------------
-      - name: Build .deb and .rpm
+      - name: Build packages
         run: |
           nfpm pkg --config nfpm.yaml --target hardwaremon.deb
           nfpm pkg --config nfpm.yaml --target hardwaremon.rpm
 
-          echo "📦 Built packages:"
           ls -lah *.deb *.rpm
 
       # -------------------------
@@ -144,18 +153,18 @@ jobs:
           cd ../..
 
       # -------------------------
-      # Verify everything
+      # Verify
       # -------------------------
       - name: Verify repos
         run: |
-          echo "APT repo:"
+          echo "APT:"
           ls -lah repo/apt
 
-          echo "YUM repo:"
+          echo "YUM:"
           ls -lah repo/yum
 
       # -------------------------
-      # Upload APT repo to Nexus (RAW)
+      # Upload APT repo (Nexus RAW)
       # -------------------------
       - name: Upload APT repo
         run: |
@@ -172,7 +181,7 @@ jobs:
             ${{ secrets.NEXUS_URL }}/repository/hardwaremon-deb/
 
       # -------------------------
-      # Upload YUM repo to Nexus (RAW)
+      # Upload YUM repo (Nexus RAW)
       # -------------------------
       - name: Upload YUM repo
         run: |
