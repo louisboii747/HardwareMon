@@ -9,12 +9,10 @@ description: "A hardware monitoring tool written in Python."
 license: MIT
 
 contents:
-    - src: ./pkg/
+  - src: ./pkg/
     dst: /opt/hardwaremon/
 
-    - src: ./pkg/bin/hardwaremon
+  - src: ./pkg/bin/hardwaremon
     dst: /usr/bin/hardwaremon
-
     file_info:
-        mode: 0755
-
+      mode: 0755
