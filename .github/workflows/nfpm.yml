@@ -1,0 +1,20 @@
+name: hardwaremon
+arch: amd64
+platform: linux
+version: ${VERSION}
+section: utils
+priority: optional
+maintainer: "Louis Hinchliffe <louishinchliffe11@gmail.com>"
+description: "A hardware monitoring tool written in Python."
+license: MIT
+
+contents:
+    - src: ./pkg/
+    dst: /opt/hardwaremon/
+
+    - src: ./pkg/bin/hardwaremon
+    dst: /usr/bin/hardwaremon
+
+    file_info:
+        mode: 0755
+
