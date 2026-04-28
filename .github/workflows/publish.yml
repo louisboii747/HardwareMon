@@ -47,6 +47,8 @@ jobs:
           mkdir -p pkg/bin
           cat <<EOF > pkg/bin/hardwaremon
           #!/usr/bin/env python3
+          import sys
+          sys.path.insert(0, '/opt/hardwaremon')
           from hardwaremon.cli import main
           main()
           EOF
