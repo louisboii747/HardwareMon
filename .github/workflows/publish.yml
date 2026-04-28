@@ -103,7 +103,9 @@ jobs:
           cp dist/hardwaremon.deb repo/apt/pool/main/h/hardwaremon/
 
           cd repo/apt
-          dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz
+
+          dpkg-scanpackages pool /dev/null | gzip -9c > dists/stable/main/binary-amd64/Packages.gz
+
 
           echo "Origin: HardwareMon" > Release
           echo "Label: HardwareMon" >> Release
