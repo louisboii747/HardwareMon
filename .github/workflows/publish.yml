@@ -34,7 +34,7 @@ jobs:
           pip install build twine setuptools_scm
 
       # -------------------------
-      # Clean
+      # Clean workspace
       # -------------------------
       - name: Clean workspace
         run: rm -rf dist build *.egg-info repo
@@ -48,7 +48,7 @@ jobs:
         run: python -m build
 
       # -------------------------
-      # PyPI upload
+      # Upload to PyPI
       # -------------------------
       - name: Upload to PyPI
         run: python -m twine upload dist/*
@@ -57,7 +57,7 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
 
       # -------------------------
-      # Install staging package
+      # Staging install
       # -------------------------
       - name: Install package into staging
         run: |
@@ -66,7 +66,7 @@ jobs:
           rm -rf pkg/hardwaremon/*.dist-info pkg/hardwaremon/*.data
 
       # -------------------------
-      # CLI WRAPPERS
+      # CLI wrappers
       # -------------------------
       - name: Create CLI wrapper
         run: |
@@ -87,45 +87,37 @@ jobs:
           chmod +x pkg/bin/hardwaremon-gui
 
       # -------------------------
-      # Install repo tools (APT + YUM metadata)
+      # Install tools (APT + YUM metadata)
       # -------------------------
       - name: Install repo tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y dpkg-dev createrepo-c curl
+          sudo apt-get install -y dpkg-dev createrepo-c curl golang-go
 
       # -------------------------
-      # Install nfpm
+      # Install nfpm (FIXED - GO METHOD)
       # -------------------------
       - name: Install nfpm
         run: |
           set -e
 
-          VERSION=$(curl -s https://api.github.com/repos/goreleaser/nfpm/releases/latest \
-            | grep '"tag_name"' \
-            | cut -d '"' -f4)
+          echo "Installing nfpm via Go..."
 
-          echo "Using nfpm version: $VERSION"
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
 
-          URL="https://github.com/goreleaser/nfpm/releases/download/${VERSION}/nfpm_${VERSION#v}_linux_amd64.deb"
-
-          curl -L --fail -o nfpm.deb "$URL"
-
-          ls -lah nfpm.deb
-          file nfpm.deb
-
-          sudo dpkg -i nfpm.deb
+          echo "$HOME/go/bin" >> $GITHUB_PATH
 
           nfpm version
 
       # -------------------------
-      # Build DEB + RPM
+      # Build packages
       # -------------------------
-      - name: Build packages
+      - name: Build .deb and .rpm
         run: |
           nfpm pkg --config nfpm.yaml --target hardwaremon.deb
           nfpm pkg --config nfpm.yaml --target hardwaremon.rpm
 
+          echo "Built artifacts:"
           ls -lah *.deb *.rpm
 
       # -------------------------
@@ -153,18 +145,18 @@ jobs:
           cd ../..
 
       # -------------------------
-      # Verify
+      # Verify repos
       # -------------------------
       - name: Verify repos
         run: |
-          echo "APT:"
+          echo "APT repo:"
           ls -lah repo/apt
 
-          echo "YUM:"
+          echo "YUM repo:"
           ls -lah repo/yum
 
       # -------------------------
-      # Upload APT repo (Nexus RAW)
+      # Upload APT repo to Nexus (RAW)
       # -------------------------
       - name: Upload APT repo
         run: |
@@ -181,7 +173,7 @@ jobs:
             ${{ secrets.NEXUS_URL }}/repository/hardwaremon-deb/
 
       # -------------------------
-      # Upload YUM repo (Nexus RAW)
+      # Upload YUM repo to Nexus (RAW)
       # -------------------------
       - name: Upload YUM repo
         run: |
