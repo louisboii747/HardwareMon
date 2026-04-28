@@ -147,6 +147,13 @@ jobs:
           </body>
           </html>
           HTML
+          EOF
+
+          cat > public/_redirects <<EOF
+            /apt/* /apt/:splat 200
+            /yum/* /yum/:splat 200
+            /*    /:splat 200
+            EOF
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
