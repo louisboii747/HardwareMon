@@ -26,7 +26,8 @@ jobs:
 
       - run: python -m build
 
-      - run: python -m twine upload dist/*
+      - name: Upload to PyPI
+        run: python -m twine upload dist/*
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
@@ -39,8 +40,6 @@ jobs:
           mkdir -p pkg/hardwaremon
           pip install dist/*.whl --target pkg/hardwaremon --no-deps
           rm -rf pkg/hardwaremon/*.dist-info pkg/hardwaremon/*.data    
-
-
 
       - name: Create CLI wrapper
         run: |
@@ -73,6 +72,22 @@ jobs:
         run: |
           nfpm pkg --config nfpm.yaml --target hardwaremon.deb
           nfpm pkg --config nfpm.yaml --target hardwaremon.rpm
+
+      # =========================
+      # 🆕 NEXUS UPLOAD SECTION
+      # =========================
+
+      - name: Upload DEB to Nexus (APT repo)
+        run: |
+          curl -u ${{ secrets.NEXUS_USER }}:${{ secrets.NEXUS_PASS }} \
+          --upload-file hardwaremon.deb \
+          ${{ secrets.NEXUS_URL }}/repository/hardwaremon-apt/
+
+      - name: Upload RPM to Nexus (YUM repo)
+        run: |
+          curl -u ${{ secrets.NEXUS_USER }}:${{ secrets.NEXUS_PASS }} \
+          --upload-file hardwaremon.rpm \
+          ${{ secrets.NEXUS_URL }}/repository/hardwaremon-yum/
 
       - name: Create GitHub Release + upload packages
         uses: softprops/action-gh-release@v2
