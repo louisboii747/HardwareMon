@@ -16,3 +16,8 @@ contents:
     dst: /usr/bin/hardwaremon
     file_info:
       mode: 0755
+
+  - src: ./pkg/bin/hardwaremon-gui
+    dst: /usr/bin/hardwaremon-gui  
+    file_info:
+      mode: 0755
