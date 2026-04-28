@@ -96,7 +96,11 @@ jobs:
       - name: Build APT repo
         run: |
           mkdir -p repo/apt
-          cp dist/hardwaremon.deb repo/apt/
+          mkdir -p repo/apt/pool/main/h/hardwaremon
+          mkdir -p repo/apt/dists/stable/main/binary-amd64
+
+
+          cp dist/hardwaremon.deb repo/apt/pool/main/h/hardwaremon/
 
           cd repo/apt
           dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz
