@@ -25,6 +25,8 @@ hardwaremon_cli = "hardwaremon.hardwaremon:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
+include = ["hardwaremon*"]
+exclude = ["Windows*", "assets*"]
 
 [tool.setuptools.package-data]
 hardwaremon = ["icons/*"]
