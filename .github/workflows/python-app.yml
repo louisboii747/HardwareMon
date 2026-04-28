@@ -1,4 +1,4 @@
-name: Build & Release HardwareMon
+name: Build & Release HardwareMon to PyPI and Linux Package Repositories
 
 on:
   push:
