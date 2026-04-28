@@ -34,13 +34,13 @@ jobs:
           pip install build twine setuptools_scm
 
       # -------------------------
-      # CLEAN (IMPORTANT)
+      # Clean
       # -------------------------
       - name: Clean previous builds
-        run: rm -rf dist build *.egg-info
+        run: rm -rf dist build *.egg-info repo
 
       # -------------------------
-      # BUILD PYTHON PACKAGE (FIXED VERSION ISSUE)
+      # Build Python package (FIXED VERSIONING)
       # -------------------------
       - name: Build Python package
         env:
@@ -48,13 +48,13 @@ jobs:
         run: python -m build
 
       # -------------------------
-      # DEBUG DIST
+      # Debug dist
       # -------------------------
       - name: Inspect dist
         run: ls -lah dist/
 
       # -------------------------
-      # Upload to PyPI
+      # PyPI upload (optional but kept)
       # -------------------------
       - name: Upload to PyPI
         run: python -m twine upload dist/*
@@ -63,13 +63,7 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
 
       # -------------------------
-      # Version
-      # -------------------------
-      - name: Set version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
-
-      # -------------------------
-      # STAGING INSTALL
+      # Install staging package
       # -------------------------
       - name: Install package into staging
         run: |
@@ -78,7 +72,7 @@ jobs:
           rm -rf pkg/hardwaremon/*.dist-info pkg/hardwaremon/*.data
 
       # -------------------------
-      # CLI WRAPPERS (SAFE VERSION)
+      # CLI WRAPPERS
       # -------------------------
       - name: Create CLI wrapper
         run: |
@@ -101,69 +95,95 @@ jobs:
           chmod +x pkg/bin/hardwaremon-gui
 
       # -------------------------
-      # INSTALL NFPM
+      # Install repo tools
       # -------------------------
-      - name: Install nfpm
+      - name: Install repo tools
         run: |
-          echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list
-          sudo apt-get update -q
-          sudo apt-get install -y nfpm
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev createrepo-c
 
       # -------------------------
-      # BUILD DEB + RPM
+      # Build Linux packages
       # -------------------------
-      - name: Build Linux packages
+      - name: Build .deb and .rpm
         run: |
-          nfpm pkg --config nfpm.yaml --target ./hardwaremon.deb
-          nfpm pkg --config nfpm.yaml --target ./hardwaremon.rpm
+          nfpm pkg --config nfpm.yaml --target hardwaremon.deb
+          nfpm pkg --config nfpm.yaml --target hardwaremon.rpm
 
-          echo "📦 Built artifacts:"
+          echo "📦 Built packages:"
           ls -lah *.deb *.rpm
 
       # -------------------------
-      # VERIFY ARTIFACTS
+      # Build APT repo
       # -------------------------
-      - name: Verify artifacts exist
+      - name: Build APT repo
         run: |
-          test -f hardwaremon.deb
-          test -f hardwaremon.rpm
-          ls -lah
+          mkdir -p repo/apt
+          cp hardwaremon.deb repo/apt/
 
-
-
-      - name: DEBUG CHECK
-        run: |
-          echo "PWD:"
-          pwd
-          echo "FILES:"
-          ls -lah
-          echo "DEB INFO:"
-          stat hardwaremon.deb || true
-          echo "RPM INFO:"
-          stat hardwaremon.rpm || true    
+          cd repo/apt
+          dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz
+          cd ../..
 
       # -------------------------
-      # NEXUS (APT)
+      # Build YUM repo
       # -------------------------
-      - name: Upload DEB to Nexus
+      - name: Build YUM repo
         run: |
+          mkdir -p repo/yum
+          cp hardwaremon.rpm repo/yum/
+
+          cd repo/yum
+          createrepo_c .
+          cd ../..
+
+      # -------------------------
+      # Verify everything
+      # -------------------------
+      - name: Verify repos
+        run: |
+          echo "APT repo:"
+          ls -lah repo/apt
+
+          echo "YUM repo:"
+          ls -lah repo/yum
+
+      # -------------------------
+      # Upload APT repo to Nexus (RAW)
+      # -------------------------
+      - name: Upload APT repo
+        run: |
+          cd repo/apt
+
           curl -v --fail-with-body \
-          -u ${{ secrets.NEXUS_USER }}:${{ secrets.NEXUS_PASS }} \
-          --upload-file hardwaremon.deb \
-          ${{ secrets.NEXUS_URL }}/repository/hardwaremon-apt/
+            -u ${{ secrets.NEXUS_USER }}:${{ secrets.NEXUS_PASS }} \
+            --upload-file hardwaremon.deb \
+            ${{ secrets.NEXUS_URL }}/repository/hardwaremon-deb/
 
-      # -------------------------
-      # NEXUS (YUM)
-      # -------------------------
-      - name: Upload RPM to Nexus
-        run: |
           curl -v --fail-with-body \
-          -u ${{ secrets.NEXUS_USER }}:${{ secrets.NEXUS_PASS }} \
-          --upload-file hardwaremon.rpm \
-          ${{ secrets.NEXUS_URL }}/repository/hardwaremon-yum/
+            -u ${{ secrets.NEXUS_USER }}:${{ secrets.NEXUS_PASS }} \
+            --upload-file Packages.gz \
+            ${{ secrets.NEXUS_URL }}/repository/hardwaremon-deb/
 
       # -------------------------
-      # GITHUB RELEASE
+      # Upload YUM repo to Nexus (RAW)
+      # -------------------------
+      - name: Upload YUM repo
+        run: |
+          cd repo/yum
+
+          curl -v --fail-with-body \
+            -u ${{ secrets.NEXUS_USER }}:${{ secrets.NEXUS_PASS }} \
+            --upload-file hardwaremon.rpm \
+            ${{ secrets.NEXUS_URL }}/repository/hardwaremon-yum/
+
+          curl -v --fail-with-body \
+            -u ${{ secrets.NEXUS_USER }}:${{ secrets.NEXUS_PASS }} \
+            --upload-file repodata/repomd.xml \
+            ${{ secrets.NEXUS_URL }}/repository/hardwaremon-yum/
+
+      # -------------------------
+      # GitHub Release
       # -------------------------
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
