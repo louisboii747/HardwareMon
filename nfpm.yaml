@@ -1,27 +1,15 @@
-name: hardwaremon
-arch: amd64
-platform: linux
-version: ${VERSION}
-section: utils
-priority: optional
+- name: Create nfpm config
+  run: |
+    echo "name: hardwaremon" > nfpm.yaml
+    echo "arch: amd64" >> nfpm.yaml
+    echo "platform: linux" >> nfpm.yaml
+    echo "version: ${GITHUB_REF_NAME:-1.0.0}" >> nfpm.yaml
+    echo "maintainer: Louis Hinchliffe <louishinchliffe11@gmail.com>" >> nfpm.yaml
+    echo "description: HardwareMon system monitor" >> nfpm.yaml
+    echo "homepage: https://github.com/louisboii747/HardwareMon" >> nfpm.yaml
 
-maintainer: Louis
-description: Hardware monitoring tool (CLI + GUI)
-license: MIT
-
-contents:
-  - src: hardwaremon/
-    dst: /opt/hardwaremon/
-
-  - src: pyproject.toml
-    dst: /opt/hardwaremon/pyproject.toml
-
-  - src: pkg/bin/hardwaremon
-    dst: /usr/bin/hardwaremon
-    file_info:
-      mode: 0755
-
-  - src: pkg/bin/hardwaremon-gui
-    dst: /usr/bin/hardwaremon-gui
-    file_info:
-      mode: 0755
+    echo "contents:" >> nfpm.yaml
+    echo "  - src: pkg/bin/hardwaremon" >> nfpm.yaml
+    echo "    dst: /usr/bin/hardwaremon" >> nfpm.yaml
+    echo "  - src: pkg/bin/hardwaremon-gui" >> nfpm.yaml
+    echo "    dst: /usr/bin/hardwaremon-gui" >> nfpm.yaml
