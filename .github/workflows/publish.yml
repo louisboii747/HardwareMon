@@ -32,7 +32,7 @@ jobs:
           sudo apt-get install -y dpkg-dev createrepo-c curl golang-go
 
       - name: Install nfpm
-        run: |
+        run: | 
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
           echo "$HOME/go/bin" >> $GITHUB_PATH
 
@@ -53,18 +53,20 @@ jobs:
           mkdir -p pkg/bin
 
           printf '%s\n' \
-'#!/usr/bin/env python3' \
-'from hardwaremon.hardwaremon import main' \
-'' \
-'if __name__ == "__main__":' \
-'    main()' > pkg/bin/hardwaremon
+
+
+          '#!/usr/bin/env python3' \
+          'from hardwaremon.hardwaremon import main' \
+          '' \
+          'if __name__ == "__main__":' \
+          '    main()' > pkg/bin/hardwaremon
 
           printf '%s\n' \
-'#!/usr/bin/env python3' \
-'from hardwaremon.hardwaremon_gui import gui' \
-'' \
-'if __name__ == "__main__":' \
-'    gui()' > pkg/bin/hardwaremon-gui
+          '#!/usr/bin/env python3' \
+          'from hardwaremon.hardwaremon_gui import gui' \
+          '' \
+          'if __name__ == "__main__":' \
+          '    gui()' > pkg/bin/hardwaremon-gui
 
           chmod +x pkg/bin/hardwaremon
           chmod +x pkg/bin/hardwaremon-gui
@@ -86,13 +88,13 @@ jobs:
           dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz
 
           printf '%s\n' \
-'Origin: HardwareMon' \
-'Label: HardwareMon' \
-'Suite: stable' \
-'Codename: stable' \
-'Architectures: amd64' \
-'Components: main' \
-'Description: HardwareMon APT Repository' > Release
+          'Origin: HardwareMon' \
+          'Label: HardwareMon' \
+          'Suite: stable' \
+          'Codename: stable' \
+          'Architectures: amd64' \
+          'Components: main' \
+          'Description: HardwareMon APT Repository' > Release
 
       # -------------------------
       # YUM REPO
@@ -106,11 +108,11 @@ jobs:
           createrepo_c .
 
           printf '%s\n' \
-'[hardwaremon]' \
-'name=HardwareMon Repo' \
-'baseurl=https://hardwaremon.pages.dev/yum' \
-'enabled=1' \
-'gpgcheck=0' > hardwaremon.repo
+          '[hardwaremon]' \
+          'name=HardwareMon Repo' \
+          'baseurl=https://hardwaremon.pages.dev/yum' \
+          'enabled=1' \
+          'gpgcheck=0' > hardwaremon.repo
 
       # -------------------------
       # PAGES OUTPUT
@@ -123,21 +125,21 @@ jobs:
           cp -r repo/* public/
 
           printf '%s\n' \
-'<!doctype html>' \
-'<html>' \
-'<head><meta charset="utf-8"><title>HardwareMon Repo</title></head>' \
-'<body>' \
-'<h1>HardwareMon Repository</h1>' \
-'<p><a href="/apt/">APT Repository</a></p>' \
-'<p><a href="/yum/">YUM Repository</a></p>' \
-'</body>' \
-'</html>' > public/index.html
+          '<!doctype html>' \
+          '<html>' \
+          '<head><meta charset="utf-8"><title>HardwareMon Repo</title></head>' \
+          '<body>' \
+          '<h1>HardwareMon Repository</h1>' \
+          '<p><a href="/apt/">APT Repository</a></p>' \
+          '<p><a href="/yum/">YUM Repository</a></p>' \
+          '</body>' \
+          '</html>' > public/index.html
 
           printf '%s\n' \
-'<h1>APT Repo</h1><p>Linux package repository</p>' > public/apt/index.html
+          '<h1>APT Repo</h1><p>Linux package repository</p>' > public/apt/index.html
 
           printf '%s\n' \
-'<h1>YUM Repo</h1><p>Linux package repository</p>' > public/yum/index.html
+          '<h1>YUM Repo</h1><p>Linux package repository</p>' > public/yum/index.html
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
