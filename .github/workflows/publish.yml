@@ -91,9 +91,10 @@ jobs:
       # ---------------- BUILD PACKAGES ----------------
       - name: Build packages
         run: |
-          nfpm pkg --config nfpm.yaml
-          nfpm pkg --config nfpm.yaml
+          nfpm pkg --config nfpm.yaml --packer deb --target dist/hardwaremon.deb
+          nfpm pkg --config nfpm.yaml --packer rpm --target dist/hardwaremon.rpm
 
+          echo "=== DIST CONTENTS ==="
           ls -lah dist
 
       # ---------------- APT REPO ----------------
