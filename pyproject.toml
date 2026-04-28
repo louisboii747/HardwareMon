@@ -29,7 +29,7 @@ include = ["hardwaremon*"]
 exclude = ["Windows*", "assets*"]
 
 [tool.setuptools.package-data]
-hardwaremon = ["icons/*"]
+hardwaremon = ["icons/*.png"]
 
 [tool.setuptools_scm]
 version_scheme = "no-guess-dev"

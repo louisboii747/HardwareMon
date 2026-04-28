@@ -44,11 +44,17 @@ theme_names = list(THEMES.keys())
 #########################
 def load_icon(name):
     try:
-        # __file__ is the path to this script
-        path = os.path.join(os.path.dirname(__file__), "icons", name)
-        img = Image.open(path).convert("RGBA")
-        img = img.resize((32, 32), Image.Resampling.LANCZOS)
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        icon_path = os.path.join(base_dir, "icons", name)
+
+        if not os.path.exists(icon_path):
+            print(f"Missing icon: {icon_path}")
+            return None
+
+        img = Image.open(icon_path).convert("RGBA")
+        img = img.resize(ICON_SIZE, Image.Resampling.LANCZOS)
         return ImageTk.PhotoImage(img)
+
     except Exception as e:
         print(f"Error loading icon {name}: {e}")
         return None
