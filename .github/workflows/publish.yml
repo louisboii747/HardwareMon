@@ -68,51 +68,49 @@ jobs:
       # ---------------- NFPM CONFIG (NO EOF, SAFE METHOD) ----------------
       - name: Create nfpm config
         run: |
-          mkdir -p dist
+            rm -f nfpm.yaml
 
-          echo "name: hardwaremon" > nfpm.yaml
-          echo "arch: amd64" >> nfpm.yaml
-          echo "platform: linux" >> nfpm.yaml
-          echo "version: ${GITHUB_REF_NAME:-1.0.0}" >> nfpm.yaml
-          echo "maintainer: Louis Hinchliffe <louishinchliffe11@gmail.com>" >> nfpm.yaml
-          echo "description: HardwareMon system monitor" >> nfpm.yaml
-          echo "homepage: https://github.com/louisboii747/HardwareMon" >> nfpm.yaml
+            echo "name: hardwaremon" >> nfpm.yaml
+            echo "arch: amd64" >> nfpm.yaml
+            echo "platform: linux" >> nfpm.yaml
+            echo "version: 1.0.0" >> nfpm.yaml
+            echo "maintainer: you <you@example.com>" >> nfpm.yaml
+            echo "description: HardwareMon system monitor" >> nfpm.yaml
+            echo "homepage: https://github.com/louisboii747/HardwareMon" >> nfpm.yaml
 
-          echo "formats:" >> nfpm.yaml
-          echo "  - deb" >> nfpm.yaml
-          echo "  - rpm" >> nfpm.yaml
+            echo "contents:" >> nfpm.yaml
+            echo "  - src: pkg/bin/hardwaremon" >> nfpm.yaml
+            echo "    dst: /usr/bin/hardwaremon" >> nfpm.yaml
+            echo "  - src: pkg/bin/hardwaremon-gui" >> nfpm.yaml
+            echo "    dst: /usr/bin/hardwaremon-gui" >> nfpm.yaml
 
-          echo "contents:" >> nfpm.yaml
-          echo "  - src: pkg/bin/hardwaremon" >> nfpm.yaml
-          echo "    dst: /usr/bin/hardwaremon" >> nfpm.yaml
-          echo "  - src: pkg/bin/hardwaremon-gui" >> nfpm.yaml
-          echo "    dst: /usr/bin/hardwaremon-gui" >> nfpm.yaml
+            echo "=== NFPM CONFIG ==="
+            cat nfpm.yaml
+            # ---------------- BUILD PACKAGES ----------------
+            - name: Build packages
+                run: |
+                nfpm pkg --config nfpm.yaml --packager deb --target dist/hardwaremon.deb
+                nfpm pkg --config nfpm.yaml --packager rpm --target dist/hardwaremon.rpm
 
-      # ---------------- BUILD PACKAGES ----------------
-      - name: Build packages
-        run: |
-          nfpm pkg --config nfpm.yaml --packager deb --target dist/hardwaremon.deb
-          nfpm pkg --config nfpm.yaml --packager rpm --target dist/hardwaremon.rpm
+                echo "=== DIST CONTENTS ==="
+                ls -lah dist
 
-          echo "=== DIST CONTENTS ==="
-          ls -lah dist
+            # ---------------- APT REPO ----------------
+            - name: Build APT repo
+                run: |
+                mkdir -p repo/apt
+                cp dist/hardwaremon.deb repo/apt/
 
-      # ---------------- APT REPO ----------------
-      - name: Build APT repo
-        run: |
-          mkdir -p repo/apt
-          cp dist/hardwaremon.deb repo/apt/
+                cd repo/apt
+                dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz
 
-          cd repo/apt
-          dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz
-
-          echo "Origin: HardwareMon" > Release
-          echo "Label: HardwareMon" >> Release
-          echo "Suite: stable" >> Release
-          echo "Codename: stable" >> Release
-          echo "Architectures: amd64" >> Release
-          echo "Components: main" >> Release
-          echo "Description: HardwareMon APT Repository" >> Release
+                echo "Origin: HardwareMon" > Release
+                echo "Label: HardwareMon" >> Release
+                echo "Suite: stable" >> Release
+                echo "Codename: stable" >> Release
+                echo "Architectures: amd64" >> Release
+                echo "Components: main" >> Release
+                echo "Description: HardwareMon APT Repository" >> Release
 
       # ---------------- DNF REPO ----------------
       - name: Build DNF repo
