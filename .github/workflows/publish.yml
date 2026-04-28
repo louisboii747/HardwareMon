@@ -24,7 +24,7 @@ jobs:
       - name: Install Python tools
         run: |
           python -m pip install --upgrade pip
-          pip install build twine setuptools_scm
+          pip install build setuptools_scm
 
       - name: Install system tools
         run: |
@@ -32,7 +32,7 @@ jobs:
           sudo apt-get install -y dpkg-dev createrepo-c curl golang-go
 
       - name: Install nfpm
-        run: | 
+        run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
           echo "$HOME/go/bin" >> $GITHUB_PATH
 
@@ -45,9 +45,7 @@ jobs:
           SETUPTOOLS_SCM_PRETEND_VERSION: ${{ github.ref_name }}
         run: python -m build
 
-      # -------------------------
-      # CLI WRAPPERS
-      # -------------------------
+      # ---------------- CLI WRAPPERS (SAFE ECHO ONLY) ----------------
       - name: Create CLI wrappers
         run: |
           mkdir -p pkg/bin
@@ -67,48 +65,70 @@ jobs:
           chmod +x pkg/bin/hardwaremon
           chmod +x pkg/bin/hardwaremon-gui
 
-          
-      # -------------------------
-      # APT REPO (FIXED)
-      # -------------------------
+      # ---------------- NFPM CONFIG (NO EOF, SAFE METHOD) ----------------
+      - name: Create nfpm config
+        run: |
+          mkdir -p dist
+
+          echo "name: hardwaremon" > nfpm.yaml
+          echo "arch: amd64" >> nfpm.yaml
+          echo "platform: linux" >> nfpm.yaml
+          echo "version: ${GITHUB_REF_NAME:-1.0.0}" >> nfpm.yaml
+          echo "maintainer: Louis Hinchliffe <louishinchliffe11@gmail.com>" >> nfpm.yaml
+          echo "description: HardwareMon system monitor" >> nfpm.yaml
+          echo "homepage: https://github.com/louisboii747/HardwareMon" >> nfpm.yaml
+
+          echo "formats:" >> nfpm.yaml
+          echo "  - deb" >> nfpm.yaml
+          echo "  - rpm" >> nfpm.yaml
+
+          echo "contents:" >> nfpm.yaml
+          echo "  - src: pkg/bin/hardwaremon" >> nfpm.yaml
+          echo "    dst: /usr/bin/hardwaremon" >> nfpm.yaml
+          echo "  - src: pkg/bin/hardwaremon-gui" >> nfpm.yaml
+          echo "    dst: /usr/bin/hardwaremon-gui" >> nfpm.yaml
+
+      # ---------------- BUILD PACKAGES ----------------
+      - name: Build packages
+        run: |
+          nfpm pkg --config nfpm.yaml --target dist/hardwaremon.deb
+          nfpm pkg --config nfpm.yaml --target dist/hardwaremon.rpm
+
+          ls -lah dist
+
+      # ---------------- APT REPO ----------------
       - name: Build APT repo
         run: |
           mkdir -p repo/apt
-          cp hardwaremon.deb repo/apt/
+          cp dist/hardwaremon.deb repo/apt/
 
           cd repo/apt
           dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz
 
-          printf '%s\n' \
-          'Origin: HardwareMon' \
-          'Label: HardwareMon' \
-          'Suite: stable' \
-          'Codename: stable' \
-          'Architectures: amd64' \
-          'Components: main' \
-          'Description: HardwareMon APT Repository' > Release
+          echo "Origin: HardwareMon" > Release
+          echo "Label: HardwareMon" >> Release
+          echo "Suite: stable" >> Release
+          echo "Codename: stable" >> Release
+          echo "Architectures: amd64" >> Release
+          echo "Components: main" >> Release
+          echo "Description: HardwareMon APT Repository" >> Release
 
-      # -------------------------
-      # YUM REPO
-      # -------------------------
-      - name: Build YUM repo
+      # ---------------- DNF REPO ----------------
+      - name: Build DNF repo
         run: |
           mkdir -p repo/yum
-          cp hardwaremon.rpm repo/yum/
+          cp dist/hardwaremon.rpm repo/yum/
 
           cd repo/yum
           createrepo_c .
 
-          printf '%s\n' \
-          '[hardwaremon]' \
-          'name=HardwareMon Repo' \
-          'baseurl=https://hardwaremon.pages.dev/yum' \
-          'enabled=1' \
-          'gpgcheck=0' > hardwaremon.repo
+          echo "[hardwaremon]" > hardwaremon.repo
+          echo "name=HardwareMon Repo" >> hardwaremon.repo
+          echo "baseurl=https://hardwaremon.pages.dev/yum" >> hardwaremon.repo
+          echo "enabled=1" >> hardwaremon.repo
+          echo "gpgcheck=0" >> hardwaremon.repo
 
-      # -------------------------
-      # PAGES OUTPUT
-      # -------------------------
+      # ---------------- PAGES ----------------
       - name: Prepare Pages output
         run: |
           rm -rf public
@@ -116,26 +136,22 @@ jobs:
 
           cp -r repo/* public/
 
-          printf '%s\n' \
-          '<!doctype html>' \
-          '<html>' \
-          '<head><meta charset="utf-8"><title>HardwareMon Repo</title></head>' \
-          '<body>' \
-          '<h1>HardwareMon Repository</h1>' \
-          '<p><a href="/apt/">APT Repository</a></p>' \
-          '<p><a href="/yum/">YUM Repository</a></p>' \
-          '</body>' \
-          '</html>' > public/index.html
+          cat > public/index.html <<HTML
+            <!doctype html>
+            <html>
+            <head><meta charset="utf-8"><title>HardwareMon Repo</title></head>
+            <body>
+            <h1>HardwareMon Repository</h1>
+            <p><a href="/apt/">APT Repository</a></p>
+            <p><a href="/yum/">DNF Repository</a></p>
+            </body>
+            </html>
+            HTML
 
-          printf '%s\n' \
-          '<h1>APT Repo</h1><p>Linux package repository</p>' > public/apt/index.html
-
-          printf '%s\n' \
-          '<h1>YUM Repo</h1><p>Linux package repository</p>' > public/yum/index.html
-
+      # ---------------- RELEASE ----------------
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            hardwaremon.deb
-            hardwaremon.rpm
+            dist/hardwaremon.deb
+            dist/hardwaremon.rpm
