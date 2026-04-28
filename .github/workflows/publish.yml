@@ -35,7 +35,10 @@ jobs:
       - name: Install package into staging
         run: |
           mkdir -p pkg
-          pip install dist/*.whl --target pkg
+          pip install dist/*.whl --target pkg --no-deps
+          # Remove pip/setuptools noise that --tagret pulls in
+          rm -rf pkg/*.dist-info pkg/*data
+          rm -rf pkg/bin pkg/setuptools* pkg/pkg_resources* pkg/pip*
 
       - name: Create CLI wrapper
         run: |
