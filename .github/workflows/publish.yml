@@ -86,16 +86,25 @@ jobs:
           echo "📦 Built files:"
           ls -lah *.deb *.rpm
 
-      - name: Verify artifacts exist
-        run: ls -lah
+      - name: HARD DEBUG - verify artifacts
+        run: |
+          echo "PWD:"
+          pwd
+          echo "ALL FILES:"
+          ls -lah
+          echo "DEB check:"
+          ls -lah hardwaremon.deb || true
+          echo "RPM check:"
+          ls -lah hardwaremon.rpm || true
 
       # =========================
       # NEXUS UPLOAD (APT)
       # =========================
       - name: Upload DEB to Nexus
         run: |
-          curl -v --fail-with-body -u ${{ secrets.NEXUS_USER }}:${{ secrets.NEXUS_PASS }} \
-          --upload-file ./hardwaremon.deb \
+          curl -v --fail-with-body \
+          -u ${{ secrets.NEXUS_USER }}:${{ secrets.NEXUS_PASS }} \
+          --upload-file hardwaremon.deb \
           ${{ secrets.NEXUS_URL }}/repository/hardwaremon-apt/
 
       # =========================
@@ -103,8 +112,11 @@ jobs:
       # =========================
       - name: Upload RPM to Nexus
         run: |
-          curl -v --fail-with-body -u ${{ secrets.NEXUS_USER }}:${{ secrets.NEXUS_PASS }} \
-          --upload-file ./hardwaremon.rpm \
+          echo "Uploading RPM..."
+          ls -lah hardwaremon.rpm
+          curl -v --fail-with-body \
+          -u ${{ secrets.NEXUS_USER }}:${{ secrets.NEXUS_PASS }} \
+          --upload-file hardwaremon.rpm \
           ${{ secrets.NEXUS_URL }}/repository/hardwaremon-yum/
 
       - name: Create GitHub Release
