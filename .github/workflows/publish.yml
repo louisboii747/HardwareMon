@@ -105,10 +105,13 @@ jobs:
 
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
 
+          echo "Adding Go bin to PATH..."
           echo "$HOME/go/bin" >> $GITHUB_PATH
 
+          export PATH="$PATH:$HOME/go/bin"
           nfpm version
 
+          
       # -------------------------
       # Build packages
       # -------------------------
