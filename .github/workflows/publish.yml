@@ -129,6 +129,19 @@ jobs:
           test -f hardwaremon.rpm
           ls -lah
 
+
+
+      - name: DEBUG CHECK
+        run: |
+          echo "PWD:"
+          pwd
+          echo "FILES:"
+          ls -lah
+          echo "DEB INFO:"
+          stat hardwaremon.deb || true
+          echo "RPM INFO:"
+          stat hardwaremon.rpm || true    
+
       # -------------------------
       # NEXUS (APT)
       # -------------------------
