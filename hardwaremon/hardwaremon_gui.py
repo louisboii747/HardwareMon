@@ -59,9 +59,9 @@ def load_icon(name):
         print(f"Error loading icon {name}: {e}")
         return None
 
-#########################
+########################
 # HARDWARE FUNCTIONS #
-#########################
+########################
 def cpu_info():
     cpu_name = "Unknown"
     try:
