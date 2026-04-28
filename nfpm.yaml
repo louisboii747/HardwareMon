@@ -9,8 +9,8 @@ description: "A hardware monitoring tool written in Python."
 license: MIT
 
 contents:
-  - src: ./pkg/
-    dst: /opt/
+  - src: ./pkg/hardwaremon/
+    dst: /opt/hardwaremon/
 
   - src: ./pkg/bin/hardwaremon
     dst: /usr/bin/hardwaremon
