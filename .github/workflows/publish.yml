@@ -93,7 +93,7 @@ jobs:
           echo "=== DIST CONTENTS ==="
           ls -lah dist
 
-      - name: Build APT repo
+      - name: Build APT repository
         run: |
           mkdir -p repo/apt
           mkdir -p repo/apt/pool/main/h/hardwaremon
