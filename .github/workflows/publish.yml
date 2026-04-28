@@ -156,7 +156,7 @@ jobs:
           ls -lah repo/yum
 
       # -------------------------
-      # Upload APT repo to Nexus (RAW)
+      # Upload APT repo to Nexus (RAW REPOS)
       # -------------------------
       - name: Upload APT repo
         run: |
