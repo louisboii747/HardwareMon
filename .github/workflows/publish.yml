@@ -52,30 +52,22 @@ jobs:
         run: |
           mkdir -p pkg/bin
 
-          printf '%s\n' \
+          echo "#!/usr/bin/env python3" > pkg/bin/hardwaremon
+          echo "from hardwaremon.hardwaremon import main" >> pkg/bin/hardwaremon
+          echo "" >> pkg/bin/hardwaremon
+          echo "if __name__ == '__main__':" >> pkg/bin/hardwaremon
+          echo "    main()" >> pkg/bin/hardwaremon
 
-
-          '#!/usr/bin/env python3' \
-          'from hardwaremon.hardwaremon import main' \
-          '' \
-          'if __name__ == "__main__":' \
-          '    main()' > pkg/bin/hardwaremon
-
-          printf '%s\n' \
-          '#!/usr/bin/env python3' \
-          'from hardwaremon.hardwaremon_gui import gui' \
-          '' \
-          'if __name__ == "__main__":' \
-          '    gui()' > pkg/bin/hardwaremon-gui
+          echo "#!/usr/bin/env python3" > pkg/bin/hardwaremon-gui
+          echo "from hardwaremon.hardwaremon_gui import gui" >> pkg/bin/hardwaremon-gui
+          echo "" >> pkg/bin/hardwaremon-gui
+          echo "if __name__ == '__main__':" >> pkg/bin/hardwaremon-gui
+          echo "    gui()" >> pkg/bin/hardwaremon-gui
 
           chmod +x pkg/bin/hardwaremon
           chmod +x pkg/bin/hardwaremon-gui
 
-      - name: Build packages
-        run: |
-          nfpm pkg --config nfpm.yaml --target hardwaremon.deb
-          nfpm pkg --config nfpm.yaml --target hardwaremon.rpm
-
+          
       # -------------------------
       # APT REPO (FIXED)
       # -------------------------
