@@ -10,7 +10,7 @@ license: MIT
 
 contents:
   - src: ./pkg/
-    dst: /opt/hardwaremon/
+    dst: /opt/
 
   - src: ./pkg/bin/hardwaremon
     dst: /usr/bin/hardwaremon

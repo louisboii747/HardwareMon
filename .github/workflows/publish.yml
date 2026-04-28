@@ -48,7 +48,7 @@ jobs:
           cat <<'EOF' > pkg/bin/hardwaremon
           #!/usr/bin/env python3
           import sys
-          sys.path.insert(0, '/opt/hardwaremon')
+          sys.path.insert(0, '/opt/')
           from hardwaremon.hardwaremon import main
           main()
           EOF
