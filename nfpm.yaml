@@ -7,6 +7,10 @@ priority: optional
 maintainer: "Louis Hinchliffe <louishinchliffe11@gmail.com>"
 description: "A hardware monitoring tool written in Python."
 license: MIT
+dependencies:
+  - python3
+  - python3-psutil
+  - python3-pil.imagetk
 
 contents:
   - src: ./pkg/hardwaremon/
