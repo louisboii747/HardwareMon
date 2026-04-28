@@ -27,6 +27,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install build twine setuptools_scm
 
+      - name: Clean previous builds
+        run: |
+          rm -rf dist build *.egg-info
+
       - name: Build Python package
         run: python -m build
 
