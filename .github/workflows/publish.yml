@@ -49,9 +49,13 @@ jobs:
 
       - name: Install nfpm
         run: |
-          curl -sL https://github.com/goreleaser/nfpm/releases/latest/download/nfpm_$(uname -s)_$(uname -m).tar.gz | tar -xz
+          OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+          ARCH=$(uname -m)
+          if [ "$ARCH" = "x86_64" ]; then ARCH="amd64"; fi
+          curl -sL "https://github.com/goreleaser/nfpm/releases/latest/download/nfpm_${OS}_${ARCH}.tar.gz" | tar -xz
           sudo mv nfpm /usr/local/bin/
 
+          
       - name: Build Linux packages
         run: |
           nfpm pkg --config nfpm.yaml --target hardwaremon.deb
