@@ -4,19 +4,24 @@ on:
   push:
     tags:
       - "v*.*.*"
+  workflow_dispatch:
 
 jobs:
-  build-and-publish:
+  build:
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
+      # -------------------------
+      # Checkout
+      # -------------------------
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
+      # -------------------------
+      # Python setup
+      # -------------------------
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -27,56 +32,47 @@ jobs:
           python -m pip install --upgrade pip
           pip install build twine setuptools_scm
 
+      # -------------------------
+      # Clean workspace
+      # -------------------------
       - name: Clean workspace
-        run: |
-          rm -rf dist build *.egg-info repo
+        run: rm -rf dist build *.egg-info repo public
 
+      # -------------------------
+      # Build Python package
+      # -------------------------
       - name: Build Python package
         env:
           SETUPTOOLS_SCM_PRETEND_VERSION: ${{ github.ref_name }}
         run: python -m build
 
-      - name: Create CLI wrapper
-        run: |
-          mkdir -p pkg/bin
-
-          echo '#!/usr/bin/env python3' > pkg/bin/hardwaremon
-          echo 'import sys' >> pkg/bin/hardwaremon
-          echo "sys.path.insert(0, '/opt/hardwaremon')" >> pkg/bin/hardwaremon
-          echo 'from hardwaremon.hardwaremon import main' >> pkg/bin/hardwaremon
-          echo 'main()' >> pkg/bin/hardwaremon
-          chmod +x pkg/bin/hardwaremon
-
-          echo '#!/usr/bin/env python3' > pkg/bin/hardwaremon-gui
-          echo 'import sys' >> pkg/bin/hardwaremon-gui
-          echo "sys.path.insert(0, '/opt/hardwaremon')" >> pkg/bin/hardwaremon-gui
-          echo 'from hardwaremon.hardwaremon_gui import gui' >> pkg/bin/hardwaremon-gui
-          echo 'gui()' >> pkg/bin/hardwaremon-gui
-          chmod +x pkg/bin/hardwaremon-gui
-
-      - name: Install repo tools
+      # -------------------------
+      # Install repo tools
+      # -------------------------
+      - name: Install packaging tools
         run: |
           sudo apt-get update
           sudo apt-get install -y dpkg-dev createrepo-c curl golang-go
 
+      # -------------------------
+      # Install nfpm
+      # -------------------------
       - name: Install nfpm
         run: |
-          set -e
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
           echo "$HOME/go/bin" >> $GITHUB_PATH
-          export PATH="$PATH:$HOME/go/bin"
-          nfpm version
 
-      - name: Build .deb and .rpm
-        env:
-          VERSION: ${{ github.ref_name }}
+      # -------------------------
+      # Build .deb and .rpm
+      # -------------------------
+      - name: Build packages
         run: |
           nfpm pkg --config nfpm.yaml --target hardwaremon.deb
           nfpm pkg --config nfpm.yaml --target hardwaremon.rpm
 
-          echo "Built packages:"
-          ls -lah *.deb *.rpm
-
+      # -------------------------
+      # Create APT repo
+      # -------------------------
       - name: Build APT repo
         run: |
           mkdir -p repo/apt
@@ -85,6 +81,9 @@ jobs:
           cd repo/apt
           dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz
 
+      # -------------------------
+      # Create YUM repo
+      # -------------------------
       - name: Build YUM repo
         run: |
           mkdir -p repo/yum
@@ -93,13 +92,34 @@ jobs:
           cd repo/yum
           createrepo_c .
 
-      - name: Verify repos
+      # -------------------------
+      # Prepare static output for Pages
+      # -------------------------
+      - name: Prepare deploy directory
         run: |
-          ls -R repo
+          rm -rf public
+          mkdir -p public
 
+          cp -r repo/* public/
+
+          # Optional: redirect homepage → apt repo
+          echo '<meta http-equiv="refresh" content="0; url=/apt/">' > public/index.html
+
+      # -------------------------
+      # Upload GitHub Release artifacts
+      # -------------------------
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            *.deb
-            *.rpm
+            hardwaremon.deb
+            hardwaremon.rpm
+
+      # -------------------------
+      # Deploy to GitHub Pages
+      # -------------------------
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
