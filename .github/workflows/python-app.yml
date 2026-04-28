@@ -1,4 +1,4 @@
-name: Build & Release HardwareMon to PyPI and Linux Package Repositories
+name: HardwareMon Full Release
 
 on:
   push:
@@ -6,74 +6,61 @@ on:
       - "v*"
 
 jobs:
-  build:
+  build-packages:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout repo
       uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.11"
-
-    - name: Install build tools
-      run: |
-        python -m pip install --upgrade pip
-        pip install build twine setuptools wheel
-
-    - name: Build Python package
-      run: |
-        python -m build
-
-    - name: Upload to PyPI (optional)
-      env:
-        TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
-      run: |
-        python -m twine upload dist/* || true
-
-
-  packages:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout repo
-      uses: actions/checkout@v4
-
-    - name: Install packaging tools
+    - name: Install FPM
       run: |
         sudo apt-get update
         sudo apt-get install -y ruby ruby-dev build-essential
         sudo gem install fpm
 
+    # -------------------------
+    # DEB PACKAGE (FIXED)
+    # -------------------------
     - name: Build DEB
       run: |
-        fpm -s python -t deb \
+        fpm -s dir -t deb \
           -n hardwaremon \
           -v 2.0.4 \
-          --python-bin python3 \
-          hardwaremon/
+          --prefix=/usr/local \
+          hardwaremon/=usr/local/share/hardwaremon/ \
+          hardwaremon/hardwaremon.py=/usr/local/bin/hardwaremon \
+          hardwaremon/hardwaremon_gui.py=/usr/local/bin/hardwaremon-gui
 
+    # -------------------------
+    # RPM PACKAGE (FIXED)
+    # -------------------------
     - name: Build RPM
       run: |
-        fpm -s python -t rpm \
+        fpm -s dir -t rpm \
           -n hardwaremon \
           -v 2.0.4 \
-          --python-bin python3 \
-          hardwaremon/
+          --prefix=/usr/local \
+          hardwaremon/=usr/local/share/hardwaremon/ \
+          hardwaremon/hardwaremon.py=/usr/local/bin/hardwaremon \
+          hardwaremon/hardwaremon_gui.py=/usr/local/bin/hardwaremon-gui
 
-    - name: Upload DEB to Nexus (APT repo)
+    # -------------------------
+    # UPLOAD TO NEXUS (APT)
+    # -------------------------
+    - name: Upload DEB to Nexus
       run: |
         curl -f --retry 3 --retry-delay 5 \
           -u "${{ secrets.NEXUS_USER }}:${{ secrets.NEXUS_PASS }}" \
-          --upload-file hardwaremon*.deb \
+          --upload-file *.deb \
           https://nexus.hardwaremon.online/repository/hardwaremon-apt/
 
-    - name: Upload RPM to Nexus (YUM repo)
+    # -------------------------
+    # UPLOAD TO NEXUS (YUM)
+    # -------------------------
+    - name: Upload RPM to Nexus
       run: |
         curl -f --retry 3 --retry-delay 5 \
           -u "${{ secrets.NEXUS_USER }}:${{ secrets.NEXUS_PASS }}" \
-          --upload-file hardwaremon*.rpm \
+          --upload-file *.rpm \
           https://nexus.hardwaremon.online/repository/hardwaremon-yum/
