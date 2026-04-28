@@ -4,24 +4,24 @@ platform: linux
 version: ${VERSION}
 section: utils
 priority: optional
-maintainer: "Louis Hinchliffe <louishinchliffe11@gmail.com>"
-description: "A hardware monitoring tool written in Python."
+
+maintainer: Louis
+description: Hardware monitoring tool (CLI + GUI)
 license: MIT
-depends:
-  - python3
-  - python3-psutil
-  - python3-pil.imagetk
 
 contents:
-  - src: ./pkg/hardwaremon/
+  - src: hardwaremon/
     dst: /opt/hardwaremon/
 
-  - src: ./pkg/bin/hardwaremon
+  - src: pyproject.toml
+    dst: /opt/hardwaremon/pyproject.toml
+
+  - src: pkg/bin/hardwaremon
     dst: /usr/bin/hardwaremon
     file_info:
       mode: 0755
 
-  - src: ./pkg/bin/hardwaremon-gui
-    dst: /usr/bin/hardwaremon-gui  
+  - src: pkg/bin/hardwaremon-gui
+    dst: /usr/bin/hardwaremon-gui
     file_info:
       mode: 0755
