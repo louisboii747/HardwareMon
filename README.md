@@ -44,10 +44,14 @@ python3 hardwaremon.py
 ## Updating
 
 ### APT:
+```
 sudo apt update sudo apt upgrade hardwaremon 
+```
 
 ### DNF:
+```
 sudo dnf upgrade hardwaremon 
+```
 
 ### PyPI:
 ```
