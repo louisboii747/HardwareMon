@@ -139,9 +139,9 @@ jobs:
 
           echo "<!doctype html"> > public/index.html
           echo "<html><body>" >> public/index.html
-          echo "<h1>HardwareMon Repostiory</1>" >> public index.html
-          echo "<p><a href=\"/apt/\">APT</a></p>" >> public index.html
-          echo "<p><a href=\"/yum/\">YUM</a></p>" >> public index.html
+          echo "<h1>HardwareMon Repostiory</1>" >> public/index.html
+          echo "<p><a href=\"/apt/\">APT</a></p>" >> public/index.html
+          echo "<p><a href=\"/yum/\">YUM</a></p>" >> public/index.html
           echo "</body></html>" >> public/index.html
 
           echo "/apt/* /apt/:splat 200" > public/_redirects
