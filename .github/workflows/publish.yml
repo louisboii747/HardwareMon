@@ -95,17 +95,21 @@ jobs:
 
       - name: Build APT repo
         run: |
+          # Create full structure FIRST
           mkdir -p repo/apt/pool/main/h/hardwaremon
           mkdir -p repo/apt/dists/stable/main/binary-amd64
 
+          # Copy package
           cp dist/hardwaremon.deb repo/apt/pool/main/h/hardwaremon/
 
           cd repo/apt
 
-          dpkg-scanpackages pool /dev/null | gzip -9c > dists/stable/main/binary-amd64/Packages
-          gzip -k -f dists/stable/main/binary-amd64/Packages
+          # Generate package lists (BOTH files)
+          dpkg-scanpackages pool /dev/null > dists/stable/main/binary-amd64/Packages
+          gzip -k dists/stable/main/binary-amd64/Packages
 
-          cd repo/apt/dists/stable
+          # Create Release file in CORRECT location
+          cd dists/stable
 
           echo "Origin: HardwareMon" > Release
           echo "Label: HardwareMon" >> Release
