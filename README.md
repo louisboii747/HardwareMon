@@ -35,13 +35,18 @@ For the best experience on Linux, use the APT or DNF repositories.
 ## Updating
 
 ### APT:
+```
 sudo apt update sudo apt upgrade hardwaremon
+```
 
 ### DNF:
+```
 sudo dnf upgrade hardwaremon
+```
 
 ### PyPI:
+```
 pipx upgrade hardwaremon
-
+```
 
 
