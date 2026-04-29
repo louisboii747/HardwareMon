@@ -115,11 +115,11 @@ jobs:
             - src: pkg/opt/hardwaremon/
               dst: /opt/hardwaremon/
 
-              - src: pkg/usr/share/applications/hardwaremon.desktop
-                dst: /usr/share/applications/hardwaremon.desktop
+            - src: pkg/usr/share/applications/hardwaremon.desktop
+              dst: /usr/share/applications/hardwaremon.desktop
 
-              - src: pkg/usr/share/icons/hicolor/256x256/apps/hardwaremon.png
-                dst: /usr/share/icons/hicolor/256x256/apps/hardwaremon.png
+            - src: pkg/usr/share/icons/hicolor/256x256/apps/hardwaremon.png
+              dst: /usr/share/icons/hicolor/256x256/apps/hardwaremon.png
           EOF
 
       - name: Create dist folder
