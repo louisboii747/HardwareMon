@@ -17,6 +17,9 @@
     echo "  - src: pkg/bin/hardwaremon-gui" >> nfpm.yaml
     echo "    dst: /usr/bin/hardwaremon-gui" >> nfpm.yaml
 
+    echo "  - src: pkg/wheel/" >> nfpm.yaml
+    echo "    dst: /opt/hardwaremon/" >> nfpm.yaml
+
     # include built wheel
     echo "  - src: dist/*.whl" >> nfpm.yaml
     echo "    dst: /opt/hardwaremon/" >> nfpm.yaml

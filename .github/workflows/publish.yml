@@ -105,6 +105,14 @@ jobs:
 
             chmod +x pkg/scripts/postinstall.sh  
 
+
+
+      - name: Prepare wheel for packaging
+        run: |
+          mkdir -p pkg/wheel
+          cp dist/*.whl pkg/wheel/
+          ls -lah pkg/wheel
+
       - name: Build packages
         run: |
           nfpm pkg --config nfpm.yaml --packager deb --target dist/hardwaremon.deb
