@@ -49,7 +49,8 @@ jobs:
       - name: Install package into staging dir
         run: |
           mkdir -p pkg/root
-          pip install . --root=pkg/root --prefix=/usr
+          mkdir -p pkg/root/usr/lib/python3.11/dist-packages
+          cp -r hardwaremon pkg/root/usr/lib/python3.11/dist-packages/
 
       - name: Create CLI wrappers
         run: |
@@ -118,18 +119,15 @@ jobs:
 
           # Generate Release file with checksums (required by apt)
           apt-ftparchive release dists/stable > dists/stable/Release
-
-          # Prepend metadata since apt-ftparchive release only does hashes
-          cat - dists/stable/Release > dists/stable/Release.tmp <<RELEASE
-          Origin: HardwareMon
-          Label: HardwareMon
-          Suite: stable
-          Codename: stable
-          Architectures: amd64
-          Components: main
-          Description: HardwareMon APT Repository
-          RELEASE
-          mv dists/stable/Release.tmp dists/stable/Release
+          sed -i '1i\
+          Origin: HardwareMon\
+          Label: HardwareMon\
+          Suite: stable\
+          Codename: stable\
+          Architectures: amd64\
+          Components: main\
+          Description: HardwareMon APT Repository\
+          ' dists/stable/Release
 
       - name: Build DNF repo
         run: |
