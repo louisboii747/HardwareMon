@@ -1,3 +1,14 @@
+## About
+
+HardwareMon is a modern system monitoring tool for Linux and Windows, designed to give a clear, real-time view of your computer’s hardware and performance.
+
+It provides detailed insights into CPU, memory, disk, GPU, network, and system activity through both a graphical interface and command-line tools. Whether you want a clean visual overview or deeper technical information, HardwareMon makes it easy to understand what your system is doing at any moment.
+
+On Linux, HardwareMon is distributed as a native package via APT and DNF, allowing simple installation and updates through your system’s package manager. On Windows, it is available as a standalone executable with a fully featured graphical interface.
+
+The project focuses on performance, clarity, and ease of use — offering powerful monitoring without unnecessary complexity.
+
+
 ## Installation (Linux)
 
 ### 🐧 Recommended: APT (Debian/Ubuntu/Zorin)
