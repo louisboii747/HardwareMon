@@ -147,6 +147,15 @@ jobs:
           echo '<p><a href="/apt/">APT</a></p>' >> public/index.html
           echo '<p><a href="/yum/">YUM</a></p>' >> public/index.html
           echo '</body></html>' >> public/index.html
+
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: hardwaremon
+          directory: public
       
       - name: DEBUG final public
         run: |
