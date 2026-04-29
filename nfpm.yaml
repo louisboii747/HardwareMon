@@ -17,8 +17,10 @@
     echo "  - src: pkg/bin/hardwaremon-gui" >> nfpm.yaml
     echo "    dst: /usr/bin/hardwaremon-gui" >> nfpm.yaml
 
-    echo "  - src: hardwaremon" >> nfpm.yaml
-    echo "    dst: /usr/lib/python3/dist-packages/hardwaremon" >> nfpm.yaml
+    # include built wheel
+    echo "  - src: dist/*.whl" >> nfpm.yaml
+    echo "    dst: /opt/hardwaremon/" >> nfpm.yaml
 
-    echo "=== NFPM CONFIG ==="
-    cat nfpm.yaml
+    echo "scripts:" >> nfpm.yaml
+    echo "  postinstall: |" >> nfpm.yaml
+    echo "    python3 -m pip install /opt/hardwaremon/*.whl" >> nfpm.yaml
