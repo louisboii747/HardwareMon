@@ -38,25 +38,16 @@ For the best experience on Linux, use the APT or DNF repositories.
 git clone https://github.com/louisboii747/HardwareMon
 cd HardwareMon
 python3 hardwaremon.py
-``
-
-}
-## Updating
+``## Updating
 
 ### APT:
-```
-sudo apt update sudo apt upgrade hardwaremon 
-```
+sudo apt update sudo apt upgrade hardwaremon
 
 ### DNF:
-```
-sudo dnf upgrade hardwaremon 
-```
+sudo dnf upgrade hardwaremon
 
 ### PyPI:
-```
 pipx upgrade hardwaremon
-```
 
 
 
