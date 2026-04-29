@@ -9,17 +9,16 @@
     echo "homepage: https://github.com/louisboii747/HardwareMon" >> nfpm.yaml
 
     echo "contents:" >> nfpm.yaml
+
+    # CLI wrappers
     echo "  - src: pkg/bin/hardwaremon" >> nfpm.yaml
     echo "    dst: /usr/bin/hardwaremon" >> nfpm.yaml
+
     echo "  - src: pkg/bin/hardwaremon-gui" >> nfpm.yaml
     echo "    dst: /usr/bin/hardwaremon-gui" >> nfpm.yaml
-    echo "  - src: dist/*.whl" >> nfpm.yaml
-    echo "    dst: /tmp/" >> nfpm.yaml
-    
-    echo "scripts:" >> nfpm.yaml
-    echo "  postinstall: |" >> nfpm.yaml
-    echo "    apt-get update || true" >> nfpm.yaml
-    echo "    apt-get install -y python3-pip || true" >> nfpm.yaml
-    echo "    python3 -m pip install /tmp/*.whl" >> nfpm.yaml
-    echo "scripts:" >> nfpm.yaml
-    echo "  postinstall: pkg/scripts/postinstall.sh" >> nfpm.yaml
+
+    echo "  - src: hardwaremon" >> nfpm.yaml
+    echo "    dst: /usr/lib/python3/dist-packages/hardwaremon" >> nfpm.yaml
+
+    echo "=== NFPM CONFIG ==="
+    cat nfpm.yaml
