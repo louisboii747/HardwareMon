@@ -85,6 +85,9 @@ jobs:
               dst: /opt/hardwaremon/
           EOF
 
+      - name: Create dist folder
+        run: mkdir -p dist
+
       - name: Build packages
         run: |
           nfpm pkg --config nfpm.yaml --packager deb --target dist/hardwaremon.deb
