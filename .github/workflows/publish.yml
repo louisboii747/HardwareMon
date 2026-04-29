@@ -134,26 +134,22 @@ jobs:
           rm -rf public
           mkdir -p public/apt public/yum
 
-          cp -r repo/* public/
+          cp -r repo/apt public/apt
+          cp -r repo/yum public/yum
 
-          cat > public/index.html <<HTML
-          <!doctype html>
-          <html>
-          <head><meta charset="utf-8"><title>HardwareMon Repo</title></head>
-          <body>
-          <h1>HardwareMon Repository</h1>
-          <p><a href="/apt/">APT Repository</a></p>
-          <p><a href="/yum/">DNF Repository</a></p>
-          </body>
-          </html>
-          HTML
-          EOF
+          echo "<!doctype html>" > public/index.html
+          echo "<html>" >> public/index.html
+          echo "<head><meta charset=\"utf-8\"><title>HardwareMon Repo</title></head>" >> public/index.html
+          echo "<body>" >> public/index.html
+          echo "<h1>HardwareMon Repository</h1>" >> public/index.html
+          echo "<p><a href=\"/apt/\">APT Repository</a></p>" >> public/index.html
+          echo "<p><a href=\"/yum/\">DNF Repository</a></p>" >> public/index.html
+          echo "</body>" >> public/index.html
+          echo "</html>" >> public/index.html
 
-          cat > public/_redirects <<EOF
-            /apt/* /apt/:splat 200
-            /yum/* /yum/:splat 200
-            /*    /:splat 200
-            EOF
+          echo "/apt/* /apt/:splat 200" > public/_redirects
+          echo "/yum/* /yum/:splat 200" >> public/_redirects
+          echo "/* /:splat 200" >> public/_redirects
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
