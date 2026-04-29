@@ -17,7 +17,7 @@ curl -fsSL https://hardwaremon.pages.dev/apt/setup.sh | sudo bash sudo apt insta
 ```
 Or manually:
 ```
-bash echo "deb [trusted=yes] https://hardwaremon.pages.dev/apt stable main" | sudo tee /etc/apt/sources.list.d/hardwaremon.list sudo apt update sudo apt install hardwaremon 
+echo "deb [trusted=yes] https://hardwaremon.pages.dev/apt stable main" | sudo tee /etc/apt/sources.list.d/hardwaremon.list sudo apt update sudo apt install hardwaremon 
 ```
 ---
 
