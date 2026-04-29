@@ -11,7 +11,7 @@ The project focuses on performance, clarity, and ease of use — offering powerf
 
 ## Installation (Linux)
 
-### 🐧 Recommended: APT (Debian/Ubuntu/Zorin)
+### 🐧 APT (Debian/Ubuntu/Zorin)
 ```
 curl -fsSL https://hardwaremon.pages.dev/apt/setup.sh | sudo bash
 
