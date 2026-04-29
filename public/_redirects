@@ -1,3 +1,0 @@
-/apt/*  /apt/:splat  200
-/yum/*  /yum/:splat  200
-/*      /:splat      200
