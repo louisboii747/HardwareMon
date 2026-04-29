@@ -34,18 +34,21 @@ jobs:
       - name: Clean workspace
         run: rm -rf dist repo public pkg
 
+
       - name: Prepare package files
         run: |
           mkdir -p pkg/opt/hardwaremon
           mkdir -p pkg/bin
 
-          cp -r hardwaremon pkg/opt/hardwaremon/
+          cp hardwaremon/* pkg/opt/hardwaremon/
 
+          # CLI launcher
           cat <<'EOF' > pkg/bin/hardwaremon
           #!/bin/bash
           exec python3 /opt/hardwaremon/hardwaremon.py "$@"
           EOF
 
+          # GUI launcher
           cat <<'EOF' > pkg/bin/hardwaremon-gui
           #!/bin/bash
           exec python3 /opt/hardwaremon/hardwaremon_gui.py "$@"
@@ -73,6 +76,8 @@ jobs:
           depends:
             - python3
             - python3-tk
+            - python3-pil
+            - python3-psutil
 
           contents:
             - src: pkg/bin/hardwaremon
@@ -136,6 +141,7 @@ jobs:
           echo '<h1>HardwareMon Repo</h1><a href="/apt/">APT</a><br><a href="/yum/">YUM</a>' > public/index.html
           echo "404" > public/404.html
 
+      # ✅ setup script (works with curl)
       - name: Add setup script
         run: |
           cat <<'EOF' > public/apt/setup.sh
@@ -152,6 +158,8 @@ jobs:
           echo "Done. Install with:"
           echo "  sudo apt install hardwaremon"
           EOF
+
+          chmod +x public/apt/setup.sh
 
       - name: Deploy to Cloudflare Pages
         run: npx wrangler pages deploy public --project-name=hardwaremon --branch=main

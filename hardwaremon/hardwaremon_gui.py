@@ -45,7 +45,7 @@ theme_names = list(THEMES.keys())
 def load_icon(name):
     try:
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        icon_path = os.path.join(base_dir, "icons", name)
+        icon_path = os.path.join(base_dir, name)
 
         if not os.path.exists(icon_path):
             print(f"Missing icon: {icon_path}")
