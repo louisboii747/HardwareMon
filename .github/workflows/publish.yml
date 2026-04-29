@@ -43,12 +43,12 @@ jobs:
 
           cat <<'EOF' > pkg/bin/hardwaremon
           #!/bin/bash
-          exec python3 /opt/hardwaremon/hardwaremon/hardwaremon.py "$@"
+          exec python3 /opt/hardwaremon/hardwaremon.py "$@"
           EOF
 
           cat <<'EOF' > pkg/bin/hardwaremon-gui
           #!/bin/bash
-          exec python3 /opt/hardwaremon/hardwaremon/hardwaremon_gui.py "$@"
+          exec python3 /opt/hardwaremon/hardwaremon_gui.py "$@"
           EOF
 
           chmod +x pkg/bin/*
