@@ -129,7 +129,7 @@ jobs:
           echo "enabled=1" >> hardwaremon.repo
           echo "gpgcheck=0" >> hardwaremon.repo
 
-      - name: Prepare Pages Output
+      - name: Prepare Pages output
         run: |
           rm -rf public
           mkdir -p public/apt public/yum
@@ -137,16 +137,17 @@ jobs:
           cp -r repo/apt/* public/apt/
           cp -r repo/yum/* public/yum/
 
-          echo "<!doctype html"> > public/index.html
-          echo "<html><body>" >> public/index.html
-          echo "<h1>HardwareMon Repostiory</1>" >> public/index.html
-          echo "<p><a href=\"/apt/\">APT</a></p>" >> public/index.html
-          echo "<p><a href=\"/yum/\">YUM</a></p>" >> public/index.html
-          echo "</body></html>" >> public/index.html
+          echo '<!doctype html>' > public/index.html
+          echo '<html><body>' >> public/index.html
+          echo '<h1>HardwareMon Repository</h1>' >> public/index.html
+          echo '<p><a href="/apt/">APT</a></p>' >> public/index.html
+          echo '<p><a href="/yum/">YUM</a></p>' >> public/index.html
+          echo '</body></html>' >> public/index.html
 
-          echo "/apt/* /apt/:splat 200" > public/_redirects
-          echo "/yum/* /yum/:splat 200" >> public/_redirects
-          
+          echo '/apt/* /apt/:splat 200' > public/_redirects
+          echo '/yum/* /yum/:splat 200' >> public/_redirects
+      
+      
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
