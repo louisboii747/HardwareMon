@@ -129,17 +129,6 @@ jobs:
           echo "enabled=1" >> hardwaremon.repo
           echo "gpgcheck=0" >> hardwaremon.repo
 
-      - name: DEBUG repo structure
-        run: |
-          echo "=== REPO STRUCTURE ==="
-          find repo -type f
-
-          echo "=== PUBLIC STRUCTURE ==="
-          find public -type f
-
-
-
-
       - name: Prepare Pages Output
         run: |
           rm -rf public
