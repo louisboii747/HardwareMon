@@ -148,7 +148,7 @@ jobs:
           echo '/yum/* /yum/:splat 200' >> public/_redirects
       
       
-      `- name: Create GitHub Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
