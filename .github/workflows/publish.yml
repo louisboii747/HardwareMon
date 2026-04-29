@@ -147,9 +147,6 @@ jobs:
           echo '<p><a href="/apt/">APT</a></p>' >> public/index.html
           echo '<p><a href="/yum/">YUM</a></p>' >> public/index.html
           echo '</body></html>' >> public/index.html
-
-          echo '/apt/* /apt/:splat 200' > public/_redirects
-          echo '/yum/* /yum/:splat 200' >> public/_redirects
       
       - name: DEBUG final public
         run: |
