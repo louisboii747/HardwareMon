@@ -32,13 +32,7 @@ For the best experience on Linux, use the APT or DNF repositories.
 
 ---
 
-### 🧪 Development / Manual Run
-
-```
-git clone https://github.com/louisboii747/HardwareMon
-cd HardwareMon
-python3 hardwaremon.py
-``## Updating
+## Updating
 
 ### APT:
 sudo apt update sudo apt upgrade hardwaremon
