@@ -13,7 +13,9 @@ The project focuses on performance, clarity, and ease of use — offering powerf
 
 ### 🐧 Recommended: APT (Debian/Ubuntu/Zorin)
 ```
-curl -fsSL https://hardwaremon.pages.dev/apt/setup.sh | sudo bash sudo apt install hardwaremon 
+curl -fsSL https://hardwaremon.pages.dev/apt/setup.sh | sudo bash
+
+sudo apt install hardwaremon 
 ```
 Or manually:
 ```
