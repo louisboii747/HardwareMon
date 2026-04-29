@@ -147,6 +147,7 @@ jobs:
           echo '<p><a href="/apt/">APT</a></p>' >> public/index.html
           echo '<p><a href="/yum/">YUM</a></p>' >> public/index.html
           echo '</body></html>' >> public/index.html
+          echo "404" > public/404.html
           
           rm -f public/apt/dists/stable/Release.gpg
 
