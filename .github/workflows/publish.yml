@@ -21,15 +21,17 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install Python tools
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install tools
         run: |
           python -m pip install --upgrade pip
           pip install build setuptools_scm
-
-      - name: Install system tools
-        run: |
           sudo apt-get update
-          sudo apt-get install -y dpkg-dev createrepo-c curl golang-go
+          sudo apt-get install -y dpkg-dev createrepo-c curl golang-go apt-utils
 
       - name: Install nfpm
         run: |
@@ -37,13 +39,17 @@ jobs:
           echo "$HOME/go/bin" >> $GITHUB_PATH
 
       - name: Clean workspace
-        run: |
-          rm -rf dist build *.egg-info repo public pkg
+        run: rm -rf dist build *.egg-info repo public pkg
 
       - name: Build Python package
         env:
           SETUPTOOLS_SCM_PRETEND_VERSION: ${{ github.ref_name }}
         run: python -m build
+
+      - name: Install package into staging dir
+        run: |
+          mkdir -p pkg/root
+          pip install . --root=pkg/root --prefix=/usr
 
       - name: Create CLI wrappers
         run: |
@@ -51,67 +57,42 @@ jobs:
 
           echo "#!/usr/bin/env python3" > pkg/bin/hardwaremon
           echo "from hardwaremon.hardwaremon import main" >> pkg/bin/hardwaremon
-          echo "" >> pkg/bin/hardwaremon
-          echo "if __name__ == '__main__':" >> pkg/bin/hardwaremon
-          echo "    main()" >> pkg/bin/hardwaremon
+          echo "if __name__ == '__main__': main()" >> pkg/bin/hardwaremon
 
           echo "#!/usr/bin/env python3" > pkg/bin/hardwaremon-gui
           echo "from hardwaremon.hardwaremon_gui import gui" >> pkg/bin/hardwaremon-gui
-          echo "" >> pkg/bin/hardwaremon-gui
-          echo "if __name__ == '__main__':" >> pkg/bin/hardwaremon-gui
-          echo "    gui()" >> pkg/bin/hardwaremon-gui
+          echo "if __name__ == '__main__': gui()" >> pkg/bin/hardwaremon-gui
 
-          chmod +x pkg/bin/hardwaremon
-          chmod +x pkg/bin/hardwaremon-gui
+          chmod +x pkg/bin/*
+
+      - name: Get version
+        id: version
+        run: |
+          # Strip leading 'v' from tag (e.g. v1.2.3 -> 1.2.3)
+          VERSION="${{ github.ref_name }}"
+          echo "version=${VERSION#v}" >> $GITHUB_OUTPUT
 
       - name: Create nfpm config
         run: |
-          rm -f nfpm.yaml
+          cat <<EOF > nfpm.yaml
+          name: hardwaremon
+          arch: amd64
+          platform: linux
+          version: "${{ steps.version.outputs.version }}"
+          maintainer: Louis Hinchliffe <louishinchliffe11@gmail.com>
+          description: HardwareMon system monitor
+          homepage: https://github.com/louisboii747/HardwareMon
 
-          echo "name: hardwaremon" >> nfpm.yaml
-          echo "arch: amd64" >> nfpm.yaml
-          echo "platform: linux" >> nfpm.yaml
-          echo "version: 1.0.0" >> nfpm.yaml
-          echo "maintainer: you <you@example.com>" >> nfpm.yaml
-          echo "description: HardwareMon system monitor" >> nfpm.yaml
-          echo "homepage: https://github.com/louisboii747/HardwareMon" >> nfpm.yaml
+          contents:
+            - src: pkg/bin/hardwaremon
+              dst: /usr/bin/hardwaremon
 
-          echo "contents:" >> nfpm.yaml
-          echo "  - src: pkg/bin/hardwaremon" >> nfpm.yaml
-          echo "    dst: /usr/bin/hardwaremon" >> nfpm.yaml
-          echo "  - src: pkg/bin/hardwaremon-gui" >> nfpm.yaml
-          echo "    dst: /usr/bin/hardwaremon-gui" >> nfpm.yaml
+            - src: pkg/bin/hardwaremon-gui
+              dst: /usr/bin/hardwaremon-gui
 
-          echo "=== NFPM CONFIG ==="
-          cat nfpm.yaml
-
-      - name: Create postinstall script
-        run: |
-            mkdir -p pkg/scripts
-
-            cat > pkg/scripts/postinstall.sh <<'EOF'
-            #!/bin/bash
-            set -e
-
-            echo "Installing HardwareMon Python package..."
-
-            apt-get update || true
-            apt-get install -y python3-pip || true
-
-            python3 -m pip install /tmp/*.whl
-
-            echo "Done."
-            EOF
-
-            chmod +x pkg/scripts/postinstall.sh  
-
-
-
-      - name: Prepare wheel for packaging
-        run: |
-          mkdir -p pkg/wheel
-          cp dist/*.whl pkg/wheel/
-          ls -lah pkg/wheel
+            - src: pkg/root/usr/
+              dst: /usr/
+          EOF
 
       - name: Build packages
         run: |
@@ -123,82 +104,55 @@ jobs:
           echo "=== DEB CONTENTS ==="
           dpkg-deb -c dist/hardwaremon.deb
 
-          
-          
-          echo "=== DIST CONTENTS ==="
-          ls -lah dist
-
       - name: Build APT repo
         run: |
-          # Create full structure FIRST
           mkdir -p repo/apt/pool/main/h/hardwaremon
           mkdir -p repo/apt/dists/stable/main/binary-amd64
 
-          # Copy package
           cp dist/hardwaremon.deb repo/apt/pool/main/h/hardwaremon/
 
           cd repo/apt
 
-          # Generate package lists (BOTH files)
-          dpkg-scanpackages pool /dev/null > dists/stable/main/binary-amd64/Packages
+          dpkg-scanpackages --multiversion pool > dists/stable/main/binary-amd64/Packages
           gzip -k dists/stable/main/binary-amd64/Packages
 
-          # Create Release file in CORRECT location
-          cd dists/stable
+          # Generate Release file with checksums (required by apt)
+          apt-ftparchive release dists/stable > dists/stable/Release
 
-          echo "Origin: HardwareMon" > Release
-          echo "Label: HardwareMon" >> Release
-          echo "Suite: stable" >> Release
-          echo "Codename: stable" >> Release
-          echo "Architectures: amd64" >> Release
-          echo "Components: main" >> Release
-          echo "Description: HardwareMon APT Repository" >> Release
+          # Prepend metadata since apt-ftparchive release only does hashes
+          cat - dists/stable/Release > dists/stable/Release.tmp <<RELEASE
+          Origin: HardwareMon
+          Label: HardwareMon
+          Suite: stable
+          Codename: stable
+          Architectures: amd64
+          Components: main
+          Description: HardwareMon APT Repository
+          RELEASE
+          mv dists/stable/Release.tmp dists/stable/Release
 
       - name: Build DNF repo
         run: |
           mkdir -p repo/yum
           cp dist/hardwaremon.rpm repo/yum/
-
           cd repo/yum
           createrepo_c .
 
-          echo "[hardwaremon]" > hardwaremon.repo
-          echo "name=HardwareMon Repo" >> hardwaremon.repo
-          echo "baseurl=https://hardwaremon.pages.dev/yum" >> hardwaremon.repo
-          echo "enabled=1" >> hardwaremon.repo
-          echo "gpgcheck=0" >> hardwaremon.repo
-
       - name: Prepare Pages output
         run: |
-          rm -rf public
           mkdir -p public/apt public/yum
 
           cp -r repo/apt/* public/apt/
           cp -r repo/yum/* public/yum/
 
-          echo '<!doctype html>' > public/index.html
-          echo '<html><body>' >> public/index.html
-          echo '<h1>HardwareMon Repository</h1>' >> public/index.html
-          echo '<p><a href="/apt/">APT</a></p>' >> public/index.html
-          echo '<p><a href="/yum/">YUM</a></p>' >> public/index.html
-          echo '</body></html>' >> public/index.html
+          echo '<h1>HardwareMon Repo</h1><a href="/apt/">APT</a><br><a href="/yum/">YUM</a>' > public/index.html
           echo "404" > public/404.html
-          
-          rm -f public/apt/dists/stable/Release.gpg
-
 
       - name: Deploy to Cloudflare Pages
         run: npx wrangler pages deploy public --project-name=hardwaremon --branch=main
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
-      
-      - name: DEBUG final public
-        run: |
-          echo "=== FINAL PUBLIC STRUCTURE ==="
-          find public -type f
-
-      
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
