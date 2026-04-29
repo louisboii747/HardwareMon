@@ -111,6 +111,11 @@ jobs:
           nfpm pkg --config nfpm.yaml --packager deb --target dist/hardwaremon.deb
           nfpm pkg --config nfpm.yaml --packager rpm --target dist/hardwaremon.rpm
 
+      - name: Build packages
+        run: |
+          nfpm pkg --config nfpm.yaml --packager deb --target dist/hardwaremon.deb
+          nfpm pkg --config nfpm.yaml --packager rpm --target dist/hardwaremon.rpm
+
           echo "=== DIST CONTENTS ==="
           ls -lah dist
 
