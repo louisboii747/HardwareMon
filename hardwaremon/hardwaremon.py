@@ -11,13 +11,7 @@ import tkinter.messagebox as messagebox
 import subprocess
 from subprocess import run, PIPE
 
-from importlib.metadata import version, PackageNotFoundError
-
-try:
-    VERSION = version("hardwaremon")
-except PackageNotFoundError:
-    VERSION = "dev"
-
+VERSION = "dev"
 
 MAX_POINTS = 60  # last 60 seconds
 

@@ -40,6 +40,16 @@ jobs:
           mkdir -p pkg/opt/hardwaremon
           mkdir -p pkg/bin
 
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+
+          echo "Injecting version $VERSION"
+
+          # Inject version into BOTH files
+          sed -i "s/^VERSION = .*/VERSION = \"${VERSION}\"/" hardwaremon/hardwaremon.py
+          sed -i "s/^VERSION = .*/VERSION = \"${VERSION}\"/" hardwaremon/hardwaremon_gui.py
+
+          # Copy AFTER injection
           cp hardwaremon/* pkg/opt/hardwaremon/
 
           # CLI launcher
