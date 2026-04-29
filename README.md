@@ -49,7 +49,7 @@ For the best experience on Linux, use the APT or DNF repositories.
 
 ### APT:
 ```
-sudo apt update sudo apt upgrade hardwaremon
+sudo apt update sudo && apt upgrade hardwaremon
 ```
 
 ### DNF:
