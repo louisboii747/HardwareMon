@@ -136,6 +136,23 @@ jobs:
           echo '<h1>HardwareMon Repo</h1><a href="/apt/">APT</a><br><a href="/yum/">YUM</a>' > public/index.html
           echo "404" > public/404.html
 
+      - name: Add setup script
+        run: |
+          cat <<'EOF' > public/apt/setup.sh
+          #!/bin/bash
+          set -e
+
+          echo "Adding HardwareMon APT repository..."
+
+          echo "deb [trusted=yes] https://hardwaremon.pages.dev/apt stable main" \
+          | sudo tee /etc/apt/sources.list.d/hardwaremon.list > /dev/null
+
+          sudo apt update
+
+          echo "Done. Install with:"
+          echo "  sudo apt install hardwaremon"
+          EOF
+
       - name: Deploy to Cloudflare Pages
         run: npx wrangler pages deploy public --project-name=hardwaremon --branch=main
         env:
