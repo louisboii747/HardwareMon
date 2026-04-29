@@ -13,3 +13,11 @@
     echo "    dst: /usr/bin/hardwaremon" >> nfpm.yaml
     echo "  - src: pkg/bin/hardwaremon-gui" >> nfpm.yaml
     echo "    dst: /usr/bin/hardwaremon-gui" >> nfpm.yaml
+    echo "  - src: dist/*.whl" >> nfpm.yaml
+    echo "    dst: /tmp/" >> nfpm.yaml
+
+
+
+    echo "scripts:" >> nfpm.yaml
+    echo "  postinstall: |" >> nfpm.yaml
+    echo "    pip3 install /tmp/*.whl" >> nfpm.yaml
