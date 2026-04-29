@@ -49,8 +49,8 @@ jobs:
       - name: Install package into staging dir
         run: |
           mkdir -p pkg/root
-          mkdir -p pkg/root/usr/lib/python3.11/dist-packages
-          cp -r hardwaremon pkg/root/usr/lib/python3.11/dist-packages/
+          mkdir -p pkg/root/usr/lib/python3/dist-packages
+          cp -r hardwaremon pkg/root/usr/lib/python3/dist-packages/
 
       - name: Create CLI wrappers
         run: |
