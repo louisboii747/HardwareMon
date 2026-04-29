@@ -21,3 +21,5 @@
     echo "    apt-get update || true" >> nfpm.yaml
     echo "    apt-get install -y python3-pip || true" >> nfpm.yaml
     echo "    python3 -m pip install /tmp/*.whl" >> nfpm.yaml
+    echo "scripts:" >> nfpm.yaml
+    echo "  postinstall: pkg/scripts/postinstall.sh" >> nfpm.yaml
