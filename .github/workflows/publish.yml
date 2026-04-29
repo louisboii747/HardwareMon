@@ -93,19 +93,19 @@ jobs:
           echo "=== DIST CONTENTS ==="
           ls -lah dist
 
-      - name: Build APT repository
+      - name: Build APT repo
         run: |
-          mkdir -p repo/apt
           mkdir -p repo/apt/pool/main/h/hardwaremon
           mkdir -p repo/apt/dists/stable/main/binary-amd64
-
 
           cp dist/hardwaremon.deb repo/apt/pool/main/h/hardwaremon/
 
           cd repo/apt
 
-          dpkg-scanpackages pool /dev/null | gzip -9c > dists/stable/main/binary-amd64/Packages.gz
+          dpkg-scanpackages pool /dev/null | gzip -9c > dists/stable/main/binary-amd64/Packages
+          gzip -k -f dists/stable/main/binary-amd64/Packages
 
+          cd dists/stable
 
           echo "Origin: HardwareMon" > Release
           echo "Label: HardwareMon" >> Release
@@ -140,23 +140,20 @@ jobs:
 
 
 
-      - name: Prepare Pages output
+      - name: Prepare Pages Output
         run: |
           rm -rf public
           mkdir -p public/apt public/yum
 
-          cp -r repo/apt public/apt
-          cp -r repo/yum public/yum
+          cp -r repo/apt/* public/apt/
+          cp -r repo/yum/* public/yum/
 
-          echo "<!doctype html>" > public/index.html
-          echo "<html>" >> public/index.html
-          echo "<head><meta charset=\"utf-8\"><title>HardwareMon Repo</title></head>" >> public/index.html
-          echo "<body>" >> public/index.html
-          echo "<h1>HardwareMon Repository</h1>" >> public/index.html
-          echo "<p><a href=\"/apt/\">APT Repository</a></p>" >> public/index.html
-          echo "<p><a href=\"/yum/\">DNF Repository</a></p>" >> public/index.html
-          echo "</body>" >> public/index.html
-          echo "</html>" >> public/index.html
+          echo "<!doctype html"> > public/index.html
+          echo "<html><body>" >> public/index.html
+          echo "<h1>HardwareMon Repostiory</1>" >> public index.html
+          echo "<p><a href=\"/apt/\">APT</a></p>" >> public index.html
+          echo "<p><a href=\"/yum/\">YUM</a></p>" >> public index.html
+          echo "</body></html>" >> public/index.html
 
           echo "/apt/* /apt/:splat 200" > public/_redirects
           echo "/yum/* /yum/:splat 200" >> public/_redirects
