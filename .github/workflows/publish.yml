@@ -151,6 +151,11 @@ jobs:
           echo '/apt/* /apt/:splat 200' > public/_redirects
           echo '/yum/* /yum/:splat 200' >> public/_redirects
       
+      - name: DEBUG final public
+        run: |
+          echo "=== FINAL PUBLIC STRUCTURE ==="
+          find public -type f
+
       
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
