@@ -25,7 +25,9 @@ echo "deb [trusted=yes] https://hardwaremon.pages.dev/apt stable main" | sudo te
 
 ### 📦 DNF (Fedora/RHEL)
 ```
-sudo dnf config-manager --add-repo https://hardwaremon.pages.dev/yum/hardwaremon.repo sudo dnf install hardwaremon 
+sudo dnf install dnf-plugins-core
+sudo dnf config-manager --add-repo https://hardwaremon.pages.dev/yum/hardwaremon.repo
+sudo dnf install hardwaremon
 ```
 ---
 
