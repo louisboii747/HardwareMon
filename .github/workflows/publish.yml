@@ -105,7 +105,7 @@ jobs:
           dpkg-scanpackages pool /dev/null | gzip -9c > dists/stable/main/binary-amd64/Packages
           gzip -k -f dists/stable/main/binary-amd64/Packages
 
-          cd dists/stable
+          cd repo/apt/dists/stable
 
           echo "Origin: HardwareMon" > Release
           echo "Label: HardwareMon" >> Release
@@ -148,7 +148,7 @@ jobs:
           echo '/yum/* /yum/:splat 200' >> public/_redirects
       
       
-      - name: Create GitHub Release
+      `- name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
