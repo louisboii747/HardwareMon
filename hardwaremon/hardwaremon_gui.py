@@ -16,7 +16,8 @@ ICON_FILES = {
     "DISK": "disk.png",
     "GPU": "gpu.png",
     "BOARD": "board.png",
-    "OS": "os.png"
+    "OS": "os.png",
+    "Wi-Fi" : "network.png"
 }
 
 ICON_SIZE = (32, 32)
@@ -89,6 +90,39 @@ def cpu_temperature():
                 lines.append(f"{entry.label}: {entry.current} °C")
     return lines
 
+def wifi_info():
+    lines = ["=== WIFI INFORMATION ===", ""]
+    try:
+        out = subprocess.getoutput("ip a | grep 'state UP' -B2 | grep 'w' | awk '{print $2}' | sed 's/://g'")
+        if out:
+            iface = out.strip()
+            lines.append(f"Interface: {iface}")
+            data = psutil.net_io_counters(pernic=True).get(iface)
+            if data:
+                lines.append(f"Sent: {data.bytes_sent / (1024**2):.2f} MB")
+                lines.append(f"Received: {data.bytes_recv / (1024**2):.2f} MB")
+            else:
+                lines.append("No data available for this interface")
+        else:
+            lines.append("No active Wi-Fi interface found")
+    except Exception as e:
+        lines.append("Error retrieving Wi-Fi information")
+    return lines
+
+
+
+def ssid_info():
+    lines = ["=== WIFI SSID ===", ""]
+    try:
+        out = subprocess.getoutput("iwctl station wlan0 get-networks | grep '*' | awk '{print $2}'")
+        if out:
+            ssid = out.strip()
+            lines.append(f"Connected SSID: {ssid}")
+        else:
+            lines.append("Not connected to any Wi-Fi network")
+    except Exception as e:
+        lines.append("Error retrieving SSID information, ensure iwctl is installed and you have permissions")
+    return lines
 
 
 def ram_info():
@@ -208,7 +242,8 @@ SECTIONS = {
     "DISK": lambda: disk_info() + [""] + partitions_info(),
     "GPU": lambda: gpu_info() + [""] + vram_info() + [""] + gpu_temperature_info(),
     "BOARD": lambda: motherboard_info() + [""] + secure_boot(),
-    "OS": lambda: os_info() + [""] + current_user()
+    "OS": lambda: os_info() + [""] + current_user(),
+    "Wi-Fi" : lambda: wifi_info() + [""] + ssid_info()
 }
 
 #########################
