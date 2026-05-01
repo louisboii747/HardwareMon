@@ -532,59 +532,21 @@ def get_package_manager():
 
 def memory_temperature():
     lines = ["=== Memory Temperature ==="]
-    found = False
+    temps = psutil.sensors_temperatures()
 
-    i2c_available = subprocess.getoutput("which decode-dimms 2>/dev/null").strip()
-    eeprom_loaded = "eeprom" in subprocess.getoutput("lsmod 2>/dev/null")
+    if not temps:
+        return ["No temperature sensors available"]
 
-    if not i2c_available or not eeprom_loaded:
-        lines.append("DIMM Memory temperature unavailable.")
-        lines.append("")
-        if not i2c_available:
-            lines.append("  → Install i2c-tools:")
-            lines.append(f"    {get_package_manager()}")
-        if not eeprom_loaded:
-            lines.append("  → Load the eeprom kernel module:")
-            lines.append("    sudo modprobe eeprom")
-            lines.append("    (Add 'eeprom' to /etc/modules to persist across reboots)")
-        return lines
+    for name, entries in temps.items():
+        for entry in entries:
+            label = (entry.label or "").lower()
+            name_l = name.lower()
 
-    # Try decode-dimms
-    decode = subprocess.getoutput("decode-dimms 2>/dev/null")
-    if decode and "not found" not in decode.lower() and "command not found" not in decode.lower():
-        for line in decode.split("\n"):
-            if "temperature" in line.lower():
-                lines.append(line.strip())
-                found = True
+            if any(keyword in (label + name_l) for keyword in ["dimm", "spd", "memory", "ram"]):
+                display = entry.label if entry.label else name
+                lines.append(f"{display}: {entry.current} °C")
 
-    # Try hwmon
-    if not found:
-        hwmon_base = "/sys/class/hwmon"
-        if os.path.exists(hwmon_base):
-            for hw in os.listdir(hwmon_base):
-                hw_path = os.path.join(hwmon_base, hw)
-                name = read_sys(os.path.join(hw_path, "name")) or ""
-                if any(k in name.lower() for k in ("dimm", "ddr", "ram", "memory", "spd")):
-                    for f in os.listdir(hw_path):
-                        if f.startswith("temp") and f.endswith("_input"):
-                            raw = read_sys(os.path.join(hw_path, f))
-                            label_file = f.replace("_input", "_label")
-                            label = read_sys(os.path.join(hw_path, label_file)) or f
-                            if raw and raw.isdigit():
-                                lines.append(f"{name} ({label}): {int(raw) // 1000} °C")
-                                found = True
-
-    # psutil fallback
-    if not found:
-        temps = psutil.sensors_temperatures()
-        if temps:
-            for name, entries in temps.items():
-                for entry in entries:
-                    if "memory" in entry.label.lower() or "ram" in name.lower() or "dimm" in name.lower():
-                        lines.append(f"{entry.label or name}: {entry.current} °C")
-                        found = True
-
-    return lines if found else ["=== No memory temperature data found ==="]
+    return lines if len(lines) > 1 else ["=== No memory temperature data exposed by hardware/kernel ==="]
 
 
 def cpu_temperature():
