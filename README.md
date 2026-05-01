@@ -59,17 +59,16 @@ sudo apt update sudo && apt upgrade hardwaremon
 sudo dnf upgrade hardwaremon
 ```
 
-### NOTE FOR DEVELOPMENT
+### PyPI:
+```
+pipx upgrade hardwaremon
+```
 
+### NOTE FOR DEVELOPMENT
 When running the GUI Linux script, you may encounter a 'PIL module not found error' in VS Code. The solution is to create a venv virtual enviornment and run
 ```
 pip install pillow
 ```
 In the terminal.
-
-### PyPI:
-```
-pipx upgrade hardwaremon
-```
 
 
