@@ -801,7 +801,7 @@ def gui_app():
     summary_mode = tk.BooleanVar(value=True)
 
     # ---- Create widgets ---- #
-    version_label = tk.Label(root, text=f"HardwareMon v{VERSION}",
+    version_label = tk.Label(root, text=f"HardwareMon {VERSION}",
                              font=("monospace", 12, "bold"))
     version_label.pack(anchor="ne", padx=10, pady=5)
 
@@ -842,9 +842,9 @@ def gui_app():
         if alerts:
             version_label.config(text=" | ".join(alerts))
         elif update_msg:
-            version_label.config(text=f"HardwareMon v{VERSION} → {update_msg}")
+            version_label.config(text=f"HardwareMon {VERSION} → {update_msg}")
         else:
-            version_label.config(text=f"HardwareMon v{VERSION}")
+            version_label.config(text=f"HardwareMon {VERSION}")
 
         active_sections = [system_summary] if summary_mode.get() else SECTIONS
         for section in active_sections:
