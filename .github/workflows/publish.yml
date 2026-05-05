@@ -236,8 +236,7 @@ jobs:
       - name: Build exe with PyInstaller
         shell: pwsh
         run: |
-          cd Windows
-          pyinstaller HardwareMon.spec
+          pyinstaller Windows/HardwareMon.spec
 
       - name: Create Inno Setup script
         shell: pwsh
@@ -261,7 +260,7 @@ jobs:
           PrivilegesRequired=admin
 
           [Files]
-          Source: "Windows\dist\HardwareMon.exe"; DestDir: "{app}"; Flags: ignoreversion
+          Source: "dist\HardwareMon.exe"; DestDir: "{app}"; Flags: ignoreversion
 
           [Icons]
           Name: "{group}\HardwareMon"; Filename: "{app}\HardwareMon.exe"
