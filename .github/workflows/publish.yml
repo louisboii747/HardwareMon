@@ -204,3 +204,107 @@ jobs:
           files: |
             dist/hardwaremon.deb
             dist/hardwaremon.rpm
+
+  # ─────────────────────────────────────────────────────────────────
+  #  Windows: build exe → Inno Setup installer → GitHub Release
+  # ─────────────────────────────────────────────────────────────────
+  build-windows:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: pip install customtkinter psutil gputil pyinstaller pillow
+
+      - name: Inject version into source
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart("v")
+          (Get-Content Windows\hardwaremon_win.py) `
+            -replace '^VERSION = .*', "VERSION = `"$version`"" `
+            | Set-Content Windows\hardwaremon_win.py
+
+      - name: Build exe with PyInstaller
+        shell: pwsh
+        run: |
+          cd Windows
+          pyinstaller HardwareMon.spec
+
+      - name: Create Inno Setup script
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart("v")
+          @"
+          [Setup]
+          AppName=HardwareMon
+          AppVersion=$version
+          AppPublisher=Louis Hinchliffe
+          AppPublisherURL=https://github.com/louisboii747/HardwareMon
+          AppSupportURL=https://github.com/louisboii747/HardwareMon/issues
+          DefaultDirName={autopf}\HardwareMon
+          DefaultGroupName=HardwareMon
+          OutputDir=installer
+          OutputBaseFilename=HardwareMonSetup
+          SetupIconFile=Windows\icon.ico
+          Compression=lzma
+          SolidCompression=yes
+          ArchitecturesInstallIn64BitMode=x64
+          PrivilegesRequired=admin
+
+          [Files]
+          Source: "Windows\dist\HardwareMon.exe"; DestDir: "{app}"; Flags: ignoreversion
+
+          [Icons]
+          Name: "{group}\HardwareMon"; Filename: "{app}\HardwareMon.exe"
+          Name: "{commondesktop}\HardwareMon"; Filename: "{app}\HardwareMon.exe"; Tasks: desktopicon
+
+          [Tasks]
+          Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional icons:"
+
+          [Run]
+          Filename: "{app}\HardwareMon.exe"; Description: "Launch HardwareMon"; Flags: postinstall nowait skipifsilent
+          "@ | Out-File -FilePath setup.iss -Encoding utf8
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          mkdir installer
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" setup.iss
+
+      - name: Upload installer to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: installer/HardwareMonSetup.exe
+
+  # ─────────────────────────────────────────────────────────────────
+  #  Winget: auto-submit manifest PR to winget-pkgs on each release
+  #  NOTE: first release must be submitted manually via wingetcreate
+  # ─────────────────────────────────────────────────────────────────
+  winget:
+    needs: build-windows
+    runs-on: windows-latest
+
+    steps:
+      - name: Get version (no v)
+        id: version
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart("v","V")
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Submit to winget
+        uses: vedantmgoyal9/winget-releaser@v2
+        with:
+          identifier: LouisHinchliffe.HardwareMon
+          version: ${{ steps.version.outputs.version }}
+          installers-regex: 'HardwareMonSetup\.exe$'
+          token: ${{ secrets.WINGET_TOKEN }}
