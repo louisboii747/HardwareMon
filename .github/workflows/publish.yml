@@ -246,7 +246,7 @@ jobs:
           Get-ChildItem -Recurse Windows 
 
 
-          
+
       - name: Build exe with PyInstaller
         shell: pwsh
         run: |
@@ -267,7 +267,7 @@ jobs:
           DefaultGroupName=HardwareMon
           OutputDir=installer
           OutputBaseFilename=HardwareMonSetup
-          SetupIconFile=Windows\icon.ico
+          SetupIconFile=Windows\board.ico
           Compression=lzma
           SolidCompression=yes
           ArchitecturesInstallIn64BitMode=x64
