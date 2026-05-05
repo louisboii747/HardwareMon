@@ -2,7 +2,7 @@
 from PyInstaller.utils.hooks import collect_all
 import os
 
-BASE_DIR = os.path.dirname(__file__)
+BASE_DIR = os.path.dirname(os.path.abspath(SPEC))
 
 datas = []
 binaries = []
