@@ -155,48 +155,97 @@ def partitions_info():
             lines.append(f"{part.device} - {part.mountpoint} ({part.fstype})")
     return lines
 
+
+
+def _try_nvidia(query):
+    """Returns output string or None if nvidia-smi is unavailable or failed."""
+    try:
+        result = subprocess.run(
+            ["nvidia-smi", f"--query-gpu={query}", "--format=csv,noheader"],
+            capture_output=True, text=True
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout.strip()
+    except FileNotFoundError:
+        pass
+    return None
+
+def _try_amd(query_type):
+    """Returns output string or None if rocm-smi is unavailable or failed."""
+    try:
+        flag = {"name": "--showproductname", "vram": "--showmeminfo", "temp": "--showtemp"}[query_type]
+        result = subprocess.run(["rocm-smi", flag], capture_output=True, text=True)
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout.strip()
+    except FileNotFoundError:
+        pass
+    return None
+
 def gpu_info():
     lines = ["=== GPU INFORMATION ===", ""]
-    
-    try:
-        nvidia = subprocess.getoutput("nvidia-smi --query-gpu=name,memory.total, --format=csv,noheader")
-        if nvidia:
-            for line in nvidia.strip().split("\n"):
-                lines.append(line.strip())
-        else:
-            out = subprocess.getoutput("lspci | grep -i 'vga'")
-            if out:
-                lines.extend(out.strip().split("\n"))
-            else:
-                lines.append("GPU info not available")
-    except Exception as e:
-        lines.append("GPU info not available")
+
+    nvidia = _try_nvidia("name,memory.total")
+    if nvidia:
+        lines.append("Vendor: NVIDIA")
+        for line in nvidia.split("\n"):
+            lines.append(line.strip())
+        return lines
+
+    amd = _try_amd("name")
+    if amd:
+        lines.append("Vendor: AMD")
+        for line in amd.split("\n"):
+            lines.append(line.strip())
+        return lines
+
+    # Fall back to lspci for display name only
+    lspci = subprocess.getoutput("lspci | grep -i 'vga\\|3d\\|display'")
+    if lspci and "command not found" not in lspci:
+        lines.append("No NVIDIA or AMD GPU detected via driver tools.")
+        lines.append("Display adapter(s) found via lspci:")
+        for line in lspci.strip().split("\n"):
+            lines.append(f"  {line.strip()}")
+    else:
+        lines.append("No NVIDIA or AMD GPU found.")
+        lines.append("No display adapter detected via lspci either.")
+
     return lines
 
 def vram_info():
     lines = ["=== VRAM INFORMATION ===", ""]
-    try:
-        nvidia = subprocess.getoutput("nvidia-smi --query-gpu=memory.total --format=csv,noheader")
-        if nvidia:
-            for line in nvidia.strip().split("\n"):
-                lines.append(line.strip())
-        else:
-            lines.append("VRAM info not available")
-    except Exception as e:
-        lines.append("VRAM info not available")
+
+    nvidia = _try_nvidia("memory.total,memory.used,memory.free")
+    if nvidia:
+        labels = ["Total", "Used", "Free"]
+        for label, val in zip(labels, nvidia.split(",")):
+            lines.append(f"{label}: {val.strip()}")
+        return lines
+
+    amd = _try_amd("vram")
+    if amd:
+        for line in amd.split("\n"):
+            lines.append(line.strip())
+        return lines
+
+    lines.append("No NVIDIA or AMD GPU found — VRAM info unavailable.")
     return lines
 
 def gpu_temperature_info():
     lines = ["=== GPU TEMPERATURE ===", ""]
-    try:
-        nvidia = subprocess.getoutput("nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader")
-        if nvidia:
-            for line in nvidia.strip().split("\n"):
-                lines.append(line.strip() + " °C")
-        else:
-            lines.append("GPU temperature not available")
-    except Exception as e:
-        lines.append("GPU temperature not available")
+
+    nvidia = _try_nvidia("temperature.gpu")
+    if nvidia:
+        for line in nvidia.split("\n"):
+            lines.append(f"{line.strip()} °C")
+        return lines
+
+    amd = _try_amd("temp")
+    if amd:
+        for line in amd.split("\n"):
+            lines.append(line.strip())
+        return lines
+
+    lines.append("No NVIDIA or AMD GPU found — temperature unavailable.")
     return lines
 
 
