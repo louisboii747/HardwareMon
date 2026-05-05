@@ -233,6 +233,20 @@ jobs:
             -replace '^VERSION = .*', "VERSION = `"$version`"" `
             | Set-Content Windows\hardwaremon_win.py
 
+      - name: Debug files
+        shell: pwsh
+        run: |
+          Write-Host "ROOT:"
+          Get-ChildItem
+
+          Write-Host "`nWINDOWS FOLDER:"
+          Get-ChildItem Windows
+
+          Write-Host "`nRECURSIVE:"
+          Get-ChildItem -Recurse Windows 
+
+
+          
       - name: Build exe with PyInstaller
         shell: pwsh
         run: |
