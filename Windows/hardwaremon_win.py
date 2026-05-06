@@ -8,7 +8,7 @@ import os
 import sys
 from datetime import datetime
 
-VERSION = "0.0.0"
+VERSION = "dev"
 
 # ── Attempt GPU info (optional) ─────────────────────────────────────────────
 try:
