@@ -8,6 +8,8 @@ import os
 import sys
 from datetime import datetime
 
+VERSION = "0.0.0"
+
 # ── Attempt GPU info (optional) ─────────────────────────────────────────────
 try:
     import GPUtil
@@ -376,10 +378,13 @@ class HardwareMonApp(ctk.CTk):
             btn.pack(fill="x", padx=10, pady=2)
             self._nav_buttons[page] = btn
 
-        # version label at bottom
-        ctk.CTkLabel(self.sidebar, text="HardwareMon\nv2.0 Windows",
-                     font=("Segoe UI Variable", 9),
-                     text_color=TEXT_SEC).pack(side="bottom", pady=16)
+    # version label at bottom
+        ctk.CTkLabel(
+            self.sidebar,
+            text=f"HardwareMon\nv{VERSION} Windows",
+            font=("Segoe UI Variable", 9),
+            text_color=TEXT_SEC
+        ).pack(side="bottom", pady=16)        
 
     # ── Page builder ─────────────────────────────────────────────────────────
     def _build_pages(self):
