@@ -1,74 +1,135 @@
+# HardwareMon
+
 ## About
 
-HardwareMon is a modern system monitoring tool for Linux and Windows, designed to give a clear, real-time view of your computer’s hardware and performance.
+HardwareMon is a modern system monitoring tool for Linux and Windows, designed to give a clear, real time view of your computer’s hardware and performance.
 
-It provides detailed insights into CPU, memory, disk, GPU, network, and system activity through both a graphical interface and command-line tools. Whether you want a clean visual overview or deeper technical information, HardwareMon makes it easy to understand what your system is doing at any moment.
+It provides detailed insights into CPU, memory, disk, GPU, network, and system activity through both a graphical interface and command line tools. Whether you want a clean visual overview or deeper technical information, HardwareMon makes it easy to understand what your system is doing at any moment.
 
-On Linux, HardwareMon is distributed as a native package via APT and DNF, allowing simple installation and updates through your system’s package manager. On Windows, it is available as a standalone executable with a fully featured graphical interface.
+On Linux, HardwareMon is distributed as a native package through APT and DNF repositories, allowing simple installation and updates directly from your system package manager.
 
-The project focuses on performance, clarity, and ease of use — offering powerful monitoring without unnecessary complexity.
+On Windows, HardwareMon is available as a standalone graphical installer and through Windows Package Manager (WinGet).
 
+The project focuses on performance, clarity, and ease of use while providing powerful monitoring features without unnecessary complexity.
 
-## Installation (Linux)
-
-### 🐧 APT (Debian/Ubuntu/Zorin)
-```
-curl -fsSL https://hardwaremon.pages.dev/apt/setup.sh | sudo bash
-
-sudo apt install hardwaremon 
-```
-Or manually:
-```
-echo "deb [trusted=yes] https://hardwaremon.pages.dev/apt stable main" | sudo tee /etc/apt/sources.list.d/hardwaremon.list sudo apt update sudo apt install hardwaremon 
-```
 ---
 
-### 📦 DNF (Fedora/RHEL)
+# Installation
+
+## Windows
+
+### WinGet
+
+```powershell
+winget install LouisHinchliffe.HardwareMon
 ```
+
+### Standalone Installer
+
+Download the latest installer from the GitHub Releases page:
+
+```text
+https://github.com/louisboii747/HardwareMon/releases
+```
+
+---
+
+## Linux
+
+### APT Debian Ubuntu Zorin
+
+```bash
+curl -fsSL https://hardwaremon.pages.dev/apt/setup.sh | sudo bash
+```
+
+```bash
+sudo apt install hardwaremon
+```
+
+### Manual APT Setup
+
+```bash
+echo "deb [trusted=yes] https://hardwaremon.pages.dev/apt stable main" | sudo tee /etc/apt/sources.list.d/hardwaremon.list
+```
+
+```bash
+sudo apt update
+```
+
+```bash
+sudo apt install hardwaremon
+```
+
+### DNF Fedora RHEL
+
+```bash
 sudo dnf install dnf-plugins-core
+```
+
+```bash
 sudo dnf config-manager --add-repo https://hardwaremon.pages.dev/yum/hardwaremon.repo
+```
+
+```bash
 sudo dnf install hardwaremon
 ```
----
-
-### 🐍 PyPI (Fallback / Cross-platform)
-
-You can still install using pip:
-```
-pip install hardwaremon 
-```
-
-Or with pipx (recommended):
-```
-sudo apt install pipx pipx install hardwaremon 
-```
-⚠️ Note: PyPI may not always have the latest features.  
-For the best experience on Linux, use the APT or DNF repositories.
 
 ---
 
-## Updating
+## PyPI Cross Platform Fallback
 
-### APT:
-```
-sudo apt update sudo && apt upgrade hardwaremon
+You can still install HardwareMon using pip:
+
+```bash
+pip install hardwaremon
 ```
 
-### DNF:
+Or with pipx:
+
+```bash
+pipx install hardwaremon
 ```
+
+PyPI may not always contain the newest features and improvements.
+
+For the best Linux experience, use the APT or DNF repositories.
+
+---
+
+# Updating
+
+## APT
+
+```bash
+sudo apt update && sudo apt upgrade hardwaremon
+```
+
+## DNF
+
+```bash
 sudo dnf upgrade hardwaremon
 ```
 
-### PyPI:
-```
+## PyPI
+
+```bash
 pipx upgrade hardwaremon
 ```
 
-### NOTE FOR DEVELOPMENT
-When running the GUI Linux script, you may encounter a 'PIL module not found error' in VS Code. The solution is to create a venv virtual enviornment and run
+## WinGet
+
+```powershell
+winget upgrade LouisHinchliffe.HardwareMon
 ```
+
+---
+
+# Development Notes
+
+When running the Linux GUI version inside VS Code, you may encounter a PIL module not found error.
+
+Create a virtual environment and install Pillow:
+
+```bash
 pip install pillow
 ```
-In the terminal.
-
-
