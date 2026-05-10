@@ -111,7 +111,7 @@ Or with pipx:
 pipx install hardwaremon
 ```
 
-PyPI will not always the newest features and improvements.
+PyPI will almost never contain the newest features and improvements.
 
 For the best Linux experience, use the APT or DNF repositories.
 
