@@ -282,7 +282,7 @@ jobs:
           DefaultGroupName=HardwareMon
           OutputDir=installer
           OutputBaseFilename=HardwareMonSetup-$version
-          SetupIconFile=Windows\board.ico
+          SetupIconFile=Windows\hardwaremon.ico
           Compression=lzma
           SolidCompression=yes
           ArchitecturesInstallIn64BitMode=x64

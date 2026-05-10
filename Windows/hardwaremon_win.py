@@ -3,7 +3,6 @@ import psutil
 import platform
 import threading
 import time
-import subprocess
 import os
 import sys
 from datetime import datetime
@@ -21,14 +20,14 @@ except ImportError:
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
-ACCENT   = "#0078D4"          # Windows 11 blue
-ACCENT2  = "#60CDFF"          # lighter accent
-BG_BASE  = "#0A0A0F"          # near-black base
-BG_CARD  = "#111118"          # card background
-BG_SIDE  = "#0D0D14"          # sidebar
-BORDER   = "#1E1E2E"          # border colour
-TEXT_PRI = "#F0F0F5"          # primary text
-TEXT_SEC = "#8888AA"          # secondary/muted text
+ACCENT   = "#0078D4"
+ACCENT2  = "#60CDFF"
+BG_BASE  = "#0A0A0F"
+BG_CARD  = "#111118"
+BG_SIDE  = "#0D0D14"
+BORDER   = "#1E1E2E"
+TEXT_PRI = "#F0F0F5"
+TEXT_SEC = "#8888AA"
 GREEN    = "#4DDB8A"
 ORANGE   = "#FF8C42"
 RED      = "#FF4D6D"
@@ -37,6 +36,36 @@ def severity_color(pct: float) -> str:
     if pct < 60:   return GREEN
     if pct < 85:   return ORANGE
     return RED
+
+def get_cpu_name() -> str:
+    """Return a proper CPU marketing name, e.g. 'Intel Core i7-12700K @ 3.60GHz'.
+    Tries the Windows registry first, falls back to platform.processor(), then
+    a psutil-derived string so it always returns something useful."""
+    # 1) Windows registry — most reliable source of the marketing name
+    try:
+        import winreg
+        key = winreg.OpenKey(
+            winreg.HKEY_LOCAL_MACHINE,
+            r"HARDWARE\DESCRIPTION\System\CentralProcessor\0"
+        )
+        name, _ = winreg.QueryValueEx(key, "ProcessorNameString")
+        winreg.CloseKey(key)
+        name = " ".join(name.split())   # collapse whitespace
+        if name:
+            return name
+    except Exception:
+        pass
+    # 2) platform.processor() — usually readable on non-Windows too
+    try:
+        p = platform.processor().strip()
+        if p and p.lower() not in ("", "unknown"):
+            return p
+    except Exception:
+        pass
+    # 3) Last resort: architecture + core count
+    cores_p = psutil.cpu_count(logical=False) or "?"
+    cores_l = psutil.cpu_count(logical=True)  or "?"
+    return f"{platform.machine()} CPU  {cores_p}C / {cores_l}T"
 
 # ── Tiny history ring-buffer ─────────────────────────────────────────────────
 class RingBuffer:
@@ -74,7 +103,6 @@ class Sparkline(ctk.CTkCanvas):
             y = H - (v / hi) * (H - 4) - 2
             pts.extend([x, y])
         if len(pts) >= 4:
-            # gradient fill polygon
             fill_pts = [pts[0], H] + pts + [pts[-2], H]
             self.create_polygon(fill_pts, fill=self._hex_alpha(self.color, 0.15),
                                 outline="", smooth=True)
@@ -82,14 +110,68 @@ class Sparkline(ctk.CTkCanvas):
 
     @staticmethod
     def _hex_alpha(hex_color: str, alpha: float) -> str:
-        """Blend hex color toward BG_CARD by alpha."""
         h = hex_color.lstrip("#")
         r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
-        br, bg_, bb = 17, 17, 24   # BG_CARD
+        br, bg_, bb = 17, 17, 24
         nr = int(br + (r - br) * alpha)
         ng = int(bg_ + (g - bg_) * alpha)
         nb = int(bb + (b - bb) * alpha)
         return f"#{nr:02x}{ng:02x}{nb:02x}"
+
+    def pulse_glow(self):
+        """Flash a brief glow overlay on the sparkline when value spikes."""
+        self._glow_alpha = 0.55
+        self._animate_glow()
+
+    def _animate_glow(self):
+        if not hasattr(self, "_glow_alpha") or self._glow_alpha <= 0:
+            self.delete("glow")
+            return
+        W, H = self.winfo_width(), self.winfo_height()
+        self.delete("glow")
+        # draw a semi-transparent rectangle as a glow wash
+        col = self._hex_alpha(self.color, self._glow_alpha)
+        self.create_rectangle(0, 0, W, H, fill=col, outline="", tags="glow")
+        self._draw()   # redraw line on top
+        self._glow_alpha -= 0.07
+        self.after(30, self._animate_glow)
+
+
+# ── Animated number label ────────────────────────────────────────────────────
+class AnimatedLabel(ctk.CTkLabel):
+    """A CTkLabel that smoothly animates numeric text changes."""
+
+    def __init__(self, master, fmt: str = "{:.1f}", suffix: str = "", **kw):
+        super().__init__(master, **kw)
+        self._fmt     = fmt
+        self._suffix  = suffix
+        self._current = 0.0
+        self._target  = 0.0
+        self._after_id = None
+
+    def set_value(self, target: float, color: str | None = None):
+        self._target = target
+        if color:
+            self.configure(text_color=color)
+        self._animate()
+
+    def _animate(self):
+        if self._after_id:
+            self.after_cancel(self._after_id)
+        diff = self._target - self._current
+        if abs(diff) < 0.15:
+            self._current = self._target
+            self._render()
+            return
+        self._current += diff * 0.22
+        self._render()
+        self._after_id = self.after(16, self._animate)
+
+    def _render(self):
+        try:
+            self.configure(text=self._fmt.format(self._current) + self._suffix)
+        except Exception:
+            pass
 
 
 # ── Animated arc gauge ───────────────────────────────────────────────────────
@@ -123,17 +205,14 @@ class ArcGauge(ctk.CTkCanvas):
         self.delete("all")
         s = self._size
         pad = 6
-        # track
         self.create_arc(pad, pad, s - pad, s - pad,
                         start=220, extent=-260,
                         style="arc", outline=BORDER, width=5)
-        # value arc
         extent = -260 * (pct / 100)
         if abs(extent) > 0.5:
             self.create_arc(pad, pad, s - pad, s - pad,
                             start=220, extent=extent,
                             style="arc", outline=color, width=5)
-        # text
         self.create_text(s // 2, s // 2 - 3,
                          text=f"{pct:.0f}%",
                          fill=TEXT_PRI, font=("Segoe UI Variable", 13, "bold"))
@@ -148,8 +227,8 @@ class MetricCard(ctk.CTkFrame):
         self.buf   = buf
         self.unit  = unit
         self.color = color
+        self._prev_val = 0.0
 
-        # header row
         hdr = ctk.CTkFrame(self, fg_color="transparent")
         hdr.pack(fill="x", padx=14, pady=(12, 0))
         ctk.CTkLabel(hdr, text=icon, font=("Segoe UI Emoji", 18),
@@ -157,7 +236,6 @@ class MetricCard(ctk.CTkFrame):
         ctk.CTkLabel(hdr, text=title, font=("Segoe UI Variable", 12, "bold"),
                      text_color=TEXT_PRI).pack(side="left", padx=8)
 
-        # value row
         val_row = ctk.CTkFrame(self, fg_color="transparent")
         val_row.pack(fill="x", padx=14, pady=(6, 0))
 
@@ -166,27 +244,49 @@ class MetricCard(ctk.CTkFrame):
 
         info_col = ctk.CTkFrame(val_row, fg_color="transparent")
         info_col.pack(side="left", padx=10, fill="both", expand=True)
-        self.val_label = ctk.CTkLabel(info_col, text="—",
-                                      font=("Segoe UI Variable", 22, "bold"),
-                                      text_color=TEXT_PRI)
+
+        # Use AnimatedLabel for the main value so it counts up smoothly
+        fmt = "{:.1f}" if unit != " KB/s" and unit != " MB/s" else "{:.0f}"
+        self.val_label = AnimatedLabel(
+            info_col, fmt=fmt, suffix=unit,
+            font=("Segoe UI Variable", 22, "bold"),
+            text=f"0{unit}", text_color=TEXT_PRI
+        )
         self.val_label.pack(anchor="w")
         self.sub_label = ctk.CTkLabel(info_col, text="",
                                       font=("Segoe UI Variable", 10),
                                       text_color=TEXT_SEC)
         self.sub_label.pack(anchor="w")
 
-        # sparkline
         self.spark = Sparkline(self, buf=buf, color=color, height=36)
         self.spark.pack(fill="x", padx=14, pady=(8, 12))
 
+        # Fade-in animation on first render
+        self._fade_alpha = 0.0
+        self.after(10, self._fade_in)
+
+    def _fade_in(self):
+        """Simulate a fade-in by briefly highlighting the border."""
+        steps = [ACCENT, ACCENT2, BORDER]
+        def step(i=0):
+            if i < len(steps):
+                try:
+                    self.configure(border_color=steps[i])
+                except Exception:
+                    pass
+                self.after(120, lambda: step(i + 1))
+        step()
+
     def update_data(self, pct: float, sub: str = ""):
-        self.val_label.configure(
-            text=f"{pct:.1f}{self.unit}",
-            text_color=severity_color(pct) if self.unit == "%" else TEXT_PRI
-        )
+        color = severity_color(pct) if self.unit == "%" else TEXT_PRI
+        self.val_label.set_value(pct, color=color)
         self.sub_label.configure(text=sub)
         self.gauge.set(pct)
         self.spark._draw()
+        # Trigger glow when value jumps by more than 15 points
+        if abs(pct - self._prev_val) > 15:
+            self.spark.pulse_glow()
+        self._prev_val = pct
 
 
 # ── Detail info panel (right side) ──────────────────────────────────────────
@@ -196,8 +296,14 @@ class InfoPanel(ctk.CTkScrollableFrame):
                          scrollbar_button_color=BORDER,
                          scrollbar_button_hover_color=ACCENT, **kw)
         self._rows: dict[str, ctk.CTkLabel] = {}
+        # FIX: track which section headers have been created to avoid duplicates
+        self._sections: set[str] = set()
 
     def set_section(self, title: str):
+        # FIX: only create section header widgets once
+        if title in self._sections:
+            return
+        self._sections.add(title)
         ctk.CTkLabel(self, text=title,
                      font=("Segoe UI Variable", 11, "bold"),
                      text_color=ACCENT2).pack(anchor="w", padx=4, pady=(10, 2))
@@ -245,7 +351,6 @@ class ProcessTable(ctk.CTkFrame):
             scrollbar_button_hover_color=ACCENT
         )
         self.rows_frame.pack(fill="x", padx=14, pady=(0, 10))
-        self._row_labels: list = []
 
     def refresh(self, procs):
         for w in self.rows_frame.winfo_children():
@@ -302,20 +407,33 @@ class HardwareMonApp(ctk.CTk):
         self.minsize(900, 580)
         self.configure(fg_color=BG_BASE)
 
-        # Remove default title bar on Windows for cleaner look
-        # (keep default to avoid complications with PyInstaller)
-
         # ring buffers
         self.cpu_buf  = RingBuffer(60)
         self.mem_buf  = RingBuffer(60)
         self.disk_buf = RingBuffer(60)
         self.net_buf  = RingBuffer(60)
+        # FIX: dedicated buffers for cards that had anonymous RingBuffer() instances
+        self.swap_buf     = RingBuffer(60)
+        self.net_send_buf = RingBuffer(60)
+        self.net_recv_buf = RingBuffer(60)
 
         self._current_page = "Overview"
         self._nav_buttons: dict[str, NavButton] = {}
         self._pages: dict[str, ctk.CTkFrame] = {}
-        self._prev_net = psutil.net_io_counters()
+        self._cpu_name = get_cpu_name()   # cached — only needs reading once
+        self._prev_net      = psutil.net_io_counters()
         self._prev_net_time = time.time()
+        # FIX: track previous disk I/O counters to compute a rate, not cumulative total
+        self._prev_disk     = psutil.disk_io_counters()
+        self._prev_disk_time = time.time()
+
+        # FIX: cache for disk partitions — only refresh every 10 ticks
+        self._disk_parts_cache: list = []
+        self._disk_parts_tick  = 0
+
+        # FIX: cache thread count — expensive to compute every tick
+        self._thread_count   = 0
+        self._thread_tick    = 0
 
         self._build_layout()
         self._build_sidebar()
@@ -331,11 +449,11 @@ class HardwareMonApp(ctk.CTk):
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(1, weight=1)
 
-        # top bar
         topbar = ctk.CTkFrame(self, fg_color=BG_CARD, corner_radius=0,
                               border_width=0, height=48)
         topbar.grid(row=0, column=0, columnspan=2, sticky="ew")
         topbar.grid_propagate(False)
+        self.topbar_ref = topbar
 
         ctk.CTkLabel(topbar, text="⬡  HardwareMon",
                      font=("Segoe UI Variable", 14, "bold"),
@@ -351,17 +469,19 @@ class HardwareMonApp(ctk.CTk):
                                        text_color=GREEN)
         self.status_dot.pack(side="right", padx=8)
 
-        # sidebar
         self.sidebar = ctk.CTkFrame(self, fg_color=BG_SIDE, corner_radius=0,
                                     border_width=0, width=188)
         self.sidebar.grid(row=1, column=0, sticky="nsew")
         self.sidebar.grid_propagate(False)
 
-        # content area
         self.content = ctk.CTkFrame(self, fg_color="transparent", corner_radius=0)
         self.content.grid(row=1, column=1, sticky="nsew")
         self.content.grid_columnconfigure(0, weight=1)
         self.content.grid_rowconfigure(0, weight=1)
+
+        # Start the pulsing LIVE dot
+        self._live_pulse_state = 0
+        self.after(800, self._pulse_live_dot)
 
     # ── Sidebar ──────────────────────────────────────────────────────────────
     def _build_sidebar(self):
@@ -378,13 +498,47 @@ class HardwareMonApp(ctk.CTk):
             btn.pack(fill="x", padx=10, pady=2)
             self._nav_buttons[page] = btn
 
-    # version label at bottom
         ctk.CTkLabel(
             self.sidebar,
             text=f"HardwareMon\nv{VERSION} Windows",
             font=("Segoe UI Variable", 9),
             text_color=TEXT_SEC
-        ).pack(side="bottom", pady=16)        
+        ).pack(side="bottom", pady=16)
+
+    def _pulse_live_dot(self):
+        """Alternate the LIVE dot between bright green and dim to simulate a pulse."""
+        colors = [GREEN, "#1A6640", GREEN, "#1A6640", GREEN]
+        def step(i=0):
+            if i < len(colors):
+                try:
+                    self.status_dot.configure(text_color=colors[i])
+                except Exception:
+                    pass
+                self.after(180, lambda: step(i + 1))
+            else:
+                self.after(2200, self._pulse_live_dot)
+        step()
+
+    def _shimmer_bar(self, bar: ctk.CTkProgressBar):
+        """Sweep a progress bar from 0→1→0 as a startup eye-candy animation."""
+        val = [0.0]
+        going_up = [True]
+        def tick():
+            if going_up[0]:
+                val[0] = min(val[0] + 0.07, 1.0)
+                if val[0] >= 1.0:
+                    going_up[0] = False
+            else:
+                val[0] = max(val[0] - 0.07, 0.0)
+                if val[0] <= 0.0:
+                    return   # done
+            try:
+                bar.set(val[0])
+                bar.configure(progress_color=ACCENT2)
+            except Exception:
+                return
+            self.after(18, tick)
+        tick()
 
     # ── Page builder ─────────────────────────────────────────────────────────
     def _build_pages(self):
@@ -406,6 +560,20 @@ class HardwareMonApp(ctk.CTk):
         for n, btn in self._nav_buttons.items():
             btn.set_active(n == name)
         self._pages[name].tkraise()
+        # Brief border-flash on the content area to signal page switch
+        self._flash_content()
+
+    def _flash_content(self):
+        """Flash the topbar accent briefly when switching pages."""
+        seq = [ACCENT2, ACCENT, BG_CARD]
+        def step(i=0):
+            if i < len(seq):
+                try:
+                    self.topbar_ref.configure(fg_color=seq[i])
+                except Exception:
+                    pass
+                self.after(60, lambda: step(i + 1))
+        step()
 
     # ── Overview page ────────────────────────────────────────────────────────
     def _build_overview(self):
@@ -418,10 +586,11 @@ class HardwareMonApp(ctk.CTk):
                      text_color=TEXT_PRI).grid(row=0, column=0, columnspan=4,
                                                sticky="w", padx=20, pady=(16, 8))
 
-        self.ov_cpu  = MetricCard(p, "CPU Usage",    "🖥️", self.cpu_buf,  color=ACCENT2)
-        self.ov_mem  = MetricCard(p, "Memory",       "💾", self.mem_buf,  color="#A78BFA")
-        self.ov_disk = MetricCard(p, "Disk I/O",     "💿", self.disk_buf, color=ORANGE)
-        self.ov_net  = MetricCard(p, "Network",      "🌐", self.net_buf,  color=GREEN,
+        self.ov_cpu  = MetricCard(p, "CPU Usage", "🖥️", self.cpu_buf,  color=ACCENT2)
+        self.ov_mem  = MetricCard(p, "Memory",    "💾", self.mem_buf,  color="#A78BFA")
+        self.ov_disk = MetricCard(p, "Disk I/O",  "💿", self.disk_buf, color=ORANGE,
+                                  unit=" MB/s")
+        self.ov_net  = MetricCard(p, "Network",   "🌐", self.net_buf,  color=GREEN,
                                   unit=" KB/s")
 
         for i, card in enumerate([self.ov_cpu, self.ov_mem,
@@ -429,7 +598,6 @@ class HardwareMonApp(ctk.CTk):
             card.grid(row=1, column=i, padx=(12 if i == 0 else 6, 6 if i < 3 else 12),
                       pady=(0, 12), sticky="nsew")
 
-        # process table below
         self.proc_table = ProcessTable(p)
         self.proc_table.grid(row=2, column=0, columnspan=4,
                              padx=12, pady=(0, 12), sticky="ew")
@@ -446,7 +614,6 @@ class HardwareMonApp(ctk.CTk):
                      text_color=TEXT_PRI).grid(row=0, column=0, columnspan=2,
                                                sticky="w", padx=20, pady=(16, 8))
 
-        # per-core grid
         self.cpu_cores_frame = ctk.CTkFrame(p, fg_color=BG_CARD,
                                             corner_radius=12,
                                             border_width=1, border_color=BORDER)
@@ -484,8 +651,9 @@ class HardwareMonApp(ctk.CTk):
                                    text_color=TEXT_SEC)
             pct_lbl.pack(side="left")
             self._core_bars.append((bar, pct_lbl))
+            # Startup shimmer: sweep each bar to 100% then back to 0 staggered
+            self.after(300 + i * 40, lambda b=bar: self._shimmer_bar(b))
 
-        # info panel
         self.cpu_info = InfoPanel(p)
         self.cpu_info.grid(row=1, column=1, padx=(0, 12),
                            pady=(0, 12), sticky="nsew")
@@ -502,14 +670,12 @@ class HardwareMonApp(ctk.CTk):
                      text_color=TEXT_PRI).grid(row=0, column=0, columnspan=2,
                                                sticky="w", padx=20, pady=(16, 8))
 
-        self.ram_card  = MetricCard(p, "RAM", "💾", self.mem_buf, color="#A78BFA")
-        self.swap_card = MetricCard(p, "Page File", "📄",
-                                    RingBuffer(), color="#F472B6", unit="%")
+        # FIX: use dedicated swap_buf so the sparkline has real history
+        self.ram_card  = MetricCard(p, "RAM",       "💾", self.mem_buf,  color="#A78BFA")
+        self.swap_card = MetricCard(p, "Page File",  "📄", self.swap_buf, color="#F472B6", unit="%")
         self.ram_card.grid( row=1, column=0, padx=(12, 6), pady=(0, 12), sticky="nsew")
         self.swap_card.grid(row=1, column=1, padx=(6, 12), pady=(0, 12), sticky="nsew")
         self.mem_info = InfoPanel(p)
-        ctk.CTkFrame(p, fg_color="transparent").grid(row=2, column=0,
-                                                     columnspan=2, sticky="nsew")
         self.mem_info.grid(row=2, column=0, columnspan=2,
                            padx=12, pady=(0, 12), sticky="ew")
 
@@ -544,10 +710,11 @@ class HardwareMonApp(ctk.CTk):
                      text_color=TEXT_PRI).grid(row=0, column=0, columnspan=2,
                                                sticky="w", padx=20, pady=(16, 8))
 
+        # FIX: use dedicated buffers so sparklines accumulate real history
         self.net_send_card = MetricCard(p, "Upload",   "⬆️",
-                                        RingBuffer(), color=ORANGE, unit=" KB/s")
+                                        self.net_send_buf, color=ORANGE, unit=" KB/s")
         self.net_recv_card = MetricCard(p, "Download", "⬇️",
-                                        RingBuffer(), color=GREEN,  unit=" KB/s")
+                                        self.net_recv_buf, color=GREEN,  unit=" KB/s")
         self.net_send_card.grid(row=1, column=0, padx=(12, 6),
                                 pady=(0, 12), sticky="nsew")
         self.net_recv_card.grid(row=1, column=1, padx=(6, 12),
@@ -572,7 +739,6 @@ class HardwareMonApp(ctk.CTk):
         self.sys_info.grid(row=1, column=0, padx=12,
                            pady=(0, 12), sticky="nsew")
 
-        # Populate static system info once
         self._populate_system_info()
 
     def _populate_system_info(self):
@@ -584,7 +750,7 @@ class HardwareMonApp(ctk.CTk):
         inf.set_row("Node",     platform.node())
 
         inf.set_section("Processor")
-        inf.set_row("CPU",           platform.processor()[:60] or "Unknown")
+        inf.set_row("CPU",            get_cpu_name()[:64])
         inf.set_row("Physical cores", str(psutil.cpu_count(logical=False)))
         inf.set_row("Logical cores",  str(psutil.cpu_count(logical=True)))
         try:
@@ -616,6 +782,9 @@ class HardwareMonApp(ctk.CTk):
 
     # ── Data loop (background thread) ────────────────────────────────────────
     def _data_loop(self):
+        # Prime cpu_percent so first reading isn't 0.0
+        psutil.cpu_percent(interval=None)
+        psutil.cpu_percent(percpu=True)
         while self._running:
             try:
                 self._collect_and_update()
@@ -634,54 +803,78 @@ class HardwareMonApp(ctk.CTk):
         mem_pct  = vm.percent
         sw       = psutil.swap_memory()
         self.mem_buf.push(mem_pct)
+        # FIX: push swap into its own buffer
+        self.swap_buf.push(sw.percent)
 
-        # ── Disk I/O ─────────────────────────────────────────────────────────
+        # ── Disk I/O (rate, not cumulative) ──────────────────────────────────
+        # FIX: compute MB/s delta between ticks instead of pushing raw totals
+        disk_mb_s = 0.0
         try:
-            dio = psutil.disk_io_counters()
-            disk_mb = (dio.read_bytes + dio.write_bytes) / 1024 / 1024
-            self.disk_buf.push(min(disk_mb, 100))
+            now_d  = time.time()
+            dio    = psutil.disk_io_counters()
+            dt_d   = max(now_d - self._prev_disk_time, 0.001)
+            delta  = (
+                (dio.read_bytes  - self._prev_disk.read_bytes) +
+                (dio.write_bytes - self._prev_disk.write_bytes)
+            )
+            disk_mb_s = max(delta / dt_d / 1024 / 1024, 0.0)
+            self._prev_disk      = dio
+            self._prev_disk_time = now_d
         except Exception:
-            self.disk_buf.push(0)
+            pass
+        self.disk_buf.push(disk_mb_s)
 
         # ── Network ──────────────────────────────────────────────────────────
         now  = time.time()
         net  = psutil.net_io_counters()
         dt   = max(now - self._prev_net_time, 0.001)
-        sent = (net.bytes_sent - self._prev_net.bytes_sent) / dt / 1024
-        recv = (net.bytes_recv - self._prev_net.bytes_recv) / dt / 1024
+        sent = max((net.bytes_sent - self._prev_net.bytes_sent) / dt / 1024, 0.0)
+        recv = max((net.bytes_recv - self._prev_net.bytes_recv) / dt / 1024, 0.0)
         self._prev_net      = net
         self._prev_net_time = now
-        self.net_buf.push(min(recv, 1000))
+        self.net_buf.push(recv)
+        # FIX: push into dedicated send/recv buffers
+        self.net_send_buf.push(sent)
+        self.net_recv_buf.push(recv)
 
-        # ── Processes ────────────────────────────────────────────────────────
+        # ── Processes (lightweight) ───────────────────────────────────────────
+        # FIX: avoid cpu_percent per-process on every tick (too slow); collect
+        # only what we need and guard all attribute access
         procs = []
         for proc in psutil.process_iter(["pid", "name", "cpu_percent",
                                           "memory_info"]):
             try:
+                info = proc.info
                 procs.append({
-                    "pid":  proc.info["pid"],
-                    "name": proc.info["name"] or "—",
-                    "cpu":  proc.info["cpu_percent"] or 0,
-                    "mem":  (proc.info["memory_info"].rss / 1024 / 1024
-                             if proc.info["memory_info"] else 0)
+                    "pid":  info["pid"],
+                    "name": info["name"] or "—",
+                    "cpu":  info["cpu_percent"] or 0.0,
+                    "mem":  (info["memory_info"].rss / 1024 / 1024
+                             if info["memory_info"] else 0.0)
                 })
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 pass
         procs.sort(key=lambda x: x["cpu"], reverse=True)
 
-        # ── Disk partitions ──────────────────────────────────────────────────
-        parts = []
-        for part in psutil.disk_partitions():
-            try:
-                usage = psutil.disk_usage(part.mountpoint)
-                parts.append({"device":     part.device,
-                              "mountpoint": part.mountpoint,
-                              "fstype":     part.fstype,
-                              "total":      usage.total,
-                              "used":       usage.used,
-                              "pct":        usage.percent})
-            except Exception:
-                pass
+        # ── Disk partitions (cached — only refresh every 10 ticks) ───────────
+        # FIX: rebuilding partition widgets every second causes visible stutter
+        self._disk_parts_tick += 1
+        if self._disk_parts_tick >= 10 or not self._disk_parts_cache:
+            parts = []
+            for part in psutil.disk_partitions():
+                try:
+                    usage = psutil.disk_usage(part.mountpoint)
+                    parts.append({"device":     part.device,
+                                  "mountpoint": part.mountpoint,
+                                  "fstype":     part.fstype,
+                                  "total":      usage.total,
+                                  "used":       usage.used,
+                                  "pct":        usage.percent})
+                except Exception:
+                    pass
+            self._disk_parts_cache = parts
+            self._disk_parts_tick  = 0
+        parts = self._disk_parts_cache
 
         # ── CPU freq ─────────────────────────────────────────────────────────
         try:
@@ -689,11 +882,22 @@ class HardwareMonApp(ctk.CTk):
         except Exception:
             freq = None
 
-        # ── Schedule UI update on main thread ─────────────────────────────────
+        # ── Thread count (cached every 5 ticks — iterating all threads is slow)
+        self._thread_tick += 1
+        if self._thread_tick >= 5:
+            try:
+                self._thread_count = sum(
+                    p.num_threads()
+                    for p in psutil.process_iter()
+                )
+            except Exception:
+                pass
+            self._thread_tick = 0
+
         self.after(0, self._update_ui,
                    cpu_pct, core_pcts, mem_pct, vm, sw,
-                   sent, recv, net, procs, parts, freq)
-
+                   sent, recv, net, procs, parts, freq,
+                   disk_mb_s)
         self.after(0, self._update_clock)
 
     def _update_clock(self):
@@ -702,15 +906,16 @@ class HardwareMonApp(ctk.CTk):
         )
 
     def _update_ui(self, cpu_pct, core_pcts, mem_pct, vm, sw,
-                   sent, recv, net, procs, parts, freq):
+                   sent, recv, net, procs, parts, freq, disk_mb_s):
 
         # ── Overview ─────────────────────────────────────────────────────────
         self.ov_cpu.update_data(cpu_pct,
             f"{psutil.cpu_count(logical=True)} cores · {freq.current:.0f} MHz" if freq else "")
         self.ov_mem.update_data(mem_pct,
             f"{self._fmt_bytes(vm.used)} / {self._fmt_bytes(vm.total)}")
-        self.ov_disk.update_data(min(self.disk_buf.last(), 100),
-            f"{self.disk_buf.last():.1f} MB/s")
+        # FIX: show actual MB/s rate; clamp gauge to 100 for display only
+        self.ov_disk.update_data(min(disk_mb_s, 100.0),
+            f"{disk_mb_s:.2f} MB/s")
         self.ov_net.update_data(min(recv, 1000),
             f"↑ {sent:.0f}  ↓ {recv:.0f} KB/s")
 
@@ -726,17 +931,17 @@ class HardwareMonApp(ctk.CTk):
                               text_color=severity_color(core_pcts[i]))
 
         inf = self.cpu_info
-        inf.set_section("Current")          # first call creates; subsequent update
-        inf.set_row("Overall",  f"{cpu_pct:.1f}%",  "cpu_overall")
+        inf.set_section("Current")
+        inf.set_row("Overall",   f"{cpu_pct:.1f}%",         "cpu_overall")
         if freq:
             inf.set_row("Frequency", f"{freq.current:.0f} MHz", "cpu_freq")
-        inf.set_row("Processes", str(len(psutil.pids())), "cpu_procs")
-        inf.set_row("Threads",
-                    str(sum(p.num_threads() for p in psutil.process_iter()
-                            if True)), "cpu_threads")
+        inf.set_row("Processes",  str(len(psutil.pids())),   "cpu_procs")
+        inf.set_row("Threads",    str(self._thread_count),   "cpu_threads")
+        inf.set_section("Processor")
+        inf.set_row("Name", self._cpu_name[:52], "cpu_name")
 
         # ── Memory detail ────────────────────────────────────────────────────
-        self.ram_card.update_data( mem_pct,
+        self.ram_card.update_data(mem_pct,
             f"{self._fmt_bytes(vm.used)} / {self._fmt_bytes(vm.total)}")
         self.swap_card.update_data(sw.percent,
             f"{self._fmt_bytes(sw.used)} / {self._fmt_bytes(sw.total)}")
@@ -751,30 +956,32 @@ class HardwareMonApp(ctk.CTk):
         mi.set_row("Total", self._fmt_bytes(sw.total), "sw_total")
         mi.set_row("Used",  self._fmt_bytes(sw.used),  "sw_used")
 
-        # ── Disk detail ──────────────────────────────────────────────────────
-        for w in self.disk_partitions_frame.winfo_children():
-            w.destroy()
-        for part in parts:
-            card = ctk.CTkFrame(self.disk_partitions_frame, fg_color=BG_CARD,
-                                corner_radius=10, border_width=1, border_color=BORDER)
-            card.pack(fill="x", pady=4)
-            hdr = ctk.CTkFrame(card, fg_color="transparent")
-            hdr.pack(fill="x", padx=12, pady=(8, 0))
-            ctk.CTkLabel(hdr, text=f"💿  {part['device']}  ({part['fstype']})",
-                         font=("Segoe UI Variable", 11, "bold"),
-                         text_color=TEXT_PRI).pack(side="left")
-            ctk.CTkLabel(hdr, text=f"{part['pct']:.1f}%",
-                         font=("Segoe UI Variable", 11, "bold"),
-                         text_color=severity_color(part['pct'])).pack(side="right")
-            bar = ctk.CTkProgressBar(card, height=6, corner_radius=3,
-                                     fg_color=BORDER,
-                                     progress_color=severity_color(part['pct']))
-            bar.set(part['pct'] / 100)
-            bar.pack(fill="x", padx=12, pady=4)
-            ctk.CTkLabel(card,
-                         text=f"{self._fmt_bytes(part['used'])} used of {self._fmt_bytes(part['total'])}",
-                         font=("Segoe UI Variable", 9), text_color=TEXT_SEC
-                         ).pack(anchor="w", padx=12, pady=(0, 8))
+        # ── Disk detail (only rebuild widgets when partition data refreshed) ──
+        # FIX: only destroy/recreate partition widgets when data actually changed
+        if self._disk_parts_tick == 0:
+            for w in self.disk_partitions_frame.winfo_children():
+                w.destroy()
+            for part in parts:
+                card = ctk.CTkFrame(self.disk_partitions_frame, fg_color=BG_CARD,
+                                    corner_radius=10, border_width=1, border_color=BORDER)
+                card.pack(fill="x", pady=4)
+                hdr = ctk.CTkFrame(card, fg_color="transparent")
+                hdr.pack(fill="x", padx=12, pady=(8, 0))
+                ctk.CTkLabel(hdr, text=f"💿  {part['device']}  ({part['fstype']})",
+                             font=("Segoe UI Variable", 11, "bold"),
+                             text_color=TEXT_PRI).pack(side="left")
+                ctk.CTkLabel(hdr, text=f"{part['pct']:.1f}%",
+                             font=("Segoe UI Variable", 11, "bold"),
+                             text_color=severity_color(part['pct'])).pack(side="right")
+                bar = ctk.CTkProgressBar(card, height=6, corner_radius=3,
+                                         fg_color=BORDER,
+                                         progress_color=severity_color(part['pct']))
+                bar.set(part['pct'] / 100)
+                bar.pack(fill="x", padx=12, pady=4)
+                ctk.CTkLabel(card,
+                             text=f"{self._fmt_bytes(part['used'])} used of {self._fmt_bytes(part['total'])}",
+                             font=("Segoe UI Variable", 9), text_color=TEXT_SEC
+                             ).pack(anchor="w", padx=12, pady=(0, 8))
 
         # ── Network detail ────────────────────────────────────────────────────
         self.net_send_card.update_data(min(sent, 1000), f"{sent:.1f} KB/s")
@@ -782,10 +989,10 @@ class HardwareMonApp(ctk.CTk):
 
         ni = self.net_info
         ni.set_section("Totals")
-        ni.set_row("Sent",     self._fmt_bytes(net.bytes_sent),   "n_sent")
-        ni.set_row("Received", self._fmt_bytes(net.bytes_recv),   "n_recv")
-        ni.set_row("Packets ↑", str(net.packets_sent),            "n_psent")
-        ni.set_row("Packets ↓", str(net.packets_recv),            "n_precv")
+        ni.set_row("Sent",      self._fmt_bytes(net.bytes_sent), "n_sent")
+        ni.set_row("Received",  self._fmt_bytes(net.bytes_recv), "n_recv")
+        ni.set_row("Packets ↑", str(net.packets_sent),           "n_psent")
+        ni.set_row("Packets ↓", str(net.packets_recv),           "n_precv")
 
     # ── Helpers ──────────────────────────────────────────────────────────────
     @staticmethod

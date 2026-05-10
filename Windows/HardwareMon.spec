@@ -36,6 +36,6 @@ exe = EXE(
     a.datas,
     [],
     name='HardwareMon',
-    icon=os.path.join(BASE_DIR, 'board.ico'),
+    icon=os.path.join(BASE_DIR, 'hardwaremon.ico'),
     console=False,
 )
