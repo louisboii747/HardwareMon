@@ -77,7 +77,7 @@ sudo dnf install dnf-plugins-core
 ```
 
 ```bash
-sudo dnf config-manager --add-repo https://hardwaremon.pages.dev/yum/hardwaremon.repo
+sudo dnf config-manager addrepo --from-repofile=https://hardwaremon.pages.dev/yum/hardwaremon.repo
 ```
 
 ```bash
