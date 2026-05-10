@@ -110,7 +110,9 @@ jobs:
                 - python3
                 - python3-tkinter
                 - python3-pillow
+                - python3-pillow-tk
                 - python3-psutil
+
 
           contents:
             - src: pkg/bin/hardwaremon
