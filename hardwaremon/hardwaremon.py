@@ -1,15 +1,11 @@
-from email.mime import text
-from logging import root
-import platform
 import os
-import time
+import platform
 import shutil
-import re
-import requests
-import psutil
-import tkinter.messagebox as messagebox
 import subprocess
-from subprocess import run, PIPE
+import time
+
+import psutil
+import requests
 
 VERSION = "dev"
 
@@ -267,7 +263,6 @@ SECTIONS = [system_summary]
 
 
 def system_info():
-    lines = ["=== System Information ==="]
     try:
         uptime_seconds = time.time() - psutil.boot_time()
         info = [
@@ -282,7 +277,7 @@ def system_info():
             f"Uptime: {uptime_seconds / 3600:.2f} hours",
             f"User: {os.getlogin()}",
             f"Display Size: {shutil.get_terminal_size().columns}x{shutil.get_terminal_size().lines}",
-            f"Filesystem: {platform.system()}"
+            f"Filesystem: {platform.system()}",
             f"Resizable Bar: {'Supported' if os.path.exists('/sys/bus/pci/devices/0000:00:01.0/resizable_bar') else 'Not Supported'}",
         ]
 

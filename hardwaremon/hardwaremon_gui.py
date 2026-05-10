@@ -1,11 +1,11 @@
 # GUI CODE FOR HARDWAREMON
-import tkinter as tk
-from tkinter import ttk
-import psutil
+import os
 import platform
 import subprocess
-from PIL import Image, ImageTk, ImageOps
-import os
+import tkinter as tk
+
+import psutil
+from PIL import Image, ImageTk
 
 VERSION = "dev"
 
@@ -111,7 +111,7 @@ def wifi_info():
                 lines.append("No data available for this interface")
         else:
             lines.append("No active Wi-Fi interface found")
-    except Exception as e:
+    except Exception:
         lines.append("Error retrieving Wi-Fi information")
     return lines
 
@@ -125,7 +125,7 @@ def ssid_info():
             lines.append(f"Connected SSID: {ssid}")
         else:
             lines.append("Not connected to any Wi-Fi network")
-    except Exception as e:
+    except Exception:
         lines.append(
             "Error retrieving SSID information, ensure iwctl is installed and you have permissions"
         )
@@ -270,7 +270,7 @@ def motherboard_info():
     try:
         out = subprocess.getoutput("cat /sys/devices/virtual/dmi/id/board_name")
         lines.append(out.strip() if out else "Unknown")
-    except:
+    except Exception:
         lines.append("Unknown")
     return lines
 
@@ -280,7 +280,7 @@ def secure_boot():
     try:
         out = subprocess.getoutput("mokutil --sb-state")
         lines.append(out.strip() if out else "Unknown")
-    except:
+    except Exception:
         lines.append("Unknown")
     return lines
 

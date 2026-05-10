@@ -1,11 +1,11 @@
-import customtkinter as ctk
-import psutil
 import platform
+import sys
 import threading
 import time
-import os
-import sys
 from datetime import datetime
+
+import customtkinter as ctk
+import psutil
 
 VERSION = "dev"
 
