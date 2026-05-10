@@ -281,7 +281,7 @@ jobs:
           DefaultDirName={autopf}\HardwareMon
           DefaultGroupName=HardwareMon
           OutputDir=installer
-          OutputBaseFilename=HardwareMonSetup
+          OutputBaseFilename=HardwareMonSetup-$version
           SetupIconFile=Windows\board.ico
           Compression=lzma
           SolidCompression=yes
@@ -311,7 +311,7 @@ jobs:
       - name: Upload installer to release
         uses: softprops/action-gh-release@v2
         with:
-          files: installer/HardwareMonSetup.exe
+          files: installer/HardwareMonSetup-*.exe
 
   # ─────────────────────────────────────────────────────────────────
   # Winget submission
@@ -333,5 +333,5 @@ jobs:
         with:
           identifier: LouisHinchliffe.HardwareMon
           version: ${{ steps.version.outputs.version }}
-          installers-regex: 'HardwareMonSetup\.exe$'
+          installers-regex: 'HardwareMonSetup-.*\.exe$'
           token: ${{ secrets.WINGET_TOKEN }}
