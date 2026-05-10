@@ -1,121 +1,364 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const HardwareMonApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class HardwareMonApp extends StatelessWidget {
+  const HardwareMonApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+      debugShowCheckedModeBanner: false,
+      title: 'HardwareMon',
+      theme: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: const Color(0xFF0D1117),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const HomePage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<HomePage> createState() => _HomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _HomePageState extends State<HomePage> {
+  int selectedPage = 0;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  final List<Widget> pages = [
+    const DashboardPage(),
+    const SettingsPage(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Row(
+        children: [
+          Container(
+            width: 90,
+            color: const Color(0xFF11151C),
+            child: Column(
+              children: [
+                const SizedBox(height: 30),
+
+                const Icon(
+                  Icons.memory,
+                  size: 40,
+                ),
+
+                const SizedBox(height: 40),
+
+                IconButton(
+                  icon: Icon(
+                    Icons.dashboard,
+                    size: 30,
+                    color: selectedPage == 0
+                        ? Colors.cyanAccent
+                        : Colors.white70,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      selectedPage = 0;
+                    });
+                  },
+                ),
+
+                const SizedBox(height: 20),
+
+                IconButton(
+                  icon: Icon(
+                    Icons.settings,
+                    size: 30,
+                    color: selectedPage == 1
+                        ? Colors.cyanAccent
+                        : Colors.white70,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      selectedPage = 1;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          Expanded(
+            child: pages[selectedPage],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class DashboardPage extends StatefulWidget {
+  const DashboardPage({super.key});
+
+  @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  int cpuUsage = 0;
+  int ramUsage = 0;
+  int diskUsage = 0;
+
+  late Timer timer;
+
+  Future<void> fetchStats() async {
+    try {
+      final result = await Process.run(
+        'python',
+        ['../hardwaremon/api.py'],
+      );
+
+      final data = jsonDecode(result.stdout);
+
+      setState(() {
+        cpuUsage = data['cpu'];
+        ramUsage = data['ram'];
+        diskUsage = data['disk'];
+      });
+    } catch (e) {
+      print("Error fetching stats: $e");
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    fetchStats();
+
+    timer = Timer.periodic(
+      const Duration(seconds: 2),
+      (_) => fetchStats(),
+    );
+  }
+
+  @override
+  void dispose() {
+    timer.cancel();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+    return Padding(
+      padding: const EdgeInsets.all(30),
+
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+
+        children: [
+          const Text(
+            "HardwareMon",
+            style: TextStyle(
+              fontSize: 38,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          const Text(
+            "Modern Hardware Monitoring",
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 18,
+            ),
+          ),
+
+          const SizedBox(height: 40),
+
+          Expanded(
+            child: GridView.count(
+              crossAxisCount: 2,
+              crossAxisSpacing: 20,
+              mainAxisSpacing: 20,
+              childAspectRatio: 2.2,
+
+              children: [
+                StatCard(
+                  title: "CPU Usage",
+                  value: "$cpuUsage%",
+                  icon: Icons.memory,
+                ),
+
+                StatCard(
+                  title: "RAM Usage",
+                  value: "$ramUsage%",
+                  icon: Icons.storage,
+                ),
+
+                StatCard(
+                  title: "Disk Usage",
+                  value: "$diskUsage%",
+                  icon: Icons.sd_storage,
+                ),
+
+                const StatCard(
+                  title: "Backend",
+                  value: "Connected",
+                  icon: Icons.check_circle,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
+    );
+  }
+}
+
+class StatCard extends StatefulWidget {
+  final String title;
+  final String value;
+  final IconData icon;
+
+  const StatCard({
+    super.key,
+    required this.title,
+    required this.value,
+    required this.icon,
+  });
+
+  @override
+  State<StatCard> createState() => _StatCardState();
+}
+
+class _StatCardState extends State<StatCard> {
+  bool hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) {
+        setState(() {
+          hovered = true;
+        });
+      },
+
+      onExit: (_) {
+        setState(() {
+          hovered = false;
+        });
+      },
+
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+
+        transform: Matrix4.identity()
+          ..scale(hovered ? 1.03 : 1.0),
+
+        padding: const EdgeInsets.all(20),
+
+        decoration: BoxDecoration(
+          color: const Color(0xFF161B22),
+
+          borderRadius: BorderRadius.circular(20),
+
+          border: Border.all(
+            color: hovered
+                ? Colors.cyanAccent
+                : Colors.white10,
+            width: 1.5,
+          ),
+
+          boxShadow: hovered
+              ? [
+                  BoxShadow(
+                    color: Colors.cyanAccent.withOpacity(0.25),
+                    blurRadius: 20,
+                    spreadRadius: 1,
+                  ),
+                ]
+              : [],
+        ),
+
+        child: Row(
           children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+            Icon(
+              widget.icon,
+              size: 40,
+              color: hovered
+                  ? Colors.cyanAccent
+                  : Colors.white,
+            ),
+
+            const SizedBox(width: 20),
+
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+
+              children: [
+                Text(
+                  widget.title,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 16,
+                  ),
+                ),
+
+                const SizedBox(height: 5),
+
+                Text(
+                  widget.value,
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+    );
+  }
+}
+
+class SettingsPage extends StatelessWidget {
+  const SettingsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.all(30),
+
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+
+        children: [
+          Text(
+            "Settings",
+            style: TextStyle(
+              fontSize: 38,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          SizedBox(height: 20),
+
+          Text(
+            "HardwareMon settings will appear here.",
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 18,
+            ),
+          ),
+        ],
       ),
     );
   }
