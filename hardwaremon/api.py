@@ -1,10 +1,10 @@
-from flask import Flask, jsonify
-from flask_cors import CORS
-
-import psutil
-import GPUtil
 import platform
 import time
+
+import GPUtil
+import psutil
+from flask import Flask, jsonify
+from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
@@ -58,6 +58,7 @@ def stats():
             .strip()
         )
     except:
+        exception = "Unknown CPU"
         cpu_name = platform.processor()
 
     ram_total = round(
