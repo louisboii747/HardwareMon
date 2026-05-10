@@ -107,6 +107,7 @@ sudo apt update && sudo apt upgrade hardwaremon
 ## DNF
 
 ```bash
+sudo dnf upgrade --refresh
 sudo dnf upgrade hardwaremon
 ```
 
