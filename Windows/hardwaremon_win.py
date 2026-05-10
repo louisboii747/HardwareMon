@@ -500,7 +500,7 @@ class HardwareMonApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text=f"HardwareMon\nv{VERSION} Windows",
+            text=f"HardwareMon\n{VERSION} Windows",
             font=("Segoe UI Variable", 9),
             text_color=TEXT_SEC
         ).pack(side="bottom", pady=16)
