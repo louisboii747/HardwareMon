@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:fl_chart/fl_chart.dart';
-import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
 String cpuName = "Loading...";
 String gpuName = "Loading...";
@@ -152,7 +153,9 @@ class _HomePageState extends State<HomePage> {
         icon: Icon(
           icon,
           size: 30,
-          color: active ? Colors.cyanAccent : Colors.white70,
+          color: active
+              ? Colors.cyanAccent
+              : Colors.white70,
         ),
       ),
     );
@@ -177,16 +180,18 @@ class _DashboardPageState extends State<DashboardPage> {
   int gpuTemp = 0;
 
   String currentTime = "";
-  String uptime = "";
+  String uptime = "Online";
 
   List<double> cpuHistory = [];
   List<double> ramHistory = [];
   List<double> networkHistory = [];
 
-  List<List<double>> coreHistories = [];
   List<int> coreUsages = [];
+  List<List<double>> coreHistories = [];
 
   late Timer timer;
+
+  Process? backendProcess;
 
   Color getTempColor(int temp) {
     if (temp >= 85) {
@@ -200,97 +205,137 @@ class _DashboardPageState extends State<DashboardPage> {
     return Colors.greenAccent;
   }
 
-  Future<void> fetchStats() async {
-  try {
-    final response = await http.get(
-      Uri.parse('http://127.0.0.1:5000/stats'),
-    );
+  Future<void> startBackend() async {
+    try {
+      backendProcess = await Process.start(
+        'python3',
+        ['../hardwaremon/api.py'],
+        mode: ProcessStartMode.detached,
+      );
 
-    final data = jsonDecode(response.body);
+      print("Backend started");
 
-    if (!mounted) return;
-
-    setState(() {
-      final cores = (data['cores'] as List)
-          .map((e) => (e as num).toInt())
-          .toList();
-
-      cpuUsage = data['cpu'] ?? 0;
-      coreUsages = cores;
-
-      ramUsage = data['ram'] ?? 0;
-      diskUsage = data['disk'] ?? 0;
-
-      cpuName = data['cpu_name'] ?? "Unknown CPU";
-      gpuName = data['gpu_name'] ?? "Unknown GPU";
-
-      ramTotal = data['ram_total'] ?? 0;
-
-      uploadSpeed =
-          (data['upload'] ?? 0).toDouble();
-
-      downloadSpeed =
-          (data['download'] ?? 0).toDouble();
-
-      gpuTemp = data['gpu_temp'] ?? 0;
-
-      currentTime =
-          DateFormat('HH:mm:ss').format(DateTime.now());
-
-      uptime = "Online";
-
-      cpuHistory.add(cpuUsage.toDouble());
-      ramHistory.add(ramUsage.toDouble());
-      networkHistory.add(downloadSpeed);
-
-      while (
-          coreHistories.length < coreUsages.length) {
-        coreHistories.add([]);
-      }
-
-      for (int i = 0;
-          i < coreUsages.length;
-          i++) {
-        coreHistories[i]
-            .add(coreUsages[i].toDouble());
-
-        if (coreHistories[i].length > 30) {
-          coreHistories[i].removeAt(0);
-        }
-      }
-
-      if (cpuHistory.length > 30) {
-        cpuHistory.removeAt(0);
-      }
-
-      if (ramHistory.length > 30) {
-        ramHistory.removeAt(0);
-      }
-
-      if (networkHistory.length > 30) {
-        networkHistory.removeAt(0);
-      }
-    });
-  } catch (e) {
-    print("API error: $e");
+      await Future.delayed(
+        const Duration(seconds: 2),
+      );
+    } catch (e) {
+      print("Backend failed: $e");
+    }
   }
-}
+
+  Future<void> fetchStats() async {
+    try {
+      final response = await http.get(
+        Uri.parse('http://127.0.0.1:5000/stats'),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (!mounted) return;
+
+      setState(() {
+        final cores = (data['cores'] as List)
+            .map((e) => (e as num).toInt())
+            .toList();
+
+        cpuUsage = data['cpu'] ?? 0;
+        coreUsages = cores;
+
+        ramUsage = data['ram'] ?? 0;
+        diskUsage = data['disk'] ?? 0;
+
+        cpuName =
+            data['cpu_name'] ?? "Unknown CPU";
+
+        gpuName =
+            data['gpu_name'] ?? "Unknown GPU";
+
+        ramTotal = data['ram_total'] ?? 0;
+
+        uploadSpeed =
+            (data['upload'] ?? 0).toDouble();
+
+        downloadSpeed =
+            (data['download'] ?? 0).toDouble();
+
+        gpuTemp = data['gpu_temp'] ?? 0;
+
+        currentTime =
+            DateFormat('HH:mm:ss').format(
+          DateTime.now(),
+        );
+
+        cpuHistory.add(
+          cpuUsage.toDouble(),
+        );
+
+        ramHistory.add(
+          ramUsage.toDouble(),
+        );
+
+        networkHistory.add(
+          downloadSpeed,
+        );
+
+        while (
+            coreHistories.length <
+                coreUsages.length) {
+          coreHistories.add([]);
+        }
+
+        for (
+          int i = 0;
+          i < coreUsages.length;
+          i++
+        ) {
+          coreHistories[i].add(
+            coreUsages[i].toDouble(),
+          );
+
+          if (
+              coreHistories[i].length >
+                  30) {
+            coreHistories[i].removeAt(0);
+          }
+        }
+
+        if (cpuHistory.length > 30) {
+          cpuHistory.removeAt(0);
+        }
+
+        if (ramHistory.length > 30) {
+          ramHistory.removeAt(0);
+        }
+
+        if (networkHistory.length > 30) {
+          networkHistory.removeAt(0);
+        }
+      });
+    } catch (e) {
+      print("API error: $e");
+    }
+  }
 
   @override
   void initState() {
     super.initState();
 
-    fetchStats();
+    startBackend().then((_) {
+      fetchStats();
 
-    timer = Timer.periodic(
-      const Duration(seconds: 2),
-      (_) => fetchStats(),
-    );
+      timer = Timer.periodic(
+        const Duration(seconds: 2),
+        (_) => fetchStats(),
+      );
+    });
   }
 
   @override
   void dispose() {
     timer.cancel();
+
+    backendProcess?.kill();
+
     super.dispose();
   }
 
@@ -304,9 +349,12 @@ class _DashboardPageState extends State<DashboardPage> {
         LineChartData(
           minY: 0,
           maxY: 100,
-          gridData: const FlGridData(show: false),
-          titlesData: const FlTitlesData(show: false),
-          borderData: FlBorderData(show: false),
+          gridData:
+              const FlGridData(show: false),
+          titlesData:
+              const FlTitlesData(show: false),
+          borderData:
+              FlBorderData(show: false),
           lineBarsData: [
             LineChartBarData(
               spots: data
@@ -323,7 +371,8 @@ class _DashboardPageState extends State<DashboardPage> {
               curveSmoothness: 0.35,
               color: color,
               barWidth: 2,
-              dotData: const FlDotData(show: false),
+              dotData:
+                  const FlDotData(show: false),
               belowBarData: BarAreaData(
                 show: true,
                 color: color.withOpacity(0.10),
@@ -340,329 +389,345 @@ class _DashboardPageState extends State<DashboardPage> {
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
-          TweenAnimationBuilder(
-            tween: Tween(begin: 0.0, end: 1.0),
-            duration: const Duration(milliseconds: 600),
-            builder: (context, value, child) {
-              return Opacity(
-                opacity: value,
-                child: Transform.translate(
-                  offset: Offset(0, 15 * (1 - value)),
-                  child: child,
-                ),
-              );
-            },
-            child: Row(
-              mainAxisAlignment:
-                  MainAxisAlignment.spaceBetween,
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-              children: [
-                Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "HardwareMon",
-                      style: TextStyle(
-                        fontSize: 34,
-                        fontWeight: FontWeight.bold,
-                      ),
+          Row(
+            mainAxisAlignment:
+                MainAxisAlignment.spaceBetween,
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
+            children: [
+              Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "HardwareMon",
+                    style: TextStyle(
+                      fontSize: 34,
+                      fontWeight:
+                          FontWeight.bold,
                     ),
+                  ),
 
-                    const SizedBox(height: 6),
+                  const SizedBox(height: 6),
 
-                    Text(
-                      "$cpuName • $gpuName • ${ramTotal} GB RAM",
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
+                  Text(
+                    "$cpuName • $gpuName • ${ramTotal} GB RAM",
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 14,
                     ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
 
-                Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      currentTime,
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
+              Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    currentTime,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight:
+                          FontWeight.bold,
                     ),
+                  ),
 
-                    const SizedBox(height: 6),
+                  const SizedBox(height: 6),
 
-                    Text(
-                      uptime,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
+                  Text(
+                    uptime,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 14,
                     ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
+            ],
           ),
 
           const SizedBox(height: 24),
 
           Expanded(
             child: SingleChildScrollView(
-              child: SizedBox(
-                height: 1250,
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: StatCard(
-                              title: "CPU Usage",
-                              value: "$cpuUsage%",
-                              icon: Icons.memory_rounded,
-                              graph: buildMiniGraph(
-                                cpuHistory,
-                                Colors.cyanAccent,
-                              ),
-                            ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: StatCard(
+                          title: "CPU Usage",
+                          value: "$cpuUsage%",
+                          icon:
+                              Icons.memory_rounded,
+                          graph: buildMiniGraph(
+                            cpuHistory,
+                            Colors.cyanAccent,
                           ),
-
-                          const SizedBox(width: 18),
-
-                          Expanded(
-                            child: StatCard(
-                              title: "RAM Usage",
-                              value: "$ramUsage%",
-                              icon: Icons.storage_rounded,
-                              graph: buildMiniGraph(
-                                ramHistory,
-                                Colors.greenAccent,
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
 
-                    const SizedBox(height: 18),
+                      const SizedBox(width: 18),
 
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: StatCard(
-                              title: "Disk Usage",
-                              value: "$diskUsage%",
-                              icon: Icons.sd_storage_rounded,
-                              graph: buildMiniGraph(
-                                cpuHistory,
-                                Colors.orangeAccent,
-                              ),
-                            ),
+                      Expanded(
+                        child: StatCard(
+                          title: "RAM Usage",
+                          value: "$ramUsage%",
+                          icon:
+                              Icons.storage_rounded,
+                          graph: buildMiniGraph(
+                            ramHistory,
+                            Colors.greenAccent,
                           ),
-
-                          const SizedBox(width: 18),
-
-                          Expanded(
-                            child: StatCard(
-                              title: "Download",
-                              value:
-                                  "${downloadSpeed.toStringAsFixed(1)} KB/s",
-                              icon: Icons.download_rounded,
-                              graph: buildMiniGraph(
-                                networkHistory,
-                                Colors.blueAccent,
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
+                    ],
+                  ),
 
-                    const SizedBox(height: 18),
+                  const SizedBox(height: 18),
 
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: StatCard(
-                              title: "Upload",
-                              value:
-                                  "${uploadSpeed.toStringAsFixed(1)} KB/s",
-                              icon: Icons.upload_rounded,
-                              graph: buildMiniGraph(
-                                networkHistory,
-                                Colors.purpleAccent,
-                              ),
-                            ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: StatCard(
+                          title: "Disk Usage",
+                          value: "$diskUsage%",
+                          icon: Icons
+                              .sd_storage_rounded,
+                          graph: buildMiniGraph(
+                            cpuHistory,
+                            Colors.orangeAccent,
                           ),
-
-                          const SizedBox(width: 18),
-
-                          Expanded(
-                            child: StatCard(
-                              title: "GPU Temp",
-                              value: "$gpuTemp°C",
-                              icon: Icons.videogame_asset_rounded,
-                              graph: buildMiniGraph(
-                                cpuHistory,
-                                getTempColor(gpuTemp),
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
 
-                    const SizedBox(height: 20),
+                      const SizedBox(width: 18),
 
-                    SizedBox(
-                      height: 140,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: coreUsages.length,
-                        itemBuilder: (context, index) {
-                          return Container(
-                            width: 140,
-                            margin: const EdgeInsets.only(
-                              right: 14,
+                      Expanded(
+                        child: StatCard(
+                          title: "Download",
+                          value:
+                              "${downloadSpeed.toStringAsFixed(1)} KB/s",
+                          icon:
+                              Icons.download_rounded,
+                          graph: buildMiniGraph(
+                            networkHistory,
+                            Colors.blueAccent,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: StatCard(
+                          title: "Upload",
+                          value:
+                              "${uploadSpeed.toStringAsFixed(1)} KB/s",
+                          icon:
+                              Icons.upload_rounded,
+                          graph: buildMiniGraph(
+                            networkHistory,
+                            Colors.purpleAccent,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 18),
+
+                      Expanded(
+                        child: StatCard(
+                          title: "GPU Temp",
+                          value: "$gpuTemp°C",
+                          icon: Icons
+                              .videogame_asset_rounded,
+                          graph: buildMiniGraph(
+                            cpuHistory,
+                            getTempColor(
+                              gpuTemp,
                             ),
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color:
-                                  const Color(0xFF161B22),
-                              borderRadius:
-                                  BorderRadius.circular(22),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  SizedBox(
+                    height: 140,
+                    child: ListView.builder(
+                      scrollDirection:
+                          Axis.horizontal,
+                      itemCount:
+                          coreUsages.length,
+                      itemBuilder:
+                          (context, index) {
+                        return Container(
+                          width: 140,
+                          margin:
+                              const EdgeInsets.only(
+                            right: 14,
+                          ),
+                          padding:
+                              const EdgeInsets.all(
+                            14,
+                          ),
+                          decoration:
+                              BoxDecoration(
+                            color: const Color(
+                              0xFF161B22,
                             ),
-                            child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "Core ${index + 1}",
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 13,
-                                  ),
+                            borderRadius:
+                                BorderRadius
+                                    .circular(
+                              22,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment:
+                                CrossAxisAlignment
+                                    .start,
+                            children: [
+                              Text(
+                                "Core ${index + 1}",
+                                style:
+                                    const TextStyle(
+                                  color: Colors
+                                      .white70,
+                                  fontSize: 13,
                                 ),
+                              ),
 
-                                const SizedBox(height: 8),
+                              const SizedBox(
+                                height: 8,
+                              ),
 
-                                Text(
-                                  "${coreUsages[index]}%",
-                                  style: const TextStyle(
-                                    fontSize: 24,
-                                    fontWeight:
-                                        FontWeight.bold,
-                                  ),
+                              Text(
+                                "${coreUsages[index]}%",
+                                style:
+                                    const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight:
+                                      FontWeight
+                                          .bold,
                                 ),
+                              ),
 
-                                const Spacer(),
+                              const Spacer(),
 
-                                buildMiniGraph(
-                                  coreHistories[index],
-                                  Colors.cyanAccent,
+                              buildMiniGraph(
+                                coreHistories[
+                                    index],
+                                Colors
+                                    .cyanAccent,
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  Container(
+                    height: 320,
+                    padding:
+                        const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color:
+                          const Color(0xFF161B22),
+                      borderRadius:
+                          BorderRadius.circular(
+                        24,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment:
+                          CrossAxisAlignment
+                              .start,
+                      children: [
+                        const Text(
+                          "CPU History",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight:
+                                FontWeight.bold,
+                          ),
+                        ),
+
+                        const SizedBox(
+                          height: 16,
+                        ),
+
+                        Expanded(
+                          child: LineChart(
+                            LineChartData(
+                              minY: 0,
+                              maxY: 100,
+                              gridData:
+                                  const FlGridData(
+                                show: false,
+                              ),
+                              titlesData:
+                                  const FlTitlesData(
+                                show: false,
+                              ),
+                              borderData:
+                                  FlBorderData(
+                                show: false,
+                              ),
+                              lineBarsData: [
+                                LineChartBarData(
+                                  spots: cpuHistory
+                                      .asMap()
+                                      .entries
+                                      .map(
+                                        (e) =>
+                                            FlSpot(
+                                          e.key
+                                              .toDouble(),
+                                          e.value,
+                                        ),
+                                      )
+                                      .toList(),
+                                  isCurved: true,
+                                  curveSmoothness:
+                                      0.35,
+                                  color: Colors
+                                      .cyanAccent,
+                                  barWidth: 3,
+                                  dotData:
+                                      const FlDotData(
+                                    show: false,
+                                  ),
+                                  belowBarData:
+                                      BarAreaData(
+                                    show: true,
+                                    color: Colors
+                                        .cyanAccent
+                                        .withOpacity(
+                                      0.10,
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
-                          );
-                        },
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    Expanded(
-                      flex: 2,
-                      child: Container(
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF161B22),
-                          borderRadius:
-                              BorderRadius.circular(24),
+                          ),
                         ),
-                        child: Column(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              "CPU History",
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight:
-                                    FontWeight.bold,
-                              ),
-                            ),
-
-                            const SizedBox(height: 16),
-
-                            Expanded(
-                              child: LineChart(
-                                LineChartData(
-                                  minY: 0,
-                                  maxY: 100,
-                                  gridData:
-                                      const FlGridData(
-                                    show: false,
-                                  ),
-                                  titlesData:
-                                      const FlTitlesData(
-                                    show: false,
-                                  ),
-                                  borderData:
-                                      FlBorderData(
-                                    show: false,
-                                  ),
-                                  lineBarsData: [
-                                    LineChartBarData(
-                                      spots: cpuHistory
-                                          .asMap()
-                                          .entries
-                                          .map(
-                                            (e) => FlSpot(
-                                              e.key
-                                                  .toDouble(),
-                                              e.value,
-                                            ),
-                                          )
-                                          .toList(),
-                                      isCurved: true,
-                                      curveSmoothness:
-                                          0.35,
-                                      color:
-                                          Colors.cyanAccent,
-                                      barWidth: 3,
-                                      dotData:
-                                          const FlDotData(
-                                        show: false,
-                                      ),
-                                      belowBarData:
-                                          BarAreaData(
-                                        show: true,
-                                        color: Colors
-                                            .cyanAccent
-                                            .withOpacity(
-                                          0.10,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -672,7 +737,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 }
 
-class StatCard extends StatelessWidget {
+class StatCard extends StatefulWidget {
   final String title;
   final String value;
   final IconData icon;
@@ -687,76 +752,280 @@ class StatCard extends StatelessWidget {
   });
 
   @override
+  State<StatCard> createState() =>
+      _StatCardState();
+}
+
+class _StatCardState
+    extends State<StatCard> {
+  bool hovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                icon,
-                color: Colors.cyanAccent,
-                size: 22,
-              ),
-
-              const SizedBox(width: 10),
-
-              Expanded(
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
-                      ),
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    Text(
-                      value,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+    return MouseRegion(
+      onEnter: (_) {
+        setState(() {
+          hovered = true;
+        });
+      },
+      onExit: (_) {
+        setState(() {
+          hovered = false;
+        });
+      },
+      child: AnimatedContainer(
+        duration:
+            const Duration(milliseconds: 220),
+        transform: Matrix4.identity()
+          ..scale(hovered ? 1.01 : 1.0),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: const Color(0xFF161B22),
+          borderRadius:
+              BorderRadius.circular(22),
+          border: Border.all(
+            color: hovered
+                ? Colors.cyanAccent
+                : Colors.white10,
+            width: 1.1,
           ),
+        ),
+        child: Column(
+          mainAxisAlignment:
+              MainAxisAlignment.spaceBetween,
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  widget.icon,
+                  size: 22,
+                  color: hovered
+                      ? Colors.cyanAccent
+                      : Colors.white,
+                ),
 
-          const Spacer(),
+                const SizedBox(width: 10),
 
-          graph,
-        ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment
+                            .start,
+                    children: [
+                      Text(
+                        widget.title,
+                        style:
+                            const TextStyle(
+                          color:
+                              Colors.white70,
+                          fontSize: 12,
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 2,
+                      ),
+
+                      Text(
+                        widget.value,
+                        style:
+                            const TextStyle(
+                          fontSize: 18,
+                          fontWeight:
+                              FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            widget.graph,
+          ],
+        ),
       ),
     );
   }
 }
 
-class ProcessesPage extends StatelessWidget {
+class ProcessesPage extends StatefulWidget {
   const ProcessesPage({super.key});
 
   @override
+  State<ProcessesPage> createState() =>
+      _ProcessesPageState();
+}
+
+class _ProcessesPageState
+    extends State<ProcessesPage> {
+  List<Map<String, dynamic>> processes = [];
+
+  String searchQuery = "";
+
+  late Timer timer;
+
+  Future<void> fetchProcesses() async {
+    try {
+      final result = await Process.run(
+        'ps',
+        [
+          '-eo',
+          'pid,comm,%cpu,%mem',
+          '--sort=-%cpu'
+        ],
+      );
+
+      final lines = result.stdout
+          .toString()
+          .split('\n')
+          .skip(1)
+          .where(
+            (line) =>
+                line.trim().isNotEmpty,
+          )
+          .take(40)
+          .toList();
+
+      List<Map<String, dynamic>>
+          parsed = [];
+
+      for (var line in lines) {
+        final parts = line
+            .trim()
+            .split(RegExp(r'\s+'));
+
+        if (parts.length >= 4) {
+          parsed.add({
+            'pid': parts[0],
+            'name': parts[1],
+            'cpu': parts[2],
+            'ram': parts[3],
+          });
+        }
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        processes = parsed;
+      });
+    } catch (e) {
+      print("Process error: $e");
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    fetchProcesses();
+
+    timer = Timer.periodic(
+      const Duration(seconds: 2),
+      (_) => fetchProcesses(),
+    );
+  }
+
+  @override
+  void dispose() {
+    timer.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        "Processes Page",
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 28,
-        ),
+    final filteredProcesses =
+        processes.where((proc) {
+      final query =
+          searchQuery.toLowerCase();
+
+      return proc['name']
+              .toLowerCase()
+              .contains(query) ||
+          proc['pid']
+              .toString()
+              .contains(query);
+    }).toList();
+
+    return Padding(
+      padding: const EdgeInsets.all(30),
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Processes",
+            style: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          TextField(
+            onChanged: (value) {
+              setState(() {
+                searchQuery = value;
+              });
+            },
+            decoration: InputDecoration(
+              hintText:
+                  "Search by name or PID",
+              prefixIcon: const Icon(
+                Icons.search_rounded,
+              ),
+              filled: true,
+              fillColor:
+                  const Color(0xFF161B22),
+              border: OutlineInputBorder(
+                borderRadius:
+                    BorderRadius.circular(
+                  12,
+                ),
+                borderSide:
+                    BorderSide.none,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          Expanded(
+            child: ListView.builder(
+              itemCount:
+                  filteredProcesses.length,
+              itemBuilder:
+                  (context, index) {
+                final proc =
+                    filteredProcesses[index];
+
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: Colors
+                        .cyanAccent
+                        .withOpacity(0.15),
+                    child: Text(
+                      proc['name'][0]
+                          .toUpperCase(),
+                    ),
+                  ),
+                  title: Text(
+                    proc['name'],
+                    overflow:
+                        TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text(
+                    "PID: ${proc['pid']} • CPU: ${proc['cpu']}% • RAM: ${proc['ram']}%",
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -767,13 +1036,30 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        "Settings Page",
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 28,
-        ),
+    return const Padding(
+      padding: EdgeInsets.all(30),
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Settings",
+            style: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          SizedBox(height: 20),
+
+          Text(
+            "HardwareMon settings will appear here.",
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 16,
+            ),
+          ),
+        ],
       ),
     );
   }
