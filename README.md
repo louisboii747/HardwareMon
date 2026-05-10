@@ -59,6 +59,16 @@ sudo apt update
 ```bash
 sudo apt install hardwaremon
 ```
+### Usage
+You can run the either the GUI from your applications list or by running:
+```
+hardwaremon-gui
+```
+In the terminal. For CLI:
+
+```
+hardwaremon
+```
 
 ### DNF Fedora RHEL
 
@@ -72,6 +82,17 @@ sudo dnf config-manager --add-repo https://hardwaremon.pages.dev/yum/hardwaremon
 
 ```bash
 sudo dnf install hardwaremon
+```
+
+### Usage
+You can run the either the GUI from your applications list or by running:
+```
+hardwaremon-gui
+```
+In the terminal. For CLI:
+
+```
+hardwaremon
 ```
 
 ---
