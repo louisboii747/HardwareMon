@@ -34,7 +34,6 @@ jobs:
       - name: Clean workspace
         run: rm -rf dist repo public pkg
 
-
       - name: Prepare package files
         run: |
           mkdir -p pkg/opt/hardwaremon
@@ -45,11 +44,9 @@ jobs:
 
           echo "Injecting version $VERSION"
 
-          # Inject version into BOTH files
           sed -i "s/^VERSION = .*/VERSION = \"${VERSION}\"/" hardwaremon/hardwaremon.py
           sed -i "s/^VERSION = .*/VERSION = \"${VERSION}\"/" hardwaremon/hardwaremon_gui.py
 
-          # Copy AFTER injection
           cp hardwaremon/* pkg/opt/hardwaremon/
 
           # CLI launcher
@@ -58,6 +55,15 @@ jobs:
           exec python3 /opt/hardwaremon/hardwaremon.py "$@"
           EOF
 
+          # GUI launcher
+          cat <<'EOF' > pkg/bin/hardwaremon-gui
+          #!/bin/bash
+          exec python3 /opt/hardwaremon/hardwaremon_gui.py "$@"
+          EOF
+
+          chmod +x pkg/bin/*
+
+          # Desktop entry
           mkdir -p pkg/usr/share/applications
 
           cat <<EOF > pkg/usr/share/applications/hardwaremon.desktop
@@ -71,16 +77,9 @@ jobs:
           Categories=System;Monitor;
           EOF
 
+          # Icon
           mkdir -p pkg/usr/share/icons/hicolor/256x256/apps
           cp hardwaremon/cpu.png pkg/usr/share/icons/hicolor/256x256/apps/hardwaremon.png
-
-          # GUI launcher
-          cat <<'EOF' > pkg/bin/hardwaremon-gui
-          #!/bin/bash
-          exec python3 /opt/hardwaremon/hardwaremon_gui.py "$@"
-          EOF
-
-          chmod +x pkg/bin/*
 
       - name: Get version
         id: version
@@ -104,6 +103,14 @@ jobs:
             - python3-tk
             - python3-pil
             - python3-psutil
+
+          overrides:
+            rpm:
+              depends:
+                - python3
+                - python3-tkinter
+                - python3-pillow
+                - python3-psutil
 
           contents:
             - src: pkg/bin/hardwaremon
@@ -130,6 +137,9 @@ jobs:
           nfpm pkg --config nfpm.yaml --packager deb --target dist/hardwaremon.deb
           nfpm pkg --config nfpm.yaml --packager rpm --target dist/hardwaremon.rpm
 
+      # ─────────────────────────────────────────────
+      # Build APT repository
+      # ─────────────────────────────────────────────
       - name: Build APT repo
         run: |
           mkdir -p repo/apt/pool/main/h/hardwaremon
@@ -156,13 +166,20 @@ jobs:
 
           apt-ftparchive -c apt.conf release dists/stable > dists/stable/Release
 
+      # ─────────────────────────────────────────────
+      # Build DNF repository
+      # ─────────────────────────────────────────────
       - name: Build DNF repo
         run: |
           mkdir -p repo/yum
           cp dist/hardwaremon.rpm repo/yum/
+
           cd repo/yum
           createrepo_c .
 
+      # ─────────────────────────────────────────────
+      # Prepare Pages output
+      # ─────────────────────────────────────────────
       - name: Prepare Pages output
         run: |
           mkdir -p public/apt public/yum
@@ -170,12 +187,16 @@ jobs:
           cp -r repo/apt/* public/apt/
           cp -r repo/yum/* public/yum/
 
-          echo '<h1>HardwareMon Repo</h1><a href="/apt/">APT</a><br><a href="/yum/">YUM</a>' > public/index.html
-          echo "404" > public/404.html
+          # DNF repo file
+          cat <<'EOF' > public/yum/hardwaremon.repo
+          [hardwaremon]
+          name=HardwareMon Repository
+          baseurl=https://hardwaremon.pages.dev/yum/
+          enabled=1
+          gpgcheck=0
+          EOF
 
-      # ✅ setup script (works with curl)
-      - name: Add setup script
-        run: |
+          # APT setup script
           cat <<'EOF' > public/apt/setup.sh
           #!/bin/bash
           set -e
@@ -193,6 +214,10 @@ jobs:
 
           chmod +x public/apt/setup.sh
 
+          # Simple index
+          echo '<h1>HardwareMon Repo</h1><a href="/apt/">APT</a><br><a href="/yum/">YUM</a>' > public/index.html
+          echo "404" > public/404.html
+
       - name: Deploy to Cloudflare Pages
         run: npx wrangler pages deploy public --project-name=hardwaremon --branch=main
         env:
@@ -206,7 +231,7 @@ jobs:
             dist/hardwaremon.rpm
 
   # ─────────────────────────────────────────────────────────────────
-  #  Windows: build exe → Inno Setup installer → GitHub Release
+  # Windows build
   # ─────────────────────────────────────────────────────────────────
   build-windows:
     runs-on: windows-latest
@@ -229,23 +254,10 @@ jobs:
         shell: pwsh
         run: |
           $version = "${{ github.ref_name }}".TrimStart("v")
+
           (Get-Content Windows\hardwaremon_win.py) `
             -replace '^VERSION = .*', "VERSION = `"$version`"" `
             | Set-Content Windows\hardwaremon_win.py
-
-      - name: Debug files
-        shell: pwsh
-        run: |
-          Write-Host "ROOT:"
-          Get-ChildItem
-
-          Write-Host "`nWINDOWS FOLDER:"
-          Get-ChildItem Windows
-
-          Write-Host "`nRECURSIVE:"
-          Get-ChildItem -Recurse Windows 
-
-
 
       - name: Build exe with PyInstaller
         shell: pwsh
@@ -256,6 +268,7 @@ jobs:
         shell: pwsh
         run: |
           $version = "${{ github.ref_name }}".TrimStart("v")
+
           @"
           [Setup]
           AppName=HardwareMon
@@ -299,15 +312,14 @@ jobs:
           files: installer/HardwareMonSetup.exe
 
   # ─────────────────────────────────────────────────────────────────
-  #  Winget: auto-submit manifest PR to winget-pkgs on each release
-  #  NOTE: first release must be submitted manually via wingetcreate
+  # Winget submission
   # ─────────────────────────────────────────────────────────────────
   winget:
     needs: build-windows
     runs-on: windows-latest
 
     steps:
-      - name: Get version (no v)
+      - name: Get version
         id: version
         shell: pwsh
         run: |
