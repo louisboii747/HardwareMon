@@ -7,6 +7,9 @@ on:
   workflow_dispatch:
 
 jobs:
+  # ─────────────────────────────────────────────────────────────────
+  # Linux build + repositories
+  # ─────────────────────────────────────────────────────────────────
   build:
     runs-on: ubuntu-latest
     permissions:
@@ -414,5 +417,19 @@ jobs:
         with:
           identifier: LouisHinchliffe.HardwareMon
           version: ${{ steps.version.outputs.version }}
+
+          release-tag: v${{ steps.version.outputs.version }}
+
           installers-regex: 'HardwareMonSetup-.*\.exe$'
+
+          architectures: x64
+
+          release-notes: |
+            Added Flutter desktop frontend.
+            Improved Linux packaging workflow.
+            Updated CI/CD automation.
+            Bug fixes and performance improvements.
+
+          release-notes-url: https://github.com/louisboii747/HardwareMon/releases/tag/v${{ steps.version.outputs.version }}
+
           token: ${{ secrets.WINGET_TOKEN }}
