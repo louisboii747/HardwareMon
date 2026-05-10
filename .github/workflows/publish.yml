@@ -400,13 +400,8 @@ jobs:
       # Dependencies
       # ─────────────────────────────────────────────
       - name: Install dependencies
-        run: |
-          pip install \
-            customtkinter \
-            psutil \
-            gputil \
-            pyinstaller \
-            pillow
+        run: pip install customtkinter psutil gputil pyinstaller pillow
+          
 
       # ─────────────────────────────────────────────
       # Inject version
