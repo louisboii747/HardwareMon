@@ -97,7 +97,7 @@ hardwaremon
 
 ---
 
-## PyPI Cross Platform Fallback
+## PyPI Cross Platform Fallback (DEPRECATED!)
 
 You can still install HardwareMon using pip:
 
@@ -111,7 +111,7 @@ Or with pipx:
 pipx install hardwaremon
 ```
 
-PyPI may not always contain the newest features and improvements.
+PyPI will not always the newest features and improvements.
 
 For the best Linux experience, use the APT or DNF repositories.
 
