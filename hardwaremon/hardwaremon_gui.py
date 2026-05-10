@@ -17,7 +17,7 @@ ICON_FILES = {
     "GPU": "gpu.png",
     "BOARD": "board.png",
     "OS": "os.png",
-    "Wi-Fi" : "network.png"
+    "Wi-Fi": "network.png",
 }
 
 ICON_SIZE = (32, 32)
@@ -29,11 +29,12 @@ THEMES = {
     "dark": {"bg": "#000000", "fg": "#ffffff", "sidebar": "#181818", "highlight": "#ffffff"},
     "blue": {"bg": "#000000", "fg": "#0080FF", "sidebar": "#000000", "highlight": "#0080FF"},
     "red": {"bg": "#000000", "fg": "#FF0000", "sidebar": "#000000", "highlight": "#FF0000"},
-    "green": {"bg": "#000000", "fg": "#00FF00", "sidebar": "#000000", "highlight": "#00FF00"}
+    "green": {"bg": "#000000", "fg": "#00FF00", "sidebar": "#000000", "highlight": "#00FF00"},
 }
 
 current_theme = "dark"
 theme_names = list(THEMES.keys())
+
 
 #########################
 # ICON LOADER #
@@ -55,6 +56,7 @@ def load_icon(name):
         print(f"Error loading icon {name}: {e}")
         return None
 
+
 ########################
 # HARDWARE FUNCTIONS #
 ########################
@@ -70,11 +72,12 @@ def cpu_info():
         cpu_name = platform.processor()  # fallback for non-Linux
 
     return [
-        "=== CPU INFORMATION ===", "",
+        "=== CPU INFORMATION ===",
+        "",
         f"Processor: {cpu_name}",
         f"Cores: {psutil.cpu_count(logical=False)}",
         f"Threads: {psutil.cpu_count(logical=True)}",
-        f"Usage: {psutil.cpu_percent()} %"
+        f"Usage: {psutil.cpu_percent()} %",
     ]
 
 
@@ -90,10 +93,13 @@ def cpu_temperature():
                 lines.append(f"{entry.label}: {entry.current} °C")
     return lines
 
+
 def wifi_info():
     lines = ["=== WIFI INFORMATION ===", ""]
     try:
-        out = subprocess.getoutput("ip a | grep 'state UP' -B2 | grep 'w' | awk '{print $2}' | sed 's/://g'")
+        out = subprocess.getoutput(
+            "ip a | grep 'state UP' -B2 | grep 'w' | awk '{print $2}' | sed 's/://g'"
+        )
         if out:
             iface = out.strip()
             lines.append(f"Interface: {iface}")
@@ -110,7 +116,6 @@ def wifi_info():
     return lines
 
 
-
 def ssid_info():
     lines = ["=== WIFI SSID ===", ""]
     try:
@@ -121,33 +126,38 @@ def ssid_info():
         else:
             lines.append("Not connected to any Wi-Fi network")
     except Exception as e:
-        lines.append("Error retrieving SSID information, ensure iwctl is installed and you have permissions")
+        lines.append(
+            "Error retrieving SSID information, ensure iwctl is installed and you have permissions"
+        )
     return lines
 
 
 def ram_info():
     mem = psutil.virtual_memory()
     return [
-        "=== RAM INFORMATION ===", "",
+        "=== RAM INFORMATION ===",
+        "",
         f"Total: {round(mem.total/1e9,2)} GB",
         f"Used: {round(mem.used/1e9,2)} GB",
         f"Available: {round(mem.available/1e9,2)} GB",
-        f"Percent Used: {mem.percent} %"
+        f"Percent Used: {mem.percent} %",
     ]
+
 
 def disk_info():
     d = psutil.disk_usage("/")
     return [
-        "=== DISK INFORMATION (ROOT PARTITION) ===", "",
+        "=== DISK INFORMATION (ROOT PARTITION) ===",
+        "",
         f"Total: {round(d.total/1e9,2)} GB",
         f"Used: {round(d.used/1e9,2)} GB",
         f"Free: {round(d.free/1e9,2)} GB",
-        f"Percent Used: {d.percent} %"
+        f"Percent Used: {d.percent} %",
     ]
+
 
 def partitions_info():
     SKIP_FS = {"tmpfs", "devtmpfs", "squashfs"}
-
 
     lines = ["=== ALL PARTITIONS ===", ""]
     for part in psutil.disk_partitions():
@@ -156,13 +166,13 @@ def partitions_info():
     return lines
 
 
-
 def _try_nvidia(query):
     """Returns output string or None if nvidia-smi is unavailable or failed."""
     try:
         result = subprocess.run(
             ["nvidia-smi", f"--query-gpu={query}", "--format=csv,noheader"],
-            capture_output=True, text=True
+            capture_output=True,
+            text=True,
         )
         if result.returncode == 0 and result.stdout.strip():
             return result.stdout.strip()
@@ -170,16 +180,20 @@ def _try_nvidia(query):
         pass
     return None
 
+
 def _try_amd(query_type):
     """Returns output string or None if rocm-smi is unavailable or failed."""
     try:
-        flag = {"name": "--showproductname", "vram": "--showmeminfo", "temp": "--showtemp"}[query_type]
+        flag = {"name": "--showproductname", "vram": "--showmeminfo", "temp": "--showtemp"}[
+            query_type
+        ]
         result = subprocess.run(["rocm-smi", flag], capture_output=True, text=True)
         if result.returncode == 0 and result.stdout.strip():
             return result.stdout.strip()
     except FileNotFoundError:
         pass
     return None
+
 
 def gpu_info():
     lines = ["=== GPU INFORMATION ===", ""]
@@ -211,6 +225,7 @@ def gpu_info():
 
     return lines
 
+
 def vram_info():
     lines = ["=== VRAM INFORMATION ===", ""]
 
@@ -229,6 +244,7 @@ def vram_info():
 
     lines.append("No NVIDIA or AMD GPU found — VRAM info unavailable.")
     return lines
+
 
 def gpu_temperature_info():
     lines = ["=== GPU TEMPERATURE ===", ""]
@@ -249,7 +265,6 @@ def gpu_temperature_info():
     return lines
 
 
-
 def motherboard_info():
     lines = ["=== MOTHERBOARD ===", ""]
     try:
@@ -258,6 +273,7 @@ def motherboard_info():
     except:
         lines.append("Unknown")
     return lines
+
 
 def secure_boot():
     lines = ["=== SECURE BOOT STATE ===", ""]
@@ -268,19 +284,20 @@ def secure_boot():
         lines.append("Unknown")
     return lines
 
+
 def os_info():
     return [
-        "=== OPERATING SYSTEM ===", "",
+        "=== OPERATING SYSTEM ===",
+        "",
         f"System: {platform.system()}",
         f"Release: {platform.release()}",
-        f"Version: {platform.version()}"
+        f"Version: {platform.version()}",
     ]
 
+
 def current_user():
-    return [
-        "=== CURRENT USER ===", "",
-        f"User: {os.getlogin()}"
-    ]
+    return ["=== CURRENT USER ===", "", f"User: {os.getlogin()}"]
+
 
 #########################
 # SECTIONS
@@ -292,8 +309,9 @@ SECTIONS = {
     "GPU": lambda: gpu_info() + [""] + vram_info() + [""] + gpu_temperature_info(),
     "BOARD": lambda: motherboard_info() + [""] + secure_boot(),
     "OS": lambda: os_info() + [""] + current_user(),
-    "Wi-Fi" : lambda: wifi_info() + [""] + ssid_info()
+    "Wi-Fi": lambda: wifi_info() + [""] + ssid_info(),
 }
+
 
 #########################
 # GUI
@@ -314,7 +332,7 @@ def gui():
     canvas = tk.Canvas(content, height=150)
     canvas.pack(fill="both", expand=True)
 
-    cpu_hist = [0]*60
+    cpu_hist = [0] * 60
 
     # Animated text
     def animate_text(lines):
@@ -322,12 +340,12 @@ def gui():
         text.delete("1.0", tk.END)
 
         def step(i):
-            if i >= len(lines): 
+            if i >= len(lines):
                 text.configure(state="disabled")
                 return
             text.configure(state="normal")
             text.insert(tk.END, lines[i] + "\n")
-            root.after(20, lambda: step(i+1))
+            root.after(20, lambda: step(i + 1))
 
         step(0)
 
@@ -340,24 +358,39 @@ def gui():
 
         w = canvas.winfo_width()
         h = canvas.winfo_height()
-        step = w/len(cpu_hist)
+        step = w / len(cpu_hist)
 
         # horizontal grid & labels
         for i in range(0, 101, 20):
-            y = h - (i/100)*h
-            canvas.create_line(0, y, w, y, fill="#444444", dash=(2,4))
-            canvas.create_text(30, y-10, text=f"{i}%", fill=THEMES[current_theme]["fg"], anchor="w", font=("Consolas", 10, "bold"))
+            y = h - (i / 100) * h
+            canvas.create_line(0, y, w, y, fill="#444444", dash=(2, 4))
+            canvas.create_text(
+                30,
+                y - 10,
+                text=f"{i}%",
+                fill=THEMES[current_theme]["fg"],
+                anchor="w",
+                font=("Consolas", 10, "bold"),
+            )
 
         # CPU usage line
         x = 0
         lasty = h
         for v in cpu_hist:
-            y = h - (v/100)*h
-            canvas.create_line(x, lasty, x+step, y, width=2, fill=THEMES[current_theme]["highlight"])
+            y = h - (v / 100) * h
+            canvas.create_line(
+                x, lasty, x + step, y, width=2, fill=THEMES[current_theme]["highlight"]
+            )
             lasty = y
             x += step
 
-        canvas.create_text(w/2, 10, text="CPU Usage (%)", fill=THEMES[current_theme]["fg"], font=("Consolas", 12, "bold"))
+        canvas.create_text(
+            w / 2,
+            10,
+            text="CPU Usage (%)",
+            fill=THEMES[current_theme]["fg"],
+            font=("Consolas", 12, "bold"),
+        )
 
         root.after(500, draw_graph)
 
@@ -395,7 +428,7 @@ def gui():
     def toggle_theme(event=None):
         global current_theme
         idx = theme_names.index(current_theme)
-        current_theme = theme_names[(idx+1)%len(theme_names)]
+        current_theme = theme_names[(idx + 1) % len(theme_names)]
         apply_theme(current_theme)
 
     root.bind("<F2>", toggle_theme)
@@ -406,6 +439,7 @@ def gui():
     apply_theme(current_theme)
 
     root.mainloop()
+
 
 if __name__ == "__main__":
     gui()

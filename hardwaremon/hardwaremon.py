@@ -22,8 +22,9 @@ disk_history = []
 
 import requests
 
+
 def check_for_updates():
-    repo = "louisboii747/HardwareMon" 
+    repo = "louisboii747/HardwareMon"
     url = f"https://api.github.com/repos/{repo}/releases/latest"
 
     try:
@@ -36,10 +37,11 @@ def check_for_updates():
     except Exception:
         return None  # Fail silently
 
+
 def update_history():
     cpu = psutil.cpu_percent(interval=None)
     mem = psutil.virtual_memory().percent
-    disk = psutil.disk_usage('/').percent
+    disk = psutil.disk_usage("/").percent
 
     cpu_history.append(cpu)
     mem_history.append(mem)
@@ -71,31 +73,28 @@ def draw_graph(canvas, data, color, label):
 
     canvas.create_line(points, fill=color, width=2, smooth=True)
     canvas.create_text(
-        5, 5,
+        5,
+        5,
         anchor="nw",
         text=f"{label}: {data[-1]:.1f}%",
         fill=color,
-        font=("monospace", 10, "bold")
+        font=("monospace", 10, "bold"),
     )
 
 
-ALERTS = {
-    "cpu": 90,
-    "memory": 90,
-    "gpu_temp": 80,
-    "battery_low": 20
-}
+ALERTS = {"cpu": 90, "memory": 90, "gpu_temp": 80, "battery_low": 20}
+
 
 def check_alerts():
     alerts = []
     cpu = psutil.cpu_percent(interval=None)
     if cpu > ALERTS["cpu"]:
         alerts.append(f"⚠️ CPU Usage High: {cpu:.1f}%")
-    
+
     mem = psutil.virtual_memory().percent
     if mem > ALERTS["memory"]:
         alerts.append(f"⚠️ Memory Usage High: {mem:.1f}%")
-    
+
     temps = psutil.sensors_temperatures()
     if temps:
         for name, entries in temps.items():
@@ -103,11 +102,11 @@ def check_alerts():
                 if "gpu" in entry.label.lower() or "nvidia" in name.lower():
                     if entry.current > ALERTS["gpu_temp"]:
                         alerts.append(f"⚠️ GPU Temp High: {entry.current} °C")
-    
+
     bat = psutil.sensors_battery()
     if bat and not bat.power_plugged and bat.percent < ALERTS["battery_low"]:
         alerts.append(f"⚠️ Battery Low: {bat.percent:.1f}%")
-    
+
     return alerts
 
 
@@ -115,7 +114,9 @@ def gpu_info():
     lines = ["=== GPU INFORMATION ===", ""]
     try:
         # Try NVIDIA first
-        nvidia = subprocess.getoutput("nvidia-smi --query-gpu=name,memory.total --format=csv,noheader")
+        nvidia = subprocess.getoutput(
+            "nvidia-smi --query-gpu=name,memory.total --format=csv,noheader"
+        )
         if nvidia and "error" not in nvidia.lower() and "not found" not in nvidia.lower():
             for line in nvidia.strip().split("\n"):
                 lines.append(line.strip())
@@ -138,7 +139,7 @@ def gpu_info():
     except Exception as e:
         lines.append(f"GPU info error: {e}")
     return lines
-    
+
     # GPU temp (if available)
     temps = psutil.sensors_temperatures()
     if temps:
@@ -148,7 +149,7 @@ def gpu_info():
                     if entry.current > ALERTS["gpu_temp"]:
                         alerts = []
                         alerts.append(f"⚠️ GPU Temp High: {entry.current} °C")
-    
+
     # Battery
     bat = psutil.sensors_battery()
     if bat and not bat.power_plugged and bat.percent < ALERTS["battery_low"]:
@@ -156,6 +157,7 @@ def gpu_info():
         alerts.append(f"⚠️ Battery Low: {bat.percent:.1f}%")
 
     return alerts
+
 
 def get_cpu_name():
     if platform.system() == "Linux":
@@ -168,50 +170,21 @@ def get_cpu_name():
             pass
     return platform.processor()
 
+
 THEMES = {
-    "dark": {
-        "bg": "#111111",
-        "fg": "#e6e6e6",
-        "accent": "#4fc3f7"
-    },
-    "hacker": {
-        "bg": "#000000",
-        "fg": "#00ff00",
-        "accent": "#00cc00"
-    },
-    "red": {
-        "bg": "#2e0000",
-        "fg": "#ff4d4d",
-        "accent": "#ff1a1a"
-    },
-    "black on white": {
-        "bg": "#ffffff",
-        "fg": "#000000",
-        "accent": "#000000"
-    },
-    "blue": {
-        "bg": "#001f3f",
-        "fg": "#7FDBFF",
-        "accent": "#FFFFFF"
-    },
-    "purple": {
-        "bg": "#2e003e",
-        "fg": "#ff66ff",
-        "accent": "#ff1aff"
-    }
+    "dark": {"bg": "#111111", "fg": "#e6e6e6", "accent": "#4fc3f7"},
+    "hacker": {"bg": "#000000", "fg": "#00ff00", "accent": "#00cc00"},
+    "red": {"bg": "#2e0000", "fg": "#ff4d4d", "accent": "#ff1a1a"},
+    "black on white": {"bg": "#ffffff", "fg": "#000000", "accent": "#000000"},
+    "blue": {"bg": "#001f3f", "fg": "#7FDBFF", "accent": "#FFFFFF"},
+    "purple": {"bg": "#2e003e", "fg": "#ff66ff", "accent": "#ff1aff"},
 }
-
-
 
 
 def apply_theme(root, text, theme_name):
     theme = THEMES[theme_name]
     root.configure(bg=theme["bg"])
-    text.configure(
-        bg=theme["bg"],
-        fg=theme["fg"],
-        insertbackground=theme["fg"]  # caret color
-    )
+    text.configure(bg=theme["bg"], fg=theme["fg"], insertbackground=theme["fg"])  # caret color
 
 
 current_theme = "dark"  # default
@@ -223,6 +196,7 @@ def read_sys(path):
             return f.read().strip()
     except Exception:
         return None
+
 
 def battery_info():
     lines = ["=== Battery Information ==="]
@@ -245,11 +219,13 @@ def battery_info():
     return f"{percent}% {'(Charging)' if plugged else '(Discharging)'} - Time left: {time_str}"
     return lines
 
+
 def clear_screen():
-    os.system('cls' if os.name == 'nt' else 'clear')
+    os.system("cls" if os.name == "nt" else "clear")
 
 
 ## START SYSTEM SUMMARY ##
+
 
 # ---------- Summary Function ----------
 def system_summary():
@@ -257,14 +233,12 @@ def system_summary():
 
     cpu_name = get_cpu_name()
     total_ram = round(psutil.virtual_memory().total / (1024**3), 1)
-    disk_total = round(psutil.disk_usage('/').total / (1024**3), 1)
+    disk_total = round(psutil.disk_usage("/").total / (1024**3), 1)
 
     # GPU name (simplified)
     gpu_name = "Unknown"
     if platform.system() == "Linux":
-        output = os.popen(
-            "lspci | grep -Ei '(VGA|3D)' | grep -Ei '(NVIDIA|AMD)'"
-        ).read().strip()
+        output = os.popen("lspci | grep -Ei '(VGA|3D)' | grep -Ei '(NVIDIA|AMD)'").read().strip()
         if output:
             gpu_name = output.split(":")[-1].strip()
 
@@ -275,7 +249,7 @@ def system_summary():
 
     cpu = psutil.cpu_percent(interval=None)
     mem = psutil.virtual_memory().percent
-    disk = psutil.disk_usage('/').percent
+    disk = psutil.disk_usage("/").percent
 
     lines.append(f"CPU Usage   : {cpu:.1f}%")
     lines.append(f"Memory Usage: {mem:.1f}%")
@@ -283,15 +257,13 @@ def system_summary():
 
     return lines
 
+
 # ---------- Full Sections ---------- #
 
-SECTIONS = [
-    system_summary
-]
+SECTIONS = [system_summary]
 
 
 ## END System Summary ##
-
 
 
 def system_info():
@@ -311,8 +283,7 @@ def system_info():
             f"User: {os.getlogin()}",
             f"Display Size: {shutil.get_terminal_size().columns}x{shutil.get_terminal_size().lines}",
             f"Filesystem: {platform.system()}"
-           f"Resizable Bar: {'Supported' if os.path.exists('/sys/bus/pci/devices/0000:00:01.0/resizable_bar') else 'Not Supported'}"
-        
+            f"Resizable Bar: {'Supported' if os.path.exists('/sys/bus/pci/devices/0000:00:01.0/resizable_bar') else 'Not Supported'}",
         ]
 
         io = psutil.disk_io_counters()
@@ -329,18 +300,18 @@ def system_info():
 
     except Exception as e:
         return [f"System info error: {e}"]
-    
+
 
 ## END System Info ##
+
 
 def swap_memory():
     lines = ["=== Swap Memory ==="]
     swap = psutil.swap_memory()
-    lines.append(f"Swap: {round(swap.total / (1024**3), 2)} GB, Used: {round(swap.used / (1024**3), 2)} GB ({swap.percent}%)")
+    lines.append(
+        f"Swap: {round(swap.total / (1024**3), 2)} GB, Used: {round(swap.used / (1024**3), 2)} GB ({swap.percent}%)"
+    )
     return lines
-
-
-
 
 
 def memory_temperature():
@@ -360,15 +331,13 @@ def memory_temperature():
     return lines if len(lines) > 1 else ["===No Memory temperature data found==="]
 
 
-
-
 def intel_gpu_info():
     lines = ["=== Intel GPU Information ==="]
     try:
         if platform.system() == "Linux":
             intel_gpu_output = os.popen("lspci | grep -i 'intel' | grep -i 'vga\\|3d\\|2d'").read()
             gpus = intel_gpu_output.strip().split("\n")
-            if not gpus or gpus == ['']:
+            if not gpus or gpus == [""]:
                 return ["No Intel GPU information found."]
             for gpu in gpus:
                 lines.append(gpu)
@@ -395,21 +364,22 @@ def network_info():
     net = psutil.net_io_counters(pernic=True)
     lines = ["=== Network Interfaces ==="]
     for iface, data in net.items():
-        lines.append(f"{iface:10}: Sent={data.bytes_sent / (1024**2):6.2f} MB | Recv={data.bytes_recv / (1024**2):6.2f} MB")
+        lines.append(
+            f"{iface:10}: Sent={data.bytes_sent / (1024**2):6.2f} MB | Recv={data.bytes_recv / (1024**2):6.2f} MB"
+        )
     return lines
 
 
-
 def top_processes(n=5):
-    procs = [(p.info["name"], p.info["cpu_percent"], p.info["memory_percent"])
-             for p in psutil.process_iter(["name", "cpu_percent", "memory_percent"])]
+    procs = [
+        (p.info["name"], p.info["cpu_percent"], p.info["memory_percent"])
+        for p in psutil.process_iter(["name", "cpu_percent", "memory_percent"])
+    ]
     procs.sort(key=lambda x: (x[1], x[2]), reverse=True)
     lines = [f"=== Top {n} Processes ==="]
     for name, cpu, mem in procs[:n]:
         lines.append(f"{name[:25]:25} | CPU: {cpu:5.1f}% | MEM: {mem:5.1f}%")
     return lines
-
-
 
 
 def motherboard_info():
@@ -428,8 +398,6 @@ def motherboard_info():
             lines.append(f"{key}: {value if value else 'N/A'}")
 
     return lines
-    
-
 
 
 def fan_info():
@@ -442,7 +410,7 @@ def fan_info():
     for hw in os.listdir(hwmon_base):
         hw_path = os.path.join(hwmon_base, hw)
         name = read_sys(os.path.join(hw_path, "name")) or hw
-        
+
         for file in os.listdir(hw_path):
             if file.startswith("fan") and file.endswith("_input"):
                 rpm = read_sys(os.path.join(hw_path, file))
@@ -450,8 +418,6 @@ def fan_info():
                     lines.append(f"{name} {file}: {rpm} RPM")
 
     return lines if len(lines) > 1 else ["==No fans detected==="]
-
-
 
 
 def partition_info():
@@ -484,8 +450,15 @@ def gpu_temperature():
     found = False
 
     # NVIDIA
-    nvidia = subprocess.getoutput("nvidia-smi --query-gpu=name,temperature.gpu --format=csv,noheader 2>/dev/null")
-    if nvidia and "not found" not in nvidia.lower() and "error" not in nvidia.lower() and "failed" not in nvidia.lower():
+    nvidia = subprocess.getoutput(
+        "nvidia-smi --query-gpu=name,temperature.gpu --format=csv,noheader 2>/dev/null"
+    )
+    if (
+        nvidia
+        and "not found" not in nvidia.lower()
+        and "error" not in nvidia.lower()
+        and "failed" not in nvidia.lower()
+    ):
         for line in nvidia.strip().split("\n"):
             parts = line.split(",")
             if len(parts) == 2:
@@ -522,13 +495,16 @@ def gpu_temperature():
 
 
 def get_package_manager():
-    for pm, cmd in [("apt", "sudo apt install i2c-tools"),
-                    ("dnf", "sudo dnf install i2c-tools"),
-                    ("pacman", "sudo pacman -S i2c-tools"),
-                    ("zypper", "sudo zypper install i2c-tools")]:
+    for pm, cmd in [
+        ("apt", "sudo apt install i2c-tools"),
+        ("dnf", "sudo dnf install i2c-tools"),
+        ("pacman", "sudo pacman -S i2c-tools"),
+        ("zypper", "sudo zypper install i2c-tools"),
+    ]:
         if subprocess.getoutput(f"which {pm} 2>/dev/null").strip():
             return cmd
     return "install i2c-tools via your package manager"
+
 
 def memory_temperature():
     lines = ["=== Memory Temperature ==="]
@@ -546,7 +522,11 @@ def memory_temperature():
                 display = entry.label if entry.label else name
                 lines.append(f"{display}: {entry.current} °C")
 
-    return lines if len(lines) > 1 else ["=== No memory temperature data exposed by hardware/kernel ==="]
+    return (
+        lines
+        if len(lines) > 1
+        else ["=== No memory temperature data exposed by hardware/kernel ==="]
+    )
 
 
 def cpu_temperature():
@@ -576,7 +556,7 @@ def keyboard_info():
         if platform.system() == "Linux":
             lsusb_output = os.popen("lsusb | grep -i 'keyboard'").read()
             keyboards = lsusb_output.strip().split("\n")
-            if not keyboards or keyboards == ['']:
+            if not keyboards or keyboards == [""]:
                 return ["===No keyboard information found.==="]
             for kb in keyboards:
                 lines.append(kb)
@@ -593,7 +573,7 @@ def mouse_info():
         if platform.system() == "Linux":
             lsusb_output = os.popen("lsusb | grep -i 'mouse'").read()
             mice = lsusb_output.strip().split("\n")
-            if not mice or mice == ['']:
+            if not mice or mice == [""]:
                 return ["===No mouse information found.==="]
             for mouse in mice:
                 lines.append(mouse)
@@ -636,7 +616,7 @@ def wifi_info():
         if platform.system() == "Linux":
             iwconfig_output = os.popen("iwconfig 2>/dev/null | grep 'ESSID'").read()
             wifis = iwconfig_output.strip().split("\n")
-            if not wifis or wifis == ['']:
+            if not wifis or wifis == [""]:
                 return ["===No Wi-Fi information found.==="]
             for wifi in wifis:
                 lines.append(wifi)
@@ -645,7 +625,6 @@ def wifi_info():
     except Exception as e:
         lines.append(f"Wi-Fi info error: {e}")
     return lines
-
 
 
 current_theme = "dark"
@@ -670,8 +649,8 @@ SECTIONS = [
     wifi_info,
     partition_info,
     intel_gpu_info,
-
 ]
+
 
 def apply_theme(root, text, theme_name):
     theme = THEMES[theme_name]
@@ -685,14 +664,12 @@ def system_summary():
 
     cpu_name = get_cpu_name()
     total_ram = round(psutil.virtual_memory().total / (1024**3), 1)
-    disk_total = round(psutil.disk_usage('/').total / (1024**3), 1)
+    disk_total = round(psutil.disk_usage("/").total / (1024**3), 1)
 
     # GPU name (simplified)
     gpu_name = "Unknown"
     if platform.system() == "Linux":
-        output = os.popen(
-            "lspci | grep -Ei '(VGA|3D)' | grep -Ei '(NVIDIA|AMD)'"
-        ).read().strip()
+        output = os.popen("lspci | grep -Ei '(VGA|3D)' | grep -Ei '(NVIDIA|AMD)'").read().strip()
         if output:
             gpu_name = output.split(":")[-1].strip()
 
@@ -703,7 +680,7 @@ def system_summary():
 
     cpu = psutil.cpu_percent(interval=None)
     mem = psutil.virtual_memory().percent
-    disk = psutil.disk_usage('/').percent
+    disk = psutil.disk_usage("/").percent
 
     lines.append(f"CPU Usage   : {cpu:.1f}%")
     lines.append(f"Memory Usage: {mem:.1f}%")
@@ -711,7 +688,8 @@ def system_summary():
 
     return lines
 
-SECTIONS = [ 
+
+SECTIONS = [
     system_info,
     swap_memory,
     network_info,
@@ -729,7 +707,7 @@ SECTIONS = [
     mouse_info,
     wifi_info,
     partition_info,
-    intel_gpu_info
+    intel_gpu_info,
 ]
 
 import time
@@ -738,6 +716,7 @@ import time
 _last_update_check = 0
 _update_msg_cache = None
 UPDATE_CHECK_INTERVAL = 600  # seconds (10 minutes)
+
 
 def check_for_updates_cached():
     global _last_update_check, _update_msg_cache
@@ -753,8 +732,9 @@ def check_for_updates_cached():
 # ---------- GUI App ---------- #
 
 
-
 import tkinter as tk
+
+
 def gui_app():
     root = tk.Tk()
     root.title("HardwareMon")
@@ -763,8 +743,7 @@ def gui_app():
     summary_mode = tk.BooleanVar(value=True)
 
     # ---- Create widgets ---- #
-    version_label = tk.Label(root, text=f"HardwareMon {VERSION}",
-                             font=("monospace", 12, "bold"))
+    version_label = tk.Label(root, text=f"HardwareMon {VERSION}", font=("monospace", 12, "bold"))
     version_label.pack(anchor="ne", padx=10, pady=5)
 
     text = tk.Text(root, font=("monospace", 11))
@@ -851,12 +830,11 @@ def gui_app():
     root.mainloop()
 
 
-
-
-
 def main():
     check_for_updates()
     gui_app()
+
+
 if __name__ == "__main__":
     main()
 
