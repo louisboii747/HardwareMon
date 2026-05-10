@@ -436,11 +436,20 @@ jobs:
           AppName=HardwareMon
           AppVersion=$version
           AppPublisher=Louis Hinchliffe
+          
           DefaultDirName={autopf}\HardwareMon
           DefaultGroupName=HardwareMon
 
+          ArchitecturesAllowed=x64compatible
+          ArchitecturesInstallIn64BitMode=x64compatible
+
+          WizardStyle=modern
+          PrivilegesRequired=admin
+          SetupLogging=yes
+
+
           OutputDir=.
-          OutputBaseFilename=HardwareMonSetup-$version
+          OutputBaseFilename=HardwareMonSetup-x64-$version
 
           Compression=lzma
           SolidCompression=yes
@@ -467,7 +476,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            HardwareMonSetup-*.exe
+            HardwareMonSetup-x64-*.exe
 
   # ─────────────────────────────────────────────────────────────────
   # Winget submission
@@ -498,7 +507,7 @@ jobs:
 
           release-tag: v${{ steps.version.outputs.version }}
 
-          installers-regex: 'HardwareMonSetup-.*\.exe$'
+          installers-regex: 'HardwareMonSetup-x64-([0-9.]+)\.exe$'
 
 
           token: ${{ secrets.WINGET_TOKEN }}
