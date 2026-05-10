@@ -57,8 +57,7 @@ def stats():
             .split("\n")[0]
             .strip()
         )
-    except:
-        exception = "Unknown CPU"
+    except Exception:
         cpu_name = platform.processor()
 
     ram_total = round(
