@@ -16,24 +16,72 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # ─────────────────────────────────────────────
+      # Node.js
+      # ─────────────────────────────────────────────
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
+      # ─────────────────────────────────────────────
+      # Flutter
+      # ─────────────────────────────────────────────
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      # ─────────────────────────────────────────────
+      # System dependencies
+      # ─────────────────────────────────────────────
       - name: Install system tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y dpkg-dev createrepo-c curl golang-go apt-utils
 
+          sudo apt-get install -y \
+            dpkg-dev \
+            createrepo-c \
+            curl \
+            golang-go \
+            apt-utils \
+            clang \
+            cmake \
+            ninja-build \
+            pkg-config \
+            libgtk-3-dev \
+            liblzma-dev \
+            zip \
+            python3 \
+            python3-pip \
+            python3-venv
+
+      # ─────────────────────────────────────────────
+      # Python dependencies
+      # ─────────────────────────────────────────────
+      - name: Install Python dependencies
+        run: |
+          python3 -m pip install --break-system-packages \
+            psutil \
+            gputil
+
+      # ─────────────────────────────────────────────
+      # Install nfpm
+      # ─────────────────────────────────────────────
       - name: Install nfpm
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
           echo "$HOME/go/bin" >> $GITHUB_PATH
 
+      # ─────────────────────────────────────────────
+      # Clean workspace
+      # ─────────────────────────────────────────────
       - name: Clean workspace
-        run: rm -rf dist repo public pkg
+        run: rm -rf dist repo public pkg flutter-release
 
+      # ─────────────────────────────────────────────
+      # Prepare Python package
+      # ─────────────────────────────────────────────
       - name: Prepare package files
         run: |
           mkdir -p pkg/opt/hardwaremon
@@ -81,12 +129,18 @@ jobs:
           mkdir -p pkg/usr/share/icons/hicolor/256x256/apps
           cp hardwaremon/cpu.png pkg/usr/share/icons/hicolor/256x256/apps/hardwaremon.png
 
+      # ─────────────────────────────────────────────
+      # Get version
+      # ─────────────────────────────────────────────
       - name: Get version
         id: version
         run: |
           VERSION="${{ github.ref_name }}"
           echo "version=${VERSION#v}" >> $GITHUB_OUTPUT
 
+      # ─────────────────────────────────────────────
+      # Create nfpm config
+      # ─────────────────────────────────────────────
       - name: Create nfpm config
         run: |
           cat <<EOF > nfpm.yaml
@@ -113,7 +167,6 @@ jobs:
                 - python3-pillow-tk
                 - python3-psutil
 
-
           contents:
             - src: pkg/bin/hardwaremon
               dst: /usr/bin/hardwaremon
@@ -131,6 +184,9 @@ jobs:
               dst: /usr/share/icons/hicolor/256x256/apps/hardwaremon.png
           EOF
 
+      # ─────────────────────────────────────────────
+      # Build Linux packages
+      # ─────────────────────────────────────────────
       - name: Create dist folder
         run: mkdir -p dist
 
@@ -140,7 +196,38 @@ jobs:
           nfpm pkg --config nfpm.yaml --packager rpm --target dist/hardwaremon.rpm
 
       # ─────────────────────────────────────────────
-      # Build APT repository
+      # Flutter dependencies
+      # ─────────────────────────────────────────────
+      - name: Install Flutter dependencies
+        working-directory: flutter_gui
+        run: flutter pub get
+
+      # ─────────────────────────────────────────────
+      # Build Flutter Linux app
+      # ─────────────────────────────────────────────
+      - name: Build Flutter Linux app
+        working-directory: flutter_gui
+        run: flutter build linux --release
+
+      # ─────────────────────────────────────────────
+      # Prepare Flutter release ZIP
+      # ─────────────────────────────────────────────
+      - name: Prepare Flutter release
+        run: |
+          mkdir -p flutter-release
+
+          cp -r flutter_gui/build/linux/x64/release/bundle/* flutter-release/
+
+          cp hardwaremon/api.py flutter-release/
+
+          cd flutter-release
+
+          chmod +x flutter_gui || true
+
+          zip -r ../HardwareMon-Flutter-Linux.zip .
+
+      # ─────────────────────────────────────────────
+      # Build APT repo
       # ─────────────────────────────────────────────
       - name: Build APT repo
         run: |
@@ -169,7 +256,7 @@ jobs:
           apt-ftparchive -c apt.conf release dists/stable > dists/stable/Release
 
       # ─────────────────────────────────────────────
-      # Build DNF repository
+      # Build DNF repo
       # ─────────────────────────────────────────────
       - name: Build DNF repo
         run: |
@@ -189,7 +276,6 @@ jobs:
           cp -r repo/apt/* public/apt/
           cp -r repo/yum/* public/yum/
 
-          # DNF repo file
           cat <<'EOF' > public/yum/hardwaremon.repo
           [hardwaremon]
           name=HardwareMon Repository
@@ -198,7 +284,6 @@ jobs:
           gpgcheck=0
           EOF
 
-          # APT setup script
           cat <<'EOF' > public/apt/setup.sh
           #!/bin/bash
           set -e
@@ -216,15 +301,21 @@ jobs:
 
           chmod +x public/apt/setup.sh
 
-          # Simple index
           echo '<h1>HardwareMon Repo</h1><a href="/apt/">APT</a><br><a href="/yum/">YUM</a>' > public/index.html
+
           echo "404" > public/404.html
 
+      # ─────────────────────────────────────────────
+      # Deploy Pages
+      # ─────────────────────────────────────────────
       - name: Deploy to Cloudflare Pages
         run: npx wrangler pages deploy public --project-name=hardwaremon --branch=main
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
+      # ─────────────────────────────────────────────
+      # GitHub Release
+      # ─────────────────────────────────────────────
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -232,6 +323,7 @@ jobs:
           files: |
             dist/hardwaremon.deb
             dist/hardwaremon.rpm
+            HardwareMon-Flutter-Linux.zip
 
   # ─────────────────────────────────────────────────────────────────
   # Windows build
@@ -277,31 +369,18 @@ jobs:
           AppName=HardwareMon
           AppVersion=$version
           AppPublisher=Louis Hinchliffe
-          AppPublisherURL=https://github.com/louisboii747/HardwareMon
-          AppSupportURL=https://github.com/louisboii747/HardwareMon/issues
           DefaultDirName={autopf}\HardwareMon
           DefaultGroupName=HardwareMon
           OutputDir=installer
           OutputBaseFilename=HardwareMonSetup-$version
-          SetupIconFile=Windows\hardwaremon.ico
           Compression=lzma
           SolidCompression=yes
-          ArchitecturesInstallIn64BitMode=x64
-          ArchitecturesAllowed=x64compatible
-          PrivilegesRequired=admin
 
           [Files]
-          Source: "dist\HardwareMon.exe"; DestDir: "{app}"; Flags: ignoreversion
+          Source: "dist\HardwareMon.exe"; DestDir: "{app}"
 
           [Icons]
           Name: "{group}\HardwareMon"; Filename: "{app}\HardwareMon.exe"
-          Name: "{commondesktop}\HardwareMon"; Filename: "{app}\HardwareMon.exe"; Tasks: desktopicon
-
-          [Tasks]
-          Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional icons:"
-
-          [Run]
-          Filename: "{app}\HardwareMon.exe"; Description: "Launch HardwareMon"; Flags: postinstall nowait skipifsilent
           "@ | Out-File -FilePath setup.iss -Encoding utf8
 
       - name: Build installer
