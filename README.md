@@ -97,6 +97,15 @@ hardwaremon
 
 ---
 
+---
+
+## Flutter
+
+Currently, I am working on retiring the current hardwaremon scripts with a new, highly modern version written with Flutter. Until this is complete, both Hardwaremon scripts will receive attention from me, and WILL continue to receive updates since they are the foundation of this project.
+In other words, the Flutter version will look the most modern and recieve updates just as much as the legacy HardwareMon .py scripts. Flutter will be installable with the dnf and apt steps once complete.
+
+---
+
 ## PyPI Cross Platform Fallback (DEPRECATED!)
 
 You can still install HardwareMon using pip:
