@@ -31,6 +31,7 @@ jobs:
       - name: Install Linux dependencies
         run: |
           sudo apt update
+
           sudo apt install -y \
             clang \
             cmake \
@@ -45,6 +46,7 @@ jobs:
         run: flutter pub get
 
       - name: Build Linux release
+        working-directory: flutter_gui
         run: flutter build linux --release
 
       - name: Create package structure
@@ -52,25 +54,31 @@ jobs:
           mkdir -p packaging/usr/bin
           mkdir -p packaging/usr/lib/hardwaremon
           mkdir -p packaging/usr/share/applications
+          mkdir -p packaging/usr/share/icons/hicolor/256x256/apps
           mkdir -p packaging/DEBIAN
 
       - name: Copy Flutter bundle
         run: |
-          cp -r build/linux/x64/release/bundle/* packaging/usr/lib/hardwaremon/
+          cp -r flutter_gui/build/linux/x64/release/bundle/* \
+            packaging/usr/lib/hardwaremon/
 
       - name: Copy backend
         run: |
           mkdir -p packaging/usr/lib/hardwaremon/backend
-          cp ../hardwaremon/api.py packaging/usr/lib/hardwaremon/backend/
+
+          cp hardwaremon/api.py \
+            packaging/usr/lib/hardwaremon/backend/
 
       - name: Build backend venv
         run: |
           cd packaging/usr/lib/hardwaremon/backend
 
           python3 -m venv venv
+
           source venv/bin/activate
 
           pip install --upgrade pip
+
           pip install \
             flask \
             flask-cors \
@@ -109,11 +117,18 @@ jobs:
           Categories=System;Monitor;
           EOF
 
+      - name: Copy icon
+        run: |
+          cp hardwaremon/cpu.png \
+            packaging/usr/share/icons/hicolor/256x256/apps/hardwaremon.png
+
       - name: Create control file
         run: |
-          cat > packaging/DEBIAN/control << 'EOF'
+          VERSION="${GITHUB_REF_NAME#v}"
+
+          cat > packaging/DEBIAN/control << EOF
           Package: hardwaremon
-          Version: 1.0.0
+          Version: ${VERSION}
           Section: utils
           Priority: optional
           Architecture: amd64
