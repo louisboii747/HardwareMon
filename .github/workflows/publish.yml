@@ -338,6 +338,7 @@ jobs:
 
             - src: flutter-pkg/usr/lib/hardwaremon-flutter/
               dst: /usr/lib/hardwaremon-flutter/
+              type: tree
 
             - src: flutter-pkg/usr/share/applications/hardwaremon-flutter.desktop
               dst: /usr/share/applications/hardwaremon-flutter.desktop
