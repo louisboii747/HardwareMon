@@ -41,6 +41,7 @@ jobs:
             dpkg-dev
 
       - name: Flutter dependencies
+        working-directory: flutter_gui
         run: flutter pub get
 
       - name: Build Linux release
