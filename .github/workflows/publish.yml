@@ -71,7 +71,8 @@ jobs:
         run: |
           python3 -m pip install --break-system-packages \
             psutil \
-            gputil
+            gputil \
+            setuptools
 
       # ─────────────────────────────────────────────
       # Install nfpm
@@ -234,23 +235,100 @@ jobs:
         working-directory: flutter_gui
         run: flutter build linux --release
 
+      
       # ─────────────────────────────────────────────
-      # Prepare Flutter ZIP
+      # Build Flutter DEB package
       # ─────────────────────────────────────────────
-      - name: Prepare Flutter release ZIP
+      - name: Prepare Flutter package
         run: |
-          mkdir -p flutter-release
+          mkdir -p flutter-pkg/usr/bin
+          mkdir -p flutter-pkg/usr/lib/hardwaremon-flutter
+          mkdir -p flutter-pkg/usr/share/applications
+          mkdir -p flutter-pkg/usr/share/icons/hicolor/256x256/apps
+          mkdir -p flutter-pkg/DEBIAN
 
+      - name: Copy Flutter files
+        run: |
           cp -r flutter_gui/build/linux/x64/release/bundle/* \
-            flutter-release/
+            flutter-pkg/usr/lib/hardwaremon-flutter/
 
-          cp hardwaremon/api.py flutter-release/
+          mv flutter-pkg/usr/lib/hardwaremon-flutter/flutter_gui \
+            flutter-pkg/usr/lib/hardwaremon-flutter/hardwaremon-flutter
 
-          cd flutter-release
+          mkdir -p flutter-pkg/usr/lib/hardwaremon-flutter/backend
 
-          chmod +x hardwaremon || true
+          cp hardwaremon/api.py \
+            flutter-pkg/usr/lib/hardwaremon-flutter/backend/
 
-          zip -r ../HardwareMon-Flutter-Linux.zip .
+      - name: Build Flutter backend venv
+        run: |
+          cd flutter-pkg/usr/lib/hardwaremon-flutter/backend
+
+          python3 -m venv venv
+
+          source venv/bin/activate
+
+          pip install \
+            flask \
+            flask-cors \
+            psutil \
+            gputil \
+            py-cpuinfo \
+            setuptools
+
+      - name: Create Flutter launcher
+        run: |
+          cat <<'EOF' > flutter-pkg/usr/bin/hardwaremon-flutter
+          #!/bin/bash
+
+          APP_DIR="/usr/lib/hardwaremon-flutter"
+          BACKEND_DIR="$APP_DIR/backend"
+
+          cd "$APP_DIR"
+
+          "$BACKEND_DIR/venv/bin/python" "$BACKEND_DIR/api.py" &
+
+          "$APP_DIR/hardwaremon-flutter"
+          EOF
+
+          chmod +x flutter-pkg/usr/bin/hardwaremon-flutter
+
+      - name: Create Flutter desktop entry
+        run: |
+          cat <<'EOF' > flutter-pkg/usr/share/applications/hardwaremon-flutter.desktop
+          [Desktop Entry]
+          Name=HardwareMon Flutter
+          Comment=Flutter version of HardwareMon
+          Exec=hardwaremon-flutter
+          Icon=hardwaremon-flutter
+          Terminal=false
+          Type=Application
+          Categories=System;Monitor;
+          EOF
+
+      - name: Copy Flutter icon
+        run: |
+          cp hardwaremon/cpu.png \
+            flutter-pkg/usr/share/icons/hicolor/256x256/apps/hardwaremon-flutter.png
+
+      - name: Create Flutter control file
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          cat <<EOF > flutter-pkg/DEBIAN/control
+          Package: hardwaremon-flutter
+          Version: ${VERSION}
+          Section: utils
+          Priority: optional
+          Architecture: amd64
+          Maintainer: Louis Hinchliffe
+          Description: Flutter edition of HardwareMon
+          EOF
+
+      - name: Build Flutter DEB
+        run: |
+          dpkg-deb --build flutter-pkg \
+            dist/hardwaremon-flutter.deb
 
       # ─────────────────────────────────────────────
       # Build APT repository
@@ -261,6 +339,9 @@ jobs:
           mkdir -p repo/apt/dists/stable/main/binary-amd64
 
           cp dist/hardwaremon.deb \
+            repo/apt/pool/main/h/hardwaremon/
+
+          cp dist/hardwaremon-flutter.deb \
             repo/apt/pool/main/h/hardwaremon/
 
           cd repo/apt
@@ -331,8 +412,12 @@ jobs:
           sudo apt update
 
           echo ""
-          echo "Install with:"
+          echo "Tkinter version:"
           echo "sudo apt install hardwaremon"
+
+          echo ""
+          echo "Flutter version:"
+          echo "sudo apt install hardwaremon-flutter"
           EOF
 
           chmod +x public/apt/setup.sh
@@ -370,7 +455,7 @@ jobs:
           files: |
             dist/hardwaremon.deb
             dist/hardwaremon.rpm
-            HardwareMon-Flutter-Linux.zip
+            dist/hardwaremon-flutter.deb
 
   # ─────────────────────────────────────────────────────────────────
   # Windows build

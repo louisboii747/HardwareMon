@@ -52,7 +52,7 @@ jobs:
       - name: Create package structure
         run: |
           mkdir -p packaging/usr/bin
-          mkdir -p packaging/usr/lib/hardwaremon
+          mkdir -p packaging/usr/lib/hardwaremon-flutter
           mkdir -p packaging/usr/share/applications
           mkdir -p packaging/usr/share/icons/hicolor/256x256/apps
           mkdir -p packaging/DEBIAN
@@ -60,18 +60,18 @@ jobs:
       - name: Copy Flutter bundle
         run: |
           cp -r flutter_gui/build/linux/x64/release/bundle/* \
-            packaging/usr/lib/hardwaremon/
+            packaging/usr/lib/hardwaremon-flutter/
 
       - name: Copy backend
         run: |
-          mkdir -p packaging/usr/lib/hardwaremon/backend
+          mkdir -p packaging/usr/lib/hardwaremon-flutter/backend
 
           cp hardwaremon/api.py \
-            packaging/usr/lib/hardwaremon/backend/
+            packaging/usr/lib/hardwaremon-flutter/backend/
 
       - name: Build backend venv
         run: |
-          cd packaging/usr/lib/hardwaremon/backend
+          cd packaging/usr/lib/hardwaremon-flutter/backend
 
           python3 -m venv venv
 
@@ -89,10 +89,10 @@ jobs:
 
       - name: Create launcher
         run: |
-          cat > packaging/usr/bin/hardwaremon << 'EOF'
+          cat > packaging/usr/bin/hardwaremon-flutter << 'EOF'
           #!/bin/bash
 
-          APP_DIR="/usr/lib/hardwaremon"
+          APP_DIR="/usr/lib/hardwaremon-flutter"
           BACKEND_DIR="$APP_DIR/backend"
 
           cd "$APP_DIR"
@@ -102,16 +102,16 @@ jobs:
           "$APP_DIR/flutter_gui"
           EOF
 
-          chmod +x packaging/usr/bin/hardwaremon
+          chmod +x packaging/usr/bin/hardwaremon-flutter
 
       - name: Create desktop entry
         run: |
-          cat > packaging/usr/share/applications/hardwaremon.desktop << 'EOF'
+          cat > packaging/usr/share/applications/hardwaremon-flutter.desktop << 'EOF'
           [Desktop Entry]
-          Name=HardwareMon
+          Name=HardwareMon Flutter
           Comment=System monitoring application
-          Exec=hardwaremon
-          Icon=hardwaremon
+          Exec=hardwaremon-flutter
+          Icon=hardwaremon-flutter
           Terminal=false
           Type=Application
           Categories=System;Monitor;
@@ -120,14 +120,14 @@ jobs:
       - name: Copy icon
         run: |
           cp hardwaremon/cpu.png \
-            packaging/usr/share/icons/hicolor/256x256/apps/hardwaremon.png
+            packaging/usr/share/icons/hicolor/256x256/apps/hardwaremon-flutter.png
 
       - name: Create control file
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
 
           cat > packaging/DEBIAN/control << EOF
-          Package: hardwaremon
+          Package: hardwaremon-flutter
           Version: ${VERSION}
           Section: utils
           Priority: optional
@@ -138,9 +138,10 @@ jobs:
 
       - name: Build Debian package
         run: |
-          dpkg-deb --build packaging hardwaremon.deb
+          mkdir -p dist
+          dpkg-deb --build packaging dist/hardwaremon-flutter.deb
 
       - name: Upload GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: hardwaremon.deb
+          files: dist/hardwaremon-flutter.deb
