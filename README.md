@@ -1,32 +1,64 @@
-# HardwareMon
+# HardwareMon (PLEASE READ FULLY!)
 
 ## About
 
-HardwareMon is a modern system monitoring tool for Linux and Windows, designed to give a clear, real time view of your computer’s hardware and performance.
+HardwareMon is a modern system monitoring tool for Linux and Windows, designed to provide a clear, real-time view of your computer’s hardware and performance.
 
-It provides detailed insights into CPU, memory, disk, GPU, network, and system activity through both a graphical interface and command line tools. Whether you want a clean visual overview or deeper technical information, HardwareMon makes it easy to understand what your system is doing at any moment.
+It offers detailed monitoring for:
 
-On Linux, HardwareMon is distributed as a native package through APT and DNF repositories, allowing simple installation and updates directly from your system package manager.
+- CPU
+- Memory
+- Disk usage
+- GPU activity
+- Network usage
+- System statistics
+- Processes and live resource information
 
-On Windows, HardwareMon is available as a standalone graphical installer and through Windows Package Manager (WinGet).
+HardwareMon includes both graphical and command-line interfaces, allowing you to choose between a clean visual dashboard or deeper terminal-based system inspection.
 
-The project focuses on performance, clarity, and ease of use while providing powerful monitoring features without unnecessary complexity.
+The project focuses on:
+
+- Performance
+- Clarity
+- Ease of use
+- Native platform integration
+- Lightweight monitoring without unnecessary complexity
+
+---
+
+# Platforms
+
+## Linux
+
+HardwareMon is distributed through native package repositories:
+
+- APT (Debian, Ubuntu, Zorin OS, etc.)
+- DNF (Fedora, RHEL-based systems)
+
+This allows installation and updates directly through your system package manager.
+
+## Windows
+
+HardwareMon is available through:
+
+- Standalone graphical installer
+- Windows Package Manager (WinGet)
 
 ---
 
 # Installation
 
-## Windows
+# Windows
 
-### WinGet
+## WinGet
 
 ```powershell
 winget install LouisHinchliffe.HardwareMon
 ```
 
-### Standalone Installer
+## Standalone Installer
 
-Download the latest installer from the GitHub Releases page:
+Download the latest installer from:
 
 ```text
 https://github.com/louisboii747/HardwareMon/releases
@@ -34,22 +66,29 @@ https://github.com/louisboii747/HardwareMon/releases
 
 ---
 
-## Linux
+# Linux
 
-### APT Debian Ubuntu Zorin
+# APT (Debian / Ubuntu / Zorin)
+
+## Automatic Setup
 
 ```bash
 curl -fsSL https://hardwaremon.pages.dev/apt/setup.sh | sudo bash
 ```
 
+## Install
+
 ```bash
 sudo apt install hardwaremon
 ```
 
-### Manual APT Setup
+---
+
+## Manual APT Setup
 
 ```bash
-echo "deb [trusted=yes] https://hardwaremon.pages.dev/apt stable main" | sudo tee /etc/apt/sources.list.d/hardwaremon.list
+echo "deb [trusted=yes] https://hardwaremon.pages.dev/apt stable main" \
+| sudo tee /etc/apt/sources.list.d/hardwaremon.list
 ```
 
 ```bash
@@ -59,70 +98,85 @@ sudo apt update
 ```bash
 sudo apt install hardwaremon
 ```
-### Usage
-You can run the either the GUI from your applications list or by running:
-```
-hardwaremon-gui
-```
-In the terminal. For CLI:
 
-```
-hardwaremon
-```
+---
 
-### DNF Fedora RHEL
+# DNF (Fedora / RHEL)
+
+## Add Repository
 
 ```bash
 sudo dnf install dnf-plugins-core
 ```
 
 ```bash
-sudo dnf config-manager addrepo --from-repofile=https://hardwaremon.pages.dev/yum/hardwaremon.repo
+sudo dnf config-manager addrepo \
+--from-repofile=https://hardwaremon.pages.dev/yum/hardwaremon.repo
 ```
+
+## Install
 
 ```bash
 sudo dnf install hardwaremon
 ```
 
-### Usage
-You can run the either the GUI from your applications list or by running:
-```
+---
+
+# Usage
+
+## GUI
+
+Launch HardwareMon from your desktop applications menu or run:
+
+```bash
 hardwaremon-gui
 ```
-In the terminal. For CLI:
 
-```
+## CLI
+
+```bash
 hardwaremon
 ```
 
 ---
 
+# Flutter Edition
+
+A next-generation version of HardwareMon is currently being developed using Flutter.
+
+The goal of the Flutter edition is to provide:
+
+- A significantly more modern interface
+- Improved responsiveness
+- Cross-platform desktop support
+- Better long-term scalability
+- Advanced real-time monitoring dashboards
+
+The current Python/Tkinter-based HardwareMon applications will continue receiving updates just as much as the Flutter version.
+
 ---
 
-## Flutter
+## Current Flutter Package Status
 
-Currently, I am working on retiring the current hardwaremon scripts with a new, highly modern version written with Flutter. Until this is complete, both Hardwaremon scripts will receive attention from me, and WILL continue to receive updates since they are the foundation of this project.
-In other words, the Flutter version will look the most modern and recieve updates just as much as the legacy HardwareMon .py scripts. Flutter will be installable with the dnf and apt steps once complete.
+### APT
 
----
-
-## PyPI Cross Platform Fallback (DEPRECATED!)
-
-You can still install HardwareMon using pip:
+The Flutter version is currently installable on APT-based distributions using:
 
 ```bash
-pip install hardwaremon
+sudo apt install hardwaremon-flutter
 ```
 
-Or with pipx:
+### DNF / RPM
 
-```bash
-pipx install hardwaremon
+```
+sudo dnf install hardwaremon-flutter
 ```
 
-PyPI will almost never contain the newest features and improvements.
+⚠️ The Flutter RPM/DNF package is currently experimental and not fully working yet.
 
-For the best Linux experience, use the APT or DNF repositories.
+The package builds successfully, but runtime issues are still being resolved for Fedora/RHEL systems.
+
+Until this is completed, the standard HardwareMon package is recommended on DNF-based systems.
 
 ---
 
@@ -141,12 +195,6 @@ sudo dnf upgrade --refresh
 sudo dnf upgrade hardwaremon
 ```
 
-## PyPI
-
-```bash
-pipx upgrade hardwaremon
-```
-
 ## WinGet
 
 ```powershell
@@ -155,12 +203,44 @@ winget upgrade LouisHinchliffe.HardwareMon
 
 ---
 
+# PyPI Cross-Platform Fallback (Deprecated)
+
+HardwareMon can still be installed through PyPI:
+
+```bash
+pip install hardwaremon
+```
+
+Or with pipx:
+
+```bash
+pipx install hardwaremon
+```
+
+However:
+
+- PyPI releases may not contain the newest features
+- Native Linux packages are the preferred installation method
+- Repository packages receive the fastest updates and improvements
+
+---
+
 # Development Notes
 
-When running the Linux GUI version inside VS Code, you may encounter a PIL module not found error.
+When running the Linux GUI version inside VS Code or a virtual environment, you may encounter missing Pillow/PIL module errors.
 
-Create a virtual environment and install Pillow:
+Install Pillow using:
 
 ```bash
 pip install pillow
 ```
+
+---
+
+# Project Status
+
+HardwareMon is under active development.
+
+Both the legacy Python implementation and the new Flutter edition are continuing to receive updates while the Flutter version receives development.
+
+The legacy Tkinter versions will NOT be deprecated. It will continue receiveing development.
