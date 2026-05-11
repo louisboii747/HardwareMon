@@ -87,7 +87,7 @@ jobs:
       # ─────────────────────────────────────────────
       - name: Clean workspace
         run: |
-          rm -rf dist repo public pkg flutter-release
+          rm -rf dist repo public pkg flutter-pkg
 
       # ─────────────────────────────────────────────
       # Get version
@@ -101,7 +101,7 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       # ─────────────────────────────────────────────
-      # Prepare package files
+      # Prepare Tkinter package files
       # ─────────────────────────────────────────────
       - name: Prepare package files
         run: |
@@ -153,7 +153,7 @@ jobs:
             pkg/usr/share/icons/hicolor/256x256/apps/hardwaremon.png
 
       # ─────────────────────────────────────────────
-      # Create nfpm config
+      # Create Tkinter nfpm config
       # ─────────────────────────────────────────────
       - name: Create nfpm config
         run: |
@@ -202,7 +202,7 @@ jobs:
           EOF
 
       # ─────────────────────────────────────────────
-      # Build packages
+      # Build Tkinter packages
       # ─────────────────────────────────────────────
       - name: Create dist folder
         run: mkdir -p dist
@@ -235,9 +235,8 @@ jobs:
         working-directory: flutter_gui
         run: flutter build linux --release
 
-      
       # ─────────────────────────────────────────────
-      # Build Flutter DEB package
+      # Prepare Flutter package
       # ─────────────────────────────────────────────
       - name: Prepare Flutter package
         run: |
@@ -245,7 +244,6 @@ jobs:
           mkdir -p flutter-pkg/usr/lib/hardwaremon-flutter
           mkdir -p flutter-pkg/usr/share/applications
           mkdir -p flutter-pkg/usr/share/icons/hicolor/256x256/apps
-          mkdir -p flutter-pkg/DEBIAN
 
       - name: Copy Flutter files
         run: |
@@ -287,8 +285,11 @@ jobs:
           cd "$APP_DIR"
 
           "$BACKEND_DIR/venv/bin/python" "$BACKEND_DIR/api.py" &
+          BACKEND_PID=$!
 
           "$APP_DIR/hardwaremon-flutter"
+
+          kill $BACKEND_PID
           EOF
 
           chmod +x flutter-pkg/usr/bin/hardwaremon-flutter
@@ -311,24 +312,56 @@ jobs:
           cp hardwaremon/cpu.png \
             flutter-pkg/usr/share/icons/hicolor/256x256/apps/hardwaremon-flutter.png
 
-      - name: Create Flutter control file
+      # ─────────────────────────────────────────────
+      # Create Flutter nfpm config
+      # ─────────────────────────────────────────────
+      - name: Create Flutter nfpm config
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
+          cat <<EOF > flutter-nfpm.yaml
+          name: hardwaremon-flutter
+          arch: amd64
+          platform: linux
+          version: "${{ steps.version.outputs.version }}"
 
-          cat <<EOF > flutter-pkg/DEBIAN/control
-          Package: hardwaremon-flutter
-          Version: ${VERSION}
-          Section: utils
-          Priority: optional
-          Architecture: amd64
-          Maintainer: Louis Hinchliffe
-          Description: Flutter edition of HardwareMon
+          maintainer: Louis Hinchliffe <louishinchliffe11@gmail.com>
+
+          description: Flutter edition of HardwareMon
+
+          homepage: https://github.com/louisboii747/HardwareMon
+
+          depends:
+            - python3
+
+          contents:
+            - src: flutter-pkg/usr/bin/hardwaremon-flutter
+              dst: /usr/bin/hardwaremon-flutter
+
+            - src: flutter-pkg/usr/lib/hardwaremon-flutter/
+              dst: /usr/lib/hardwaremon-flutter/
+
+            - src: flutter-pkg/usr/share/applications/hardwaremon-flutter.desktop
+              dst: /usr/share/applications/hardwaremon-flutter.desktop
+
+            - src: flutter-pkg/usr/share/icons/hicolor/256x256/apps/hardwaremon-flutter.png
+              dst: /usr/share/icons/hicolor/256x256/apps/hardwaremon-flutter.png
           EOF
 
+      # ─────────────────────────────────────────────
+      # Build Flutter packages
+      # ─────────────────────────────────────────────
       - name: Build Flutter DEB
         run: |
-          dpkg-deb --build flutter-pkg \
-            dist/hardwaremon-flutter.deb
+          nfpm pkg \
+            --config flutter-nfpm.yaml \
+            --packager deb \
+            --target dist/hardwaremon-flutter.deb
+
+      - name: Build Flutter RPM
+        run: |
+          nfpm pkg \
+            --config flutter-nfpm.yaml \
+            --packager rpm \
+            --target dist/hardwaremon-flutter.rpm
 
       # ─────────────────────────────────────────────
       # Build APT repository
@@ -374,6 +407,7 @@ jobs:
           mkdir -p repo/yum
 
           cp dist/hardwaremon.rpm repo/yum/
+          cp dist/hardwaremon-flutter.rpm repo/yum/
 
           cd repo/yum
 
@@ -456,143 +490,4 @@ jobs:
             dist/hardwaremon.deb
             dist/hardwaremon.rpm
             dist/hardwaremon-flutter.deb
-
-  # ─────────────────────────────────────────────────────────────────
-  # Windows build
-  # ─────────────────────────────────────────────────────────────────
-  build-windows:
-    runs-on: windows-latest
-
-    permissions:
-      contents: write
-
-    steps:
-      # ─────────────────────────────────────────────
-      # Checkout
-      # ─────────────────────────────────────────────
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # ─────────────────────────────────────────────
-      # Python
-      # ─────────────────────────────────────────────
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      # ─────────────────────────────────────────────
-      # Dependencies
-      # ─────────────────────────────────────────────
-      - name: Install dependencies
-        run: pip install customtkinter psutil gputil pyinstaller pillow
-          
-
-      # ─────────────────────────────────────────────
-      # Inject version
-      # ─────────────────────────────────────────────
-      - name: Inject version
-        shell: pwsh
-        run: |
-          $version = "${{ github.ref_name }}".TrimStart("v")
-
-          (Get-Content Windows\hardwaremon_win.py) `
-            -replace '^VERSION = .*', "VERSION = `"$version`"" `
-            | Set-Content Windows\hardwaremon_win.py
-
-      # ─────────────────────────────────────────────
-      # Build EXE
-      # ─────────────────────────────────────────────
-      - name: Build executable
-        shell: pwsh
-        run: |
-          pyinstaller Windows/HardwareMon.spec
-
-      # ─────────────────────────────────────────────
-      # Create installer script
-      # ─────────────────────────────────────────────
-      - name: Create Inno Setup script
-        shell: pwsh
-        run: |
-          $version = "${{ github.ref_name }}".TrimStart("v")
-
-          @"
-          [Setup]
-          AppName=HardwareMon
-          AppVersion=$version
-          AppPublisher=Louis Hinchliffe
-          
-          DefaultDirName={autopf}\HardwareMon
-          DefaultGroupName=HardwareMon
-
-          ArchitecturesAllowed=x64compatible
-          ArchitecturesInstallIn64BitMode=x64compatible
-
-          WizardStyle=modern
-          PrivilegesRequired=admin
-          SetupLogging=yes
-
-
-          OutputDir=.
-          OutputBaseFilename=HardwareMonSetup-x64-$version
-
-          Compression=lzma
-          SolidCompression=yes
-
-          [Files]
-          Source: "dist\HardwareMon.exe"; DestDir: "{app}"
-
-          [Icons]
-          Name: "{group}\HardwareMon"; Filename: "{app}\HardwareMon.exe"
-          "@ | Out-File -FilePath setup.iss -Encoding utf8
-
-      # ─────────────────────────────────────────────
-      # Build installer
-      # ─────────────────────────────────────────────
-      - name: Build installer
-        shell: pwsh
-        run: |
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" setup.iss
-
-      # ─────────────────────────────────────────────
-      # Upload installer to release
-      # ─────────────────────────────────────────────
-      - name: Upload installer to release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            HardwareMonSetup-x64-*.exe
-
-  # ─────────────────────────────────────────────────────────────────
-  # Winget submission
-  # ─────────────────────────────────────────────────────────────────
-  winget:
-    needs:
-      - build-windows
-      - build
-
-    runs-on: windows-latest
-
-    steps:
-      - name: Get version
-        id: version
-        shell: pwsh
-        run: |
-          $version = "${{ github.ref_name }}".TrimStart("v","V")
-
-          echo "version=$version" >> $env:GITHUB_OUTPUT
-
-      - name: Submit to winget
-        uses: vedantmgoyal9/winget-releaser@v2
-
-        with:
-          identifier: LouisHinchliffe.HardwareMon
-
-          version: ${{ steps.version.outputs.version }}
-
-          release-tag: v${{ steps.version.outputs.version }}
-
-          installers-regex: 'HardwareMonSetup-x64-([0-9.]+)\.exe$'
-
-
-          token: ${{ secrets.WINGET_TOKEN }}
+            dist/hardwaremon-flutter.rpm
