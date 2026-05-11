@@ -15,12 +15,29 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    await Process.start(
-      'python3',
-      ['../hardwaremon/api.py'],
+    final process = await Process.start(
+      '/home/louis/HardwareMon/.venv/bin/python3',
+      ['api.py'],
+      workingDirectory: Directory.current.path,
     );
 
+    process.stdout
+        .transform(utf8.decoder)
+        .listen((data) {
+      print("PYTHON STDOUT: $data");
+    });
+
+    process.stderr
+        .transform(utf8.decoder)
+        .listen((data) {
+      print("PYTHON STDERR: $data");
+    });
+
     print("Backend started");
+
+    await Future.delayed(
+      const Duration(seconds: 2),
+    );
   } catch (e) {
     print("Backend failed: $e");
   }
@@ -37,7 +54,8 @@ class HardwareMonApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'HardwareMon',
       theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF0D1117),
+        scaffoldBackgroundColor:
+            const Color(0xFF0D1117),
       ),
       home: const HomePage(),
     );
@@ -48,7 +66,8 @@ class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<HomePage> createState() =>
+      _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
@@ -73,10 +92,16 @@ class _HomePageState extends State<HomePage> {
                 const SizedBox(height: 30),
 
                 TweenAnimationBuilder(
-                  tween: Tween(begin: 0.7, end: 1.0),
-                  duration: const Duration(milliseconds: 700),
+                  tween: Tween(
+                    begin: 0.7,
+                    end: 1.0,
+                  ),
+                  duration: const Duration(
+                    milliseconds: 700,
+                  ),
                   curve: Curves.easeOutBack,
-                  builder: (context, value, child) {
+                  builder:
+                      (context, value, child) {
                     return Transform.scale(
                       scale: value,
                       child: child,
@@ -130,7 +155,9 @@ class _HomePageState extends State<HomePage> {
 
           Expanded(
             child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
+              duration: const Duration(
+                milliseconds: 300,
+              ),
               child: pages[selectedPage],
             ),
           ),
@@ -145,17 +172,21 @@ class _HomePageState extends State<HomePage> {
     required VoidCallback onPressed,
   }) {
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
+      duration:
+          const Duration(milliseconds: 250),
       curve: Curves.easeOut,
       decoration: BoxDecoration(
         color: active
-            ? Colors.cyanAccent.withOpacity(0.15)
+            ? Colors.cyanAccent
+                .withOpacity(0.15)
             : Colors.transparent,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius:
+            BorderRadius.circular(18),
         boxShadow: active
             ? [
                 BoxShadow(
-                  color: Colors.cyanAccent.withOpacity(0.15),
+                  color: Colors.cyanAccent
+                      .withOpacity(0.15),
                   blurRadius: 18,
                 ),
               ]
@@ -179,10 +210,12 @@ class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
 
   @override
-  State<DashboardPage> createState() => _DashboardPageState();
+  State<DashboardPage> createState() =>
+      _DashboardPageState();
 }
 
-class _DashboardPageState extends State<DashboardPage> {
+class _DashboardPageState
+    extends State<DashboardPage> {
   int cpuUsage = 0;
   int ramUsage = 0;
   int diskUsage = 0;
@@ -220,16 +253,15 @@ class _DashboardPageState extends State<DashboardPage> {
     try {
       final response = await http
           .get(
-            Uri.parse('http://127.0.0.1:5000/stats'),
+            Uri.parse(
+              'http://127.0.0.1:5000/stats',
+            ),
           )
           .timeout(
             const Duration(seconds: 3),
           );
 
       if (response.statusCode != 200) {
-        print(
-          "Backend returned ${response.statusCode}",
-        );
         return;
       }
 
@@ -238,9 +270,12 @@ class _DashboardPageState extends State<DashboardPage> {
       if (!mounted) return;
 
       setState(() {
-        final cores = (data['cores'] as List)
-            .map((e) => (e as num).toInt())
-            .toList();
+        final cores =
+            (data['cores'] as List)
+                .map(
+                  (e) => (e as num).toInt(),
+                )
+                .toList();
 
         cpuUsage = data['cpu'] ?? 0;
         coreUsages = cores;
@@ -249,25 +284,30 @@ class _DashboardPageState extends State<DashboardPage> {
         diskUsage = data['disk'] ?? 0;
 
         cpuName =
-            data['cpu_name'] ?? "Unknown CPU";
+            data['cpu_name'] ??
+            "Unknown CPU";
 
         gpuName =
-            data['gpu_name'] ?? "Unknown GPU";
+            data['gpu_name'] ??
+            "Unknown GPU";
 
-        ramTotal = data['ram_total'] ?? 0;
+        ramTotal =
+            data['ram_total'] ?? 0;
 
         uploadSpeed =
-            (data['upload'] ?? 0).toDouble();
+            (data['upload'] ?? 0)
+                .toDouble();
 
         downloadSpeed =
-            (data['download'] ?? 0).toDouble();
+            (data['download'] ?? 0)
+                .toDouble();
 
-        gpuTemp = data['gpu_temp'] ?? 0;
+        gpuTemp =
+            data['gpu_temp'] ?? 0;
 
-        currentTime =
-            DateFormat('HH:mm:ss').format(
-          DateTime.now(),
-        );
+        currentTime = DateFormat(
+          'HH:mm:ss',
+        ).format(DateTime.now());
 
         cpuHistory.add(
           cpuUsage.toDouble(),
@@ -299,7 +339,8 @@ class _DashboardPageState extends State<DashboardPage> {
           if (
               coreHistories[i].length >
                   30) {
-            coreHistories[i].removeAt(0);
+            coreHistories[i]
+                .removeAt(0);
           }
         }
 
@@ -311,13 +352,12 @@ class _DashboardPageState extends State<DashboardPage> {
           ramHistory.removeAt(0);
         }
 
-        if (networkHistory.length > 30) {
+        if (networkHistory.length >
+            30) {
           networkHistory.removeAt(0);
         }
       });
-    } catch (e) {
-      print("API error: $e");
-    }
+    } catch (_) {}
   }
 
   @override
@@ -374,7 +414,8 @@ class _DashboardPageState extends State<DashboardPage> {
                   const FlDotData(show: false),
               belowBarData: BarAreaData(
                 show: true,
-                color: color.withOpacity(0.10),
+                color:
+                    color.withOpacity(0.10),
               ),
             ),
           ],
@@ -393,7 +434,8 @@ class _DashboardPageState extends State<DashboardPage> {
         children: [
           Row(
             mainAxisAlignment:
-                MainAxisAlignment.spaceBetween,
+                MainAxisAlignment
+                    .spaceBetween,
             crossAxisAlignment:
                 CrossAxisAlignment.start,
             children: [
@@ -460,31 +502,203 @@ class _DashboardPageState extends State<DashboardPage> {
                       Expanded(
                         child: StatCard(
                           title: "CPU Usage",
-                          value: "$cpuUsage%",
-                          icon:
-                              Icons.memory_rounded,
-                          graph: buildMiniGraph(
+                          value:
+                              "$cpuUsage%",
+                          icon: Icons
+                              .memory_rounded,
+                          graph:
+                              buildMiniGraph(
                             cpuHistory,
-                            Colors.cyanAccent,
+                            Colors
+                                .cyanAccent,
                           ),
                         ),
                       ),
 
-                      const SizedBox(width: 18),
+                      const SizedBox(
+                        width: 18,
+                      ),
 
                       Expanded(
                         child: StatCard(
                           title: "RAM Usage",
-                          value: "$ramUsage%",
-                          icon:
-                              Icons.storage_rounded,
-                          graph: buildMiniGraph(
+                          value:
+                              "$ramUsage%",
+                          icon: Icons
+                              .storage_rounded,
+                          graph:
+                              buildMiniGraph(
                             ramHistory,
-                            Colors.greenAccent,
+                            Colors
+                                .greenAccent,
                           ),
                         ),
                       ),
                     ],
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: StatCard(
+                          title:
+                              "Disk Usage",
+                          value:
+                              "$diskUsage%",
+                          icon: Icons
+                              .sd_storage_rounded,
+                          graph:
+                              buildMiniGraph(
+                            cpuHistory,
+                            Colors
+                                .orangeAccent,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(
+                        width: 18,
+                      ),
+
+                      Expanded(
+                        child: StatCard(
+                          title: "Download",
+                          value:
+                              "${downloadSpeed.toStringAsFixed(1)} KB/s",
+                          icon: Icons
+                              .download_rounded,
+                          graph:
+                              buildMiniGraph(
+                            networkHistory,
+                            Colors
+                                .blueAccent,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: StatCard(
+                          title: "Upload",
+                          value:
+                              "${uploadSpeed.toStringAsFixed(1)} KB/s",
+                          icon: Icons
+                              .upload_rounded,
+                          graph:
+                              buildMiniGraph(
+                            networkHistory,
+                            Colors
+                                .purpleAccent,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(
+                        width: 18,
+                      ),
+
+                      Expanded(
+                        child: StatCard(
+                          title:
+                              "GPU Temp",
+                          value:
+                              "$gpuTemp°C",
+                          icon: Icons
+                              .videogame_asset_rounded,
+                          graph:
+                              buildMiniGraph(
+                            cpuHistory,
+                            getTempColor(
+                              gpuTemp,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  SizedBox(
+                    height: 140,
+                    child: ListView.builder(
+                      scrollDirection:
+                          Axis.horizontal,
+                      itemCount:
+                          coreUsages.length,
+                      itemBuilder:
+                          (context, index) {
+                        return Container(
+                          width: 140,
+                          margin:
+                              const EdgeInsets.only(
+                            right: 14,
+                          ),
+                          padding:
+                              const EdgeInsets.all(
+                            14,
+                          ),
+                          decoration:
+                              BoxDecoration(
+                            color: const Color(
+                              0xFF161B22,
+                            ),
+                            borderRadius:
+                                BorderRadius
+                                    .circular(
+                              22,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment:
+                                CrossAxisAlignment
+                                    .start,
+                            children: [
+                              Text(
+                                "Core ${index + 1}",
+                                style:
+                                    const TextStyle(
+                                  color: Colors
+                                      .white70,
+                                  fontSize: 13,
+                                ),
+                              ),
+
+                              const SizedBox(
+                                height: 8,
+                              ),
+
+                              Text(
+                                "${coreUsages[index]}%",
+                                style:
+                                    const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight:
+                                      FontWeight
+                                          .bold,
+                                ),
+                              ),
+
+                              const Spacer(),
+
+                              buildMiniGraph(
+                                coreHistories[
+                                    index],
+                                Colors
+                                    .cyanAccent,
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),
@@ -551,7 +765,8 @@ class _StatCardState
         ),
         child: Column(
           mainAxisAlignment:
-              MainAxisAlignment.spaceBetween,
+              MainAxisAlignment
+                  .spaceBetween,
           crossAxisAlignment:
               CrossAxisAlignment.start,
           children: [
@@ -610,13 +825,180 @@ class _StatCardState
   }
 }
 
-class ProcessesPage extends StatelessWidget {
+class ProcessesPage extends StatefulWidget {
   const ProcessesPage({super.key});
 
   @override
+  State<ProcessesPage> createState() =>
+      _ProcessesPageState();
+}
+
+class _ProcessesPageState
+    extends State<ProcessesPage> {
+  List<Map<String, dynamic>> processes = [];
+
+  String searchQuery = "";
+
+  late Timer timer;
+
+  Future<void> fetchProcesses() async {
+    try {
+      final result = await Process.run(
+        'ps',
+        [
+          '-eo',
+          'pid,comm,%cpu,%mem',
+          '--sort=-%cpu'
+        ],
+      );
+
+      final lines = result.stdout
+          .toString()
+          .split('\n')
+          .skip(1)
+          .where(
+            (line) =>
+                line.trim().isNotEmpty,
+          )
+          .take(40)
+          .toList();
+
+      List<Map<String, dynamic>>
+          parsed = [];
+
+      for (var line in lines) {
+        final parts = line
+            .trim()
+            .split(RegExp(r'\s+'));
+
+        if (parts.length >= 4) {
+          parsed.add({
+            'pid': parts[0],
+            'name': parts[1],
+            'cpu': parts[2],
+            'ram': parts[3],
+          });
+        }
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        processes = parsed;
+      });
+    } catch (_) {}
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    fetchProcesses();
+
+    timer = Timer.periodic(
+      const Duration(seconds: 2),
+      (_) => fetchProcesses(),
+    );
+  }
+
+  @override
+  void dispose() {
+    timer.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text("Processes Page"),
+    final filteredProcesses =
+        processes.where((proc) {
+      final query =
+          searchQuery.toLowerCase();
+
+      return proc['name']
+              .toLowerCase()
+              .contains(query) ||
+          proc['pid']
+              .toString()
+              .contains(query);
+    }).toList();
+
+    return Padding(
+      padding: const EdgeInsets.all(30),
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Processes",
+            style: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          TextField(
+            onChanged: (value) {
+              setState(() {
+                searchQuery = value;
+              });
+            },
+            decoration: InputDecoration(
+              hintText:
+                  "Search by name or PID",
+              prefixIcon: const Icon(
+                Icons.search_rounded,
+              ),
+              filled: true,
+              fillColor:
+                  const Color(0xFF161B22),
+              border: OutlineInputBorder(
+                borderRadius:
+                    BorderRadius.circular(
+                  12,
+                ),
+                borderSide:
+                    BorderSide.none,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          Expanded(
+            child: ListView.builder(
+              itemCount:
+                  filteredProcesses.length,
+              itemBuilder:
+                  (context, index) {
+                final proc =
+                    filteredProcesses[index];
+
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: Colors
+                        .cyanAccent
+                        .withOpacity(0.15),
+                    child: Text(
+                      proc['name'][0]
+                          .toUpperCase(),
+                    ),
+                  ),
+                  title: Text(
+                    proc['name'],
+                    overflow:
+                        TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text(
+                    "PID: ${proc['pid']} • CPU: ${proc['cpu']}% • RAM: ${proc['ram']}%",
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -626,8 +1008,31 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text("Settings Page"),
+    return const Padding(
+      padding: EdgeInsets.all(30),
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Settings",
+            style: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          SizedBox(height: 20),
+
+          Text(
+            "HardwareMon settings will appear here.",
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 16,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
