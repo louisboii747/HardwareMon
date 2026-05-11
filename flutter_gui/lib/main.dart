@@ -15,19 +15,19 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    final process = await Process.start(
-      '/home/louis/HardwareMon/.venv/bin/python3',
-      ['api.py'],
+    final backendProcess = await Process.start(
+      '${Directory.current.path}/backend/venv/bin/python',
+      ['${Directory.current.path}/backend/api.py'],
       workingDirectory: Directory.current.path,
     );
 
-    process.stdout
+    backendProcess.stdout
         .transform(utf8.decoder)
         .listen((data) {
       print("PYTHON STDOUT: $data");
     });
 
-    process.stderr
+    backendProcess.stderr
         .transform(utf8.decoder)
         .listen((data) {
       print("PYTHON STDERR: $data");

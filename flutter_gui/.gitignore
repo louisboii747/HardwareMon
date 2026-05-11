@@ -32,6 +32,9 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+packaging/
+packaging.deb
+build/
 
 # Symbolication related
 app.*.symbols
