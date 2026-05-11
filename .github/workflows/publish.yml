@@ -491,3 +491,140 @@ jobs:
             dist/hardwaremon.rpm
             dist/hardwaremon-flutter.deb
             dist/hardwaremon-flutter.rpm
+
+      # ─────────────────────────────────────────────────────────────────
+      # Windows build
+      # ─────────────────────────────────────────────────────────────────
+  build-windows:
+    runs-on: windows-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      # ─────────────────────────────────────────────
+      # Checkout
+      # ─────────────────────────────────────────────
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ─────────────────────────────────────────────
+      # Python
+      # ─────────────────────────────────────────────
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # ─────────────────────────────────────────────
+      # Dependencies
+      # ─────────────────────────────────────────────
+      - name: Install dependencies
+        run: pip install customtkinter psutil gputil pyinstaller pillow
+
+      # ─────────────────────────────────────────────
+      # Inject version
+      # ─────────────────────────────────────────────
+      - name: Inject version
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart("v")
+
+          (Get-Content Windows\hardwaremon_win.py) `
+            -replace '^VERSION = .*', "VERSION = `"$version`"" `
+            | Set-Content Windows\hardwaremon_win.py
+
+      # ─────────────────────────────────────────────
+      # Build EXE
+      # ─────────────────────────────────────────────
+      - name: Build executable
+        shell: pwsh
+        run: |
+          pyinstaller Windows/HardwareMon.spec
+
+      # ─────────────────────────────────────────────
+      # Create installer script
+      # ─────────────────────────────────────────────
+      - name: Create Inno Setup script
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart("v")
+
+          @"
+          [Setup]
+          AppName=HardwareMon
+          AppVersion=$version
+          AppPublisher=Louis Hinchliffe
+          
+          DefaultDirName={autopf}\HardwareMon
+          DefaultGroupName=HardwareMon
+
+          ArchitecturesAllowed=x64compatible
+          ArchitecturesInstallIn64BitMode=x64compatible
+
+          WizardStyle=modern
+          PrivilegesRequired=admin
+          SetupLogging=yes
+
+          OutputDir=.
+          OutputBaseFilename=HardwareMonSetup-x64-$version
+
+          Compression=lzma
+          SolidCompression=yes
+
+          [Files]
+          Source: "dist\HardwareMon.exe"; DestDir: "{app}"
+
+          [Icons]
+          Name: "{group}\HardwareMon"; Filename: "{app}\HardwareMon.exe"
+          "@ | Out-File -FilePath setup.iss -Encoding utf8
+
+      # ─────────────────────────────────────────────
+      # Build installer
+      # ─────────────────────────────────────────────
+      - name: Build installer
+        shell: pwsh
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" setup.iss
+
+      # ─────────────────────────────────────────────
+      # Upload installer to release
+      # ─────────────────────────────────────────────
+      - name: Upload installer to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            HardwareMonSetup-x64-*.exe
+
+  # ─────────────────────────────────────────────────────────────────
+  # Winget submission
+  # ─────────────────────────────────────────────────────────────────
+  winget:
+    needs:
+      - build-windows
+      - build
+
+    runs-on: windows-latest
+
+    steps:
+      - name: Get version
+        id: version
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart("v","V")
+
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Submit to winget
+        uses: vedantmgoyal9/winget-releaser@v2
+
+        with:
+          identifier: LouisHinchliffe.HardwareMon
+
+          version: ${{ steps.version.outputs.version }}
+
+          release-tag: v${{ steps.version.outputs.version }}
+
+          installers-regex: 'HardwareMonSetup-x64-([0-9.]+)\.exe$'
+
+          token: ${{ secrets.WINGET_TOKEN }}
