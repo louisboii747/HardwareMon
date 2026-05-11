@@ -64,10 +64,7 @@ class _HomePageState extends State<HomePage> {
                   duration: const Duration(milliseconds: 700),
                   curve: Curves.easeOutBack,
                   builder: (context, value, child) {
-                    return Transform.scale(
-                      scale: value,
-                      child: child,
-                    );
+                    return Transform.scale(scale: value, child: child);
                   },
                   child: const Icon(
                     Icons.memory_rounded,
@@ -153,9 +150,7 @@ class _HomePageState extends State<HomePage> {
         icon: Icon(
           icon,
           size: 30,
-          color: active
-              ? Colors.cyanAccent
-              : Colors.white70,
+          color: active ? Colors.cyanAccent : Colors.white70,
         ),
       ),
     );
@@ -207,17 +202,13 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Future<void> startBackend() async {
     try {
-      backendProcess = await Process.start(
-        'python3',
-        ['../hardwaremon/api.py'],
-        mode: ProcessStartMode.detached,
-      );
+      backendProcess = await Process.start('python3', [
+        '../hardwaremon/api.py',
+      ]);
 
       print("Backend started");
 
-      await Future.delayed(
-        const Duration(seconds: 2),
-      );
+      await Future.delayed(const Duration(seconds: 2));
     } catch (e) {
       print("Backend failed: $e");
     }
@@ -225,10 +216,14 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Future<void> fetchStats() async {
     try {
-      final response = await http.get(
-        Uri.parse('http://127.0.0.1:5000/stats'),
-      );
+      final response = await http
+          .get(Uri.parse('http://127.0.0.1:5000/stats'))
+          .timeout(const Duration(seconds: 3));
 
+      if (response.statusCode != 200) {
+        print("Backend returned ${response.statusCode}");
+        return;
+      }
       final data = jsonDecode(response.body);
 
       if (!mounted) return;
@@ -244,57 +239,34 @@ class _DashboardPageState extends State<DashboardPage> {
         ramUsage = data['ram'] ?? 0;
         diskUsage = data['disk'] ?? 0;
 
-        cpuName =
-            data['cpu_name'] ?? "Unknown CPU";
+        cpuName = data['cpu_name'] ?? "Unknown CPU";
 
-        gpuName =
-            data['gpu_name'] ?? "Unknown GPU";
+        gpuName = data['gpu_name'] ?? "Unknown GPU";
 
         ramTotal = data['ram_total'] ?? 0;
 
-        uploadSpeed =
-            (data['upload'] ?? 0).toDouble();
+        uploadSpeed = (data['upload'] ?? 0).toDouble();
 
-        downloadSpeed =
-            (data['download'] ?? 0).toDouble();
+        downloadSpeed = (data['download'] ?? 0).toDouble();
 
         gpuTemp = data['gpu_temp'] ?? 0;
 
-        currentTime =
-            DateFormat('HH:mm:ss').format(
-          DateTime.now(),
-        );
+        currentTime = DateFormat('HH:mm:ss').format(DateTime.now());
 
-        cpuHistory.add(
-          cpuUsage.toDouble(),
-        );
+        cpuHistory.add(cpuUsage.toDouble());
 
-        ramHistory.add(
-          ramUsage.toDouble(),
-        );
+        ramHistory.add(ramUsage.toDouble());
 
-        networkHistory.add(
-          downloadSpeed,
-        );
+        networkHistory.add(downloadSpeed);
 
-        while (
-            coreHistories.length <
-                coreUsages.length) {
+        while (coreHistories.length < coreUsages.length) {
           coreHistories.add([]);
         }
 
-        for (
-          int i = 0;
-          i < coreUsages.length;
-          i++
-        ) {
-          coreHistories[i].add(
-            coreUsages[i].toDouble(),
-          );
+        for (int i = 0; i < coreUsages.length; i++) {
+          coreHistories[i].add(coreUsages[i].toDouble());
 
-          if (
-              coreHistories[i].length >
-                  30) {
+          if (coreHistories[i].length > 30) {
             coreHistories[i].removeAt(0);
           }
         }
@@ -323,10 +295,7 @@ class _DashboardPageState extends State<DashboardPage> {
     startBackend().then((_) {
       fetchStats();
 
-      timer = Timer.periodic(
-        const Duration(seconds: 2),
-        (_) => fetchStats(),
-      );
+      timer = Timer.periodic(const Duration(seconds: 2), (_) => fetchStats());
     });
   }
 
@@ -339,40 +308,28 @@ class _DashboardPageState extends State<DashboardPage> {
     super.dispose();
   }
 
-  Widget buildMiniGraph(
-    List<double> data,
-    Color color,
-  ) {
+  Widget buildMiniGraph(List<double> data, Color color) {
     return SizedBox(
       height: 22,
       child: LineChart(
         LineChartData(
           minY: 0,
           maxY: 100,
-          gridData:
-              const FlGridData(show: false),
-          titlesData:
-              const FlTitlesData(show: false),
-          borderData:
-              FlBorderData(show: false),
+          gridData: const FlGridData(show: false),
+          titlesData: const FlTitlesData(show: false),
+          borderData: FlBorderData(show: false),
           lineBarsData: [
             LineChartBarData(
               spots: data
                   .asMap()
                   .entries
-                  .map(
-                    (e) => FlSpot(
-                      e.key.toDouble(),
-                      e.value,
-                    ),
-                  )
+                  .map((e) => FlSpot(e.key.toDouble(), e.value))
                   .toList(),
               isCurved: true,
               curveSmoothness: 0.35,
               color: color,
               barWidth: 2,
-              dotData:
-                  const FlDotData(show: false),
+              dotData: const FlDotData(show: false),
               belowBarData: BarAreaData(
                 show: true,
                 color: color.withOpacity(0.10),
@@ -389,50 +346,37 @@ class _DashboardPageState extends State<DashboardPage> {
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment:
-                MainAxisAlignment.spaceBetween,
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
                     "HardwareMon",
-                    style: TextStyle(
-                      fontSize: 34,
-                      fontWeight:
-                          FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
                   ),
 
                   const SizedBox(height: 6),
 
                   Text(
                     "$cpuName • $gpuName • ${ramTotal} GB RAM",
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
+                    style: const TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                 ],
               ),
 
               Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
                     currentTime,
                     style: const TextStyle(
                       fontSize: 28,
-                      fontWeight:
-                          FontWeight.bold,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
 
@@ -440,10 +384,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
                   Text(
                     uptime,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
+                    style: const TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                 ],
               ),
@@ -462,12 +403,8 @@ class _DashboardPageState extends State<DashboardPage> {
                         child: StatCard(
                           title: "CPU Usage",
                           value: "$cpuUsage%",
-                          icon:
-                              Icons.memory_rounded,
-                          graph: buildMiniGraph(
-                            cpuHistory,
-                            Colors.cyanAccent,
-                          ),
+                          icon: Icons.memory_rounded,
+                          graph: buildMiniGraph(cpuHistory, Colors.cyanAccent),
                         ),
                       ),
 
@@ -477,12 +414,8 @@ class _DashboardPageState extends State<DashboardPage> {
                         child: StatCard(
                           title: "RAM Usage",
                           value: "$ramUsage%",
-                          icon:
-                              Icons.storage_rounded,
-                          graph: buildMiniGraph(
-                            ramHistory,
-                            Colors.greenAccent,
-                          ),
+                          icon: Icons.storage_rounded,
+                          graph: buildMiniGraph(ramHistory, Colors.greenAccent),
                         ),
                       ),
                     ],
@@ -496,8 +429,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         child: StatCard(
                           title: "Disk Usage",
                           value: "$diskUsage%",
-                          icon: Icons
-                              .sd_storage_rounded,
+                          icon: Icons.sd_storage_rounded,
                           graph: buildMiniGraph(
                             cpuHistory,
                             Colors.orangeAccent,
@@ -510,10 +442,8 @@ class _DashboardPageState extends State<DashboardPage> {
                       Expanded(
                         child: StatCard(
                           title: "Download",
-                          value:
-                              "${downloadSpeed.toStringAsFixed(1)} KB/s",
-                          icon:
-                              Icons.download_rounded,
+                          value: "${downloadSpeed.toStringAsFixed(1)} KB/s",
+                          icon: Icons.download_rounded,
                           graph: buildMiniGraph(
                             networkHistory,
                             Colors.blueAccent,
@@ -530,10 +460,8 @@ class _DashboardPageState extends State<DashboardPage> {
                       Expanded(
                         child: StatCard(
                           title: "Upload",
-                          value:
-                              "${uploadSpeed.toStringAsFixed(1)} KB/s",
-                          icon:
-                              Icons.upload_rounded,
+                          value: "${uploadSpeed.toStringAsFixed(1)} KB/s",
+                          icon: Icons.upload_rounded,
                           graph: buildMiniGraph(
                             networkHistory,
                             Colors.purpleAccent,
@@ -547,13 +475,10 @@ class _DashboardPageState extends State<DashboardPage> {
                         child: StatCard(
                           title: "GPU Temp",
                           value: "$gpuTemp°C",
-                          icon: Icons
-                              .videogame_asset_rounded,
+                          icon: Icons.videogame_asset_rounded,
                           graph: buildMiniGraph(
                             cpuHistory,
-                            getTempColor(
-                              gpuTemp,
-                            ),
+                            getTempColor(gpuTemp),
                           ),
                         ),
                       ),
@@ -565,70 +490,43 @@ class _DashboardPageState extends State<DashboardPage> {
                   SizedBox(
                     height: 140,
                     child: ListView.builder(
-                      scrollDirection:
-                          Axis.horizontal,
-                      itemCount:
-                          coreUsages.length,
-                      itemBuilder:
-                          (context, index) {
+                      scrollDirection: Axis.horizontal,
+                      itemCount: coreUsages.length,
+                      itemBuilder: (context, index) {
                         return Container(
                           width: 140,
-                          margin:
-                              const EdgeInsets.only(
-                            right: 14,
-                          ),
-                          padding:
-                              const EdgeInsets.all(
-                            14,
-                          ),
-                          decoration:
-                              BoxDecoration(
-                            color: const Color(
-                              0xFF161B22,
-                            ),
-                            borderRadius:
-                                BorderRadius
-                                    .circular(
-                              22,
-                            ),
+                          margin: const EdgeInsets.only(right: 14),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF161B22),
+                            borderRadius: BorderRadius.circular(22),
                           ),
                           child: Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment
-                                    .start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 "Core ${index + 1}",
-                                style:
-                                    const TextStyle(
-                                  color: Colors
-                                      .white70,
+                                style: const TextStyle(
+                                  color: Colors.white70,
                                   fontSize: 13,
                                 ),
                               ),
 
-                              const SizedBox(
-                                height: 8,
-                              ),
+                              const SizedBox(height: 8),
 
                               Text(
                                 "${coreUsages[index]}%",
-                                style:
-                                    const TextStyle(
+                                style: const TextStyle(
                                   fontSize: 24,
-                                  fontWeight:
-                                      FontWeight
-                                          .bold,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
 
                               const Spacer(),
 
                               buildMiniGraph(
-                                coreHistories[
-                                    index],
-                                Colors
-                                    .cyanAccent,
+                                coreHistories[index],
+                                Colors.cyanAccent,
                               ),
                             ],
                           ),
@@ -641,51 +539,32 @@ class _DashboardPageState extends State<DashboardPage> {
 
                   Container(
                     height: 320,
-                    padding:
-                        const EdgeInsets.all(18),
+                    padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color:
-                          const Color(0xFF161B22),
-                      borderRadius:
-                          BorderRadius.circular(
-                        24,
-                      ),
+                      color: const Color(0xFF161B22),
+                      borderRadius: BorderRadius.circular(24),
                     ),
                     child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment
-                              .start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
                           "CPU History",
                           style: TextStyle(
                             fontSize: 20,
-                            fontWeight:
-                                FontWeight.bold,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
 
-                        const SizedBox(
-                          height: 16,
-                        ),
+                        const SizedBox(height: 16),
 
                         Expanded(
                           child: LineChart(
                             LineChartData(
                               minY: 0,
                               maxY: 100,
-                              gridData:
-                                  const FlGridData(
-                                show: false,
-                              ),
-                              titlesData:
-                                  const FlTitlesData(
-                                show: false,
-                              ),
-                              borderData:
-                                  FlBorderData(
-                                show: false,
-                              ),
+                              gridData: const FlGridData(show: false),
+                              titlesData: const FlTitlesData(show: false),
+                              borderData: FlBorderData(show: false),
                               lineBarsData: [
                                 LineChartBarData(
                                   spots: cpuHistory
@@ -693,31 +572,17 @@ class _DashboardPageState extends State<DashboardPage> {
                                       .entries
                                       .map(
                                         (e) =>
-                                            FlSpot(
-                                          e.key
-                                              .toDouble(),
-                                          e.value,
-                                        ),
+                                            FlSpot(e.key.toDouble(), e.value),
                                       )
                                       .toList(),
                                   isCurved: true,
-                                  curveSmoothness:
-                                      0.35,
-                                  color: Colors
-                                      .cyanAccent,
+                                  curveSmoothness: 0.35,
+                                  color: Colors.cyanAccent,
                                   barWidth: 3,
-                                  dotData:
-                                      const FlDotData(
-                                    show: false,
-                                  ),
-                                  belowBarData:
-                                      BarAreaData(
+                                  dotData: const FlDotData(show: false),
+                                  belowBarData: BarAreaData(
                                     show: true,
-                                    color: Colors
-                                        .cyanAccent
-                                        .withOpacity(
-                                      0.10,
-                                    ),
+                                    color: Colors.cyanAccent.withOpacity(0.10),
                                   ),
                                 ),
                               ],
@@ -752,12 +617,10 @@ class StatCard extends StatefulWidget {
   });
 
   @override
-  State<StatCard> createState() =>
-      _StatCardState();
+  State<StatCard> createState() => _StatCardState();
 }
 
-class _StatCardState
-    extends State<StatCard> {
+class _StatCardState extends State<StatCard> {
   bool hovered = false;
 
   @override
@@ -774,67 +637,50 @@ class _StatCardState
         });
       },
       child: AnimatedContainer(
-        duration:
-            const Duration(milliseconds: 220),
-        transform: Matrix4.identity()
-          ..scale(hovered ? 1.01 : 1.0),
+        duration: const Duration(milliseconds: 220),
+        transform: Matrix4.identity()..scale(hovered ? 1.01 : 1.0),
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: const Color(0xFF161B22),
-          borderRadius:
-              BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: hovered
-                ? Colors.cyanAccent
-                : Colors.white10,
+            color: hovered ? Colors.cyanAccent : Colors.white10,
             width: 1.1,
           ),
         ),
         child: Column(
-          mainAxisAlignment:
-              MainAxisAlignment.spaceBetween,
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Icon(
                   widget.icon,
                   size: 22,
-                  color: hovered
-                      ? Colors.cyanAccent
-                      : Colors.white,
+                  color: hovered ? Colors.cyanAccent : Colors.white,
                 ),
 
                 const SizedBox(width: 10),
 
                 Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment
-                            .start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         widget.title,
-                        style:
-                            const TextStyle(
-                          color:
-                              Colors.white70,
+                        style: const TextStyle(
+                          color: Colors.white70,
                           fontSize: 12,
                         ),
                       ),
 
-                      const SizedBox(
-                        height: 2,
-                      ),
+                      const SizedBox(height: 2),
 
                       Text(
                         widget.value,
-                        style:
-                            const TextStyle(
+                        style: const TextStyle(
                           fontSize: 18,
-                          fontWeight:
-                              FontWeight.bold,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
@@ -855,12 +701,10 @@ class ProcessesPage extends StatefulWidget {
   const ProcessesPage({super.key});
 
   @override
-  State<ProcessesPage> createState() =>
-      _ProcessesPageState();
+  State<ProcessesPage> createState() => _ProcessesPageState();
 }
 
-class _ProcessesPageState
-    extends State<ProcessesPage> {
+class _ProcessesPageState extends State<ProcessesPage> {
   List<Map<String, dynamic>> processes = [];
 
   String searchQuery = "";
@@ -869,33 +713,24 @@ class _ProcessesPageState
 
   Future<void> fetchProcesses() async {
     try {
-      final result = await Process.run(
-        'ps',
-        [
-          '-eo',
-          'pid,comm,%cpu,%mem',
-          '--sort=-%cpu'
-        ],
-      );
+      final result = await Process.run('ps', [
+        '-eo',
+        'pid,comm,%cpu,%mem',
+        '--sort=-%cpu',
+      ]);
 
       final lines = result.stdout
           .toString()
           .split('\n')
           .skip(1)
-          .where(
-            (line) =>
-                line.trim().isNotEmpty,
-          )
+          .where((line) => line.trim().isNotEmpty)
           .take(40)
           .toList();
 
-      List<Map<String, dynamic>>
-          parsed = [];
+      List<Map<String, dynamic>> parsed = [];
 
       for (var line in lines) {
-        final parts = line
-            .trim()
-            .split(RegExp(r'\s+'));
+        final parts = line.trim().split(RegExp(r'\s+'));
 
         if (parts.length >= 4) {
           parsed.add({
@@ -923,10 +758,7 @@ class _ProcessesPageState
 
     fetchProcesses();
 
-    timer = Timer.periodic(
-      const Duration(seconds: 2),
-      (_) => fetchProcesses(),
-    );
+    timer = Timer.periodic(const Duration(seconds: 2), (_) => fetchProcesses());
   }
 
   @override
@@ -937,31 +769,21 @@ class _ProcessesPageState
 
   @override
   Widget build(BuildContext context) {
-    final filteredProcesses =
-        processes.where((proc) {
-      final query =
-          searchQuery.toLowerCase();
+    final filteredProcesses = processes.where((proc) {
+      final query = searchQuery.toLowerCase();
 
-      return proc['name']
-              .toLowerCase()
-              .contains(query) ||
-          proc['pid']
-              .toString()
-              .contains(query);
+      return proc['name'].toLowerCase().contains(query) ||
+          proc['pid'].toString().contains(query);
     }).toList();
 
     return Padding(
       padding: const EdgeInsets.all(30),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             "Processes",
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
           ),
 
           const SizedBox(height: 20),
@@ -973,21 +795,13 @@ class _ProcessesPageState
               });
             },
             decoration: InputDecoration(
-              hintText:
-                  "Search by name or PID",
-              prefixIcon: const Icon(
-                Icons.search_rounded,
-              ),
+              hintText: "Search by name or PID",
+              prefixIcon: const Icon(Icons.search_rounded),
               filled: true,
-              fillColor:
-                  const Color(0xFF161B22),
+              fillColor: const Color(0xFF161B22),
               border: OutlineInputBorder(
-                borderRadius:
-                    BorderRadius.circular(
-                  12,
-                ),
-                borderSide:
-                    BorderSide.none,
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
               ),
             ),
           ),
@@ -996,28 +810,16 @@ class _ProcessesPageState
 
           Expanded(
             child: ListView.builder(
-              itemCount:
-                  filteredProcesses.length,
-              itemBuilder:
-                  (context, index) {
-                final proc =
-                    filteredProcesses[index];
+              itemCount: filteredProcesses.length,
+              itemBuilder: (context, index) {
+                final proc = filteredProcesses[index];
 
                 return ListTile(
                   leading: CircleAvatar(
-                    backgroundColor: Colors
-                        .cyanAccent
-                        .withOpacity(0.15),
-                    child: Text(
-                      proc['name'][0]
-                          .toUpperCase(),
-                    ),
+                    backgroundColor: Colors.cyanAccent.withOpacity(0.15),
+                    child: Text(proc['name'][0].toUpperCase()),
                   ),
-                  title: Text(
-                    proc['name'],
-                    overflow:
-                        TextOverflow.ellipsis,
-                  ),
+                  title: Text(proc['name'], overflow: TextOverflow.ellipsis),
                   subtitle: Text(
                     "PID: ${proc['pid']} • CPU: ${proc['cpu']}% • RAM: ${proc['ram']}%",
                   ),
@@ -1039,25 +841,18 @@ class SettingsPage extends StatelessWidget {
     return const Padding(
       padding: EdgeInsets.all(30),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             "Settings",
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
           ),
 
           SizedBox(height: 20),
 
           Text(
             "HardwareMon settings will appear here.",
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 16,
-            ),
+            style: TextStyle(color: Colors.white70, fontSize: 16),
           ),
         ],
       ),
