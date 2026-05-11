@@ -266,13 +266,32 @@ jobs:
 
           source venv/bin/activate
 
-          pip install \
+          pip install --no-cache-dir \
             flask \
             flask-cors \
             psutil \
             gputil \
             py-cpuinfo \
             setuptools
+
+
+      - name: Slim Flutter backend venv
+        run: |
+          find flutter-pkg/usr/lib/hardwaremon-flutter/backend/venv \
+            -type d \( \
+              -name tests -o \
+              -name test -o \
+              -name __pycache__ \
+            \) -exec rm -rf {} + || true
+
+          find flutter-pkg/usr/lib/hardwaremon-flutter/backend/venv \
+            -type f \( \
+              -name "*.pyc" -o \
+              -name "*.pyo" \
+            \) -delete
+
+          rm -rf flutter-pkg/usr/lib/hardwaremon-flutter/backend/venv/lib/python3.12/site-packages/pip*
+          rm -rf flutter-pkg/usr/lib/hardwaremon-flutter/backend/venv/lib/python3.12/site-packages/setuptools*
 
       - name: Create Flutter launcher
         run: |
