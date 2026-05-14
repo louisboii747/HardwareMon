@@ -1,12 +1,16 @@
 # HardwareMon
 
-[![Build Status](https://github.com/louisboii747/HardwareMon/actions/workflows/publish.yml/badge.svg)](https://github.com/louisboii747/HardwareMon/actions)
 [![Release](https://img.shields.io/github/v/release/louisboii747/HardwareMon)](https://github.com/louisboii747/HardwareMon/releases)
 ![Downloads](https://img.shields.io/github/downloads/louisboii747/HardwareMon/total)
 ![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)
 ![Flutter](https://img.shields.io/badge/Flutter-desktop-02569B?logo=flutter)
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI/CD-2088FF?logo=github-actions)
-![Cloudflare Pages](https://img.shields.io/badge/Hosted_on-Cloudflare_Files-orange?logo=cloudflare)
+![Cloudflare Pages](https://img.shields.io/badge/Hosted_on-Cloudflare_Pages-orange?logo=cloudflare)
+![Linux](https://img.shields.io/badge/Linux-supported-2bbc8a?logo=linux)
+![Windows](https://img.shields.io/badge/Windows-supported-0078D6?logo=windows)
+![APT](https://img.shields.io/badge/APT-supported-red?logo=debian)
+![DNF](https://img.shields.io/badge/DNF-supported-294172?logo=fedora)
+![winget](https://img.shields.io/badge/WinGet-supported-0078D4?logo=windows)
 
 Modern system monitoring for Linux and Windows.
 
