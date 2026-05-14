@@ -1,4 +1,14 @@
-# HardwareMon (PLEASE READ FULLY!)
+# HardwareMon
+
+[![Build Status](https://github.com/louisboii747/HardwareMon/actions/workflows/publish.yml/badge.svg)](https://github.com/louisboii747/HardwareMon/actions)
+[![Release](https://img.shields.io/github/v/release/louisboii747/HardwareMon)](https://github.com/louisboii747/HardwareMon/releases)
+![Downloads](https://img.shields.io/github/downloads/louisboii747/HardwareMon/total)
+![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)
+![Flutter](https://img.shields.io/badge/Flutter-desktop-02569B?logo=flutter)
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI/CD-2088FF?logo=github-actions)
+![Cloudflare Pages](https://img.shields.io/badge/Hosted_on-Cloudflare_Files-orange?logo=cloudflare)
+
+Modern system monitoring for Linux and Windows.
 
 ## About
 
@@ -152,7 +162,7 @@ The goal of the Flutter edition is to provide:
 - Better long-term scalability
 - Advanced real-time monitoring dashboards
 
-The current Python/Tkinter-based HardwareMon applications will continue receiving updates just as much as the Flutter version.
+The current Python/Tkinter-based HardwareMon applications will continue receiving updates alongside the Flutter version.
 
 ---
 
