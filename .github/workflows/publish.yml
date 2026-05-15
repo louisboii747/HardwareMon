@@ -233,7 +233,9 @@ jobs:
       # ─────────────────────────────────────────────
       - name: Build Flutter Linux app
         working-directory: flutter_gui
-        run: flutter build linux --release
+        run: flutter build linux --release \
+            --dart-define=APP_VERSION="${{ steps.version.outputs.version }}"
+
 
       # ─────────────────────────────────────────────
       # Prepare Flutter package
@@ -290,8 +292,13 @@ jobs:
               -name "*.pyo" \
             \) -delete
 
-          rm -rf flutter-pkg/usr/lib/hardwaremon-flutter/backend/venv/lib/python3.12/site-packages/pip*
-          rm -rf flutter-pkg/usr/lib/hardwaremon-flutter/backend/venv/lib/python3.12/site-packages/setuptools*
+          find flutter-pkg/usr/lib/hardwaremon-flutter/backend/venv \
+          -path "*/site-packages/pip*" \
+          -exec rm -rf {} + || true
+
+          find flutter-pkg/usr/lib/hardwaremon-flutter/backend/venv \
+          -path "*/site-packages/setuptools*" \
+          -exec rm -rf {} + || true
 
       - name: Create Flutter launcher
         run: |
@@ -306,9 +313,11 @@ jobs:
           "$BACKEND_DIR/venv/bin/python" "$BACKEND_DIR/api.py" &
           BACKEND_PID=$!
 
-          "$APP_DIR/hardwaremon-flutter"
+          trap "kill $BACKEND_PID" EXIT
 
-          kill $BACKEND_PID
+          sleep 2
+
+          "$APP_DIR/hardwaremon-flutter"
           EOF
 
           chmod +x flutter-pkg/usr/bin/hardwaremon-flutter
