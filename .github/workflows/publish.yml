@@ -307,22 +307,15 @@ jobs:
           #!/bin/bash
 
           APP_DIR="/usr/lib/hardwaremon-flutter"
-          BACKEND_DIR="$APP_DIR/backend"
 
           cd "$APP_DIR"
 
-          "$BACKEND_DIR/venv/bin/python" "$BACKEND_DIR/api.py" &
-          BACKEND_PID=$!
-
-          trap "kill $BACKEND_PID" EXIT
-
-          sleep 2
-
-          "$APP_DIR/hardwaremon-flutter"
+          exec "$APP_DIR/hardwaremon-flutter"
           EOF
 
           chmod +x flutter-pkg/usr/bin/hardwaremon-flutter
 
+          
       - name: Create Flutter desktop entry
         run: |
           cat <<'EOF' > flutter-pkg/usr/share/applications/hardwaremon-flutter.desktop

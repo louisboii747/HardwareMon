@@ -1,0 +1,6 @@
+flask
+flask_cors
+psutil
+GPUtil
+py-cpuinfo
+flask-cors

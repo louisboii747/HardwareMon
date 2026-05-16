@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +15,6 @@ String cpuName = "—";
 String gpuName = "—";
 int ramTotal = 0;
 
-
 // ─── Version Output ────────────────────────────────────────────────────
 
 const String _kAppVersion = String.fromEnvironment(
@@ -22,12 +22,60 @@ const String _kAppVersion = String.fromEnvironment(
   defaultValue: 'dev build',
 );
 
-
-
-
 // ─── Entry point ─────────────────────────────────────────────────────────────
+String getBackendDir() {
+  // Development environment
+  if (File('${Directory.current.path}/hardwaremon/api.py').existsSync()) {
+    return '${Directory.current.path}/hardwaremon';
+  }
+
+  // Installed Linux package
+  return '/usr/lib/hardwaremon-flutter/backend';
+}
+
+const backendApiUrl = 'http://127.0.0.1:5000/stats';
+
+Future<void> startBackend() async {
+  try {
+    final backendDir = getBackendDir();
+
+    final process = await Process.start('$backendDir/venv/bin/python', [
+      '$backendDir/api.py',
+    ], workingDirectory: backendDir);
+
+    process.stdout.transform(utf8.decoder).listen(debugPrint);
+
+    process.stderr.transform(utf8.decoder).listen(debugPrint);
+
+    debugPrint('HardwareMon backend started');
+  } catch (e) {
+    debugPrint('Backend start failed: $e');
+  }
+}
+
+Future<bool> waitForBackend() async {
+  for (int i = 0; i < 20; i++) {
+    try {
+      final response = await http.get(Uri.parse(backendApiUrl));
+
+      if (response.statusCode == 200) {
+        debugPrint('Backend connected');
+        return true;
+      }
+    } catch (_) {}
+
+    await Future.delayed(const Duration(milliseconds: 500));
+  }
+
+  return false;
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await startBackend();
+  await waitForBackend();
+
   runApp(const HardwareMonApp());
 }
 
@@ -51,17 +99,17 @@ class HardwareMonApp extends StatelessWidget {
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 class AppColors {
-  static const bg        = Color(0xFF0D1117);
-  static const surface   = Color(0xFF161B22);
-  static const surface2  = Color(0xFF1C2128);
-  static const sidebar   = Color(0xFF0F1318);
-  static const border    = Color(0xFF30363D);
-  static const cyan      = Colors.cyanAccent;
-  static const green     = Colors.greenAccent;
-  static const orange    = Colors.orangeAccent;
-  static const blue      = Colors.blueAccent;
-  static const purple    = Colors.purpleAccent;
-  static const red       = Colors.redAccent;
+  static const bg = Color(0xFF0D1117);
+  static const surface = Color(0xFF161B22);
+  static const surface2 = Color(0xFF1C2128);
+  static const sidebar = Color(0xFF0F1318);
+  static const border = Color(0xFF30363D);
+  static const cyan = Colors.cyanAccent;
+  static const green = Colors.greenAccent;
+  static const orange = Colors.orangeAccent;
+  static const blue = Colors.blueAccent;
+  static const purple = Colors.purpleAccent;
+  static const red = Colors.redAccent;
 }
 
 // ─── Shell / Navigation ───────────────────────────────────────────────────────
@@ -99,8 +147,7 @@ class _HomePageState extends State<HomePage> {
       const SettingsPage(),
     ];
 
-    final slideDir =
-        _selectedPage > _previousPage ? 1.0 : -1.0;
+    final slideDir = _selectedPage > _previousPage ? 1.0 : -1.0;
 
     return Scaffold(
       body: Row(
@@ -162,19 +209,19 @@ class _HomePageState extends State<HomePage> {
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 320),
                 transitionBuilder: (child, animation) {
-                  final offset = Tween<Offset>(
-                    begin: Offset(0, slideDir * 0.04),
-                    end: Offset.zero,
-                  ).animate(CurvedAnimation(
-                    parent: animation,
-                    curve: Curves.easeOutCubic,
-                  ));
+                  final offset =
+                      Tween<Offset>(
+                        begin: Offset(0, slideDir * 0.04),
+                        end: Offset.zero,
+                      ).animate(
+                        CurvedAnimation(
+                          parent: animation,
+                          curve: Curves.easeOutCubic,
+                        ),
+                      );
                   return FadeTransition(
                     opacity: animation,
-                    child: SlideTransition(
-                      position: offset,
-                      child: child,
-                    ),
+                    child: SlideTransition(position: offset, child: child),
                   );
                 },
                 child: KeyedSubtree(
@@ -217,7 +264,7 @@ class _NavItemState extends State<_NavItem> {
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
-      onExit:  (_) => setState(() => _hovered = false),
+      onExit: (_) => setState(() => _hovered = false),
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: widget.onTap,
@@ -227,9 +274,7 @@ class _NavItemState extends State<_NavItem> {
           width: 60,
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
           decoration: BoxDecoration(
-            color: show
-                ? AppColors.cyan.withOpacity(0.12)
-                : Colors.transparent,
+            color: show ? AppColors.cyan.withOpacity(0.12) : Colors.transparent,
             borderRadius: BorderRadius.circular(16),
           ),
           child: Column(
@@ -243,8 +288,8 @@ class _NavItemState extends State<_NavItem> {
                   color: widget.active
                       ? AppColors.cyan
                       : _hovered
-                          ? Colors.white
-                          : Colors.white38,
+                      ? Colors.white
+                      : Colors.white38,
                 ),
               ),
               const SizedBox(height: 5),
@@ -256,13 +301,10 @@ class _NavItemState extends State<_NavItem> {
                   color: widget.active
                       ? AppColors.cyan
                       : _hovered
-                          ? Colors.white70
-                          : Colors.white24,
+                      ? Colors.white70
+                      : Colors.white24,
                 ),
-                child: Text(
-                  widget.label,
-                  textAlign: TextAlign.center,
-                ),
+                child: Text(widget.label, textAlign: TextAlign.center),
               ),
             ],
           ),
@@ -282,35 +324,36 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   // Current values
-  int    _cpuUsage      = 0;
-  int    _ramUsage      = 0;
-  int    _diskUsage     = 0;
-  double _uploadSpeed   = 0;
+  int _cpuUsage = 0;
+  int _ramUsage = 0;
+  int _diskUsage = 0;
+  double _uploadSpeed = 0;
   double _downloadSpeed = 0;
-  int    _gpuTemp       = 0;
-  String _currentTime   = "";
+  int _gpuTemp = 0;
+  String _currentTime = "";
 
   // Previous values (for animated tween)
-  int    _prevCpu      = 0;
-  int    _prevRam      = 0;
-  int    _prevDisk     = 0;
-  int    _prevGpuTemp  = 0;
+  int _prevCpu = 0;
+  int _prevRam = 0;
+  int _prevDisk = 0;
+  int _prevGpuTemp = 0;
 
   // Histories (max 30 pts each)
-  final List<double> _cpuHistory     = [];
-  final List<double> _ramHistory     = [];
-  final List<double> _diskHistory    = [];
+  final List<double> _cpuHistory = [];
+  final List<double> _ramHistory = [];
+  final List<double> _diskHistory = [];
   final List<double> _netDownHistory = [];
-  final List<double> _netUpHistory   = [];
+  final List<double> _netUpHistory = [];
+  final List<double> _gpuTempHistory = [];
 
   // Per-core
-  List<int>          _coreUsages    = [];
+  List<int> _coreUsages = [];
   final List<List<double>> _coreHistories = [];
 
   // State flags
   bool _connected = false;
-  bool _firstLoad  = true;
-  int  _failCount  = 0;
+  bool _firstLoad = true;
+  int _failCount = 0;
 
   late Timer _timer;
 
@@ -331,7 +374,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Future<void> _fetchStats() async {
     try {
       final response = await http
-          .get(Uri.parse('http://127.0.0.1:5000/stats'))
+          .get(Uri.parse(backendApiUrl))
           .timeout(const Duration(seconds: 4));
 
       if (response.statusCode != 200) {
@@ -348,33 +391,41 @@ class _DashboardPageState extends State<DashboardPage> {
         _failCount = 0;
         _firstLoad = false;
 
-        _prevCpu     = _cpuUsage;
-        _prevRam     = _ramUsage;
-        _prevDisk    = _diskUsage;
+        _prevCpu = _cpuUsage;
+        _prevRam = _ramUsage;
+        _prevDisk = _diskUsage;
         _prevGpuTemp = _gpuTemp;
 
-        _cpuUsage      = (data['cpu']      as num?)?.toInt()    ?? _cpuUsage;
-        _ramUsage      = (data['ram']      as num?)?.toInt()    ?? _ramUsage;
-        _diskUsage     = (data['disk']     as num?)?.toInt()    ?? _diskUsage;
-        _uploadSpeed   = (data['upload']   as num?)?.toDouble() ?? _uploadSpeed;
-        _downloadSpeed = (data['download'] as num?)?.toDouble() ?? _downloadSpeed;
-        _gpuTemp       = (data['gpu_temp'] as num?)?.toInt()    ?? _gpuTemp;
+        _cpuUsage = (data['cpu'] as num?)?.toInt() ?? _cpuUsage;
+        _ramUsage = (data['ram'] as num?)?.toInt() ?? _ramUsage;
+        _diskUsage = (data['disk'] as num?)?.toInt() ?? _diskUsage;
+        _uploadSpeed = ((data['upload'] as num?)?.toDouble() ?? 0).clamp(
+          0,
+          100000,
+        );
 
-        cpuName  = data['cpu_name']  as String? ?? cpuName;
-        gpuName  = data['gpu_name']  as String? ?? gpuName;
+        _downloadSpeed = ((data['download'] as num?)?.toDouble() ?? 0).clamp(
+          0,
+          100000,
+        );
+        _gpuTemp = (data['gpu_temp'] as num?)?.toInt() ?? _gpuTemp;
+
+        cpuName = data['cpu_name'] as String? ?? cpuName;
+        gpuName = data['gpu_name'] as String? ?? gpuName;
         ramTotal = (data['ram_total'] as num?)?.toInt() ?? ramTotal;
 
         _currentTime = DateFormat('HH:mm:ss').format(DateTime.now());
 
-        _pushHistory(_cpuHistory,     _cpuUsage.toDouble());
-        _pushHistory(_ramHistory,     _ramUsage.toDouble());
-        _pushHistory(_diskHistory,    _diskUsage.toDouble());
+        _pushHistory(_cpuHistory, _cpuUsage.toDouble());
+        _pushHistory(_ramHistory, _ramUsage.toDouble());
+        _pushHistory(_diskHistory, _diskUsage.toDouble());
         _pushHistory(_netDownHistory, _downloadSpeed);
-        _pushHistory(_netUpHistory,   _uploadSpeed);
+        _pushHistory(_netUpHistory, _uploadSpeed);
 
-        final cores = (data['cores'] as List?)
-                ?.map((e) => (e as num).toInt())
-                .toList() ??
+        _pushHistory(_gpuTempHistory, _gpuTemp.toDouble());
+
+        final cores =
+            (data['cores'] as List?)?.map((e) => (e as num).toInt()).toList() ??
             [];
         _coreUsages = cores;
 
@@ -420,7 +471,13 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   // ── Mini sparkline ──────────────────────────────────────────────────────
-  Widget _sparkline(List<double> data, Color color) {
+  Widget _sparkline(List<double> data, Color color, {double? fixedMaxY}) {
+    final calculatedMax = data.isEmpty
+        ? 100.0
+        : data.reduce((a, b) => a > b ? a : b) * 1.2;
+
+    final maxY = fixedMaxY ?? calculatedMax.clamp(10, 100000);
+
     return SizedBox(
       height: 24,
       child: data.length < 2
@@ -428,7 +485,7 @@ class _DashboardPageState extends State<DashboardPage> {
           : LineChart(
               LineChartData(
                 minY: 0,
-                maxY: 100,
+                maxY: maxY,
                 gridData: const FlGridData(show: false),
                 titlesData: const FlTitlesData(show: false),
                 borderData: FlBorderData(show: false),
@@ -449,7 +506,10 @@ class _DashboardPageState extends State<DashboardPage> {
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [color.withOpacity(0.18), color.withOpacity(0.0)],
+                        colors: [
+                          color.withOpacity(0.18),
+                          color.withOpacity(0.0),
+                        ],
                       ),
                     ),
                   ),
@@ -517,8 +577,8 @@ class _DashboardPageState extends State<DashboardPage> {
                     child: _connected
                         ? _badge("Live", AppColors.green)
                         : _firstLoad
-                            ? _badge("Connecting…", AppColors.orange)
-                            : _badge("Offline", AppColors.red),
+                        ? _badge("Connecting…", AppColors.orange)
+                        : _badge("Offline", AppColors.red),
                   ),
                 ],
               ),
@@ -650,7 +710,8 @@ class _DashboardPageState extends State<DashboardPage> {
         suffix: "°C",
         icon: Icons.thermostat_rounded,
         color: _tempColor(_gpuTemp),
-        history: _cpuHistory, // replace with actual gpu temp history if available
+        history:
+            _gpuTempHistory, // replace with actual gpu temp history if available
       ),
     ];
 
@@ -716,13 +777,13 @@ class _DashboardPageState extends State<DashboardPage> {
 
 // ─── Stat card data model ─────────────────────────────────────────────────────
 class _StatCardData {
-  final String    title;
-  final int?      value;
-  final int       prevValue;
-  final String?   customLabel;
-  final String?   suffix;
-  final IconData  icon;
-  final Color     color;
+  final String title;
+  final int? value;
+  final int prevValue;
+  final String? customLabel;
+  final String? suffix;
+  final IconData icon;
+  final Color color;
   final List<double> history;
 
   const _StatCardData({
@@ -762,13 +823,12 @@ class _AnimatedStatCardState extends State<_AnimatedStatCard> {
   Widget build(BuildContext context) {
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
-      onExit:  (_) => setState(() => _hovered = false),
+      onExit: (_) => setState(() => _hovered = false),
       cursor: SystemMouseCursors.basic,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
         curve: Curves.easeOut,
-        transform: Matrix4.identity()
-          ..translate(0.0, _hovered ? -2.0 : 0.0),
+        transform: Matrix4.identity()..translate(0.0, _hovered ? -2.0 : 0.0),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: AppColors.surface,
@@ -840,7 +900,7 @@ class _AnimatedStatCardState extends State<_AnimatedStatCard> {
                                         fontWeight: FontWeight.w700,
                                         color: widget.data.color,
                                         fontFeatures: const [
-                                          FontFeature.tabularFigures()
+                                          FontFeature.tabularFigures(),
                                         ],
                                       ),
                                     ),
@@ -852,7 +912,7 @@ class _AnimatedStatCardState extends State<_AnimatedStatCard> {
                                       fontWeight: FontWeight.w700,
                                       color: widget.data.color,
                                       fontFeatures: const [
-                                        FontFeature.tabularFigures()
+                                        FontFeature.tabularFigures(),
                                       ],
                                     ),
                                   ),
@@ -929,8 +989,8 @@ class _CoreCard extends StatelessWidget {
                 color: usage >= 85
                     ? AppColors.red
                     : usage >= 65
-                        ? AppColors.orange
-                        : AppColors.cyan,
+                    ? AppColors.orange
+                    : AppColors.cyan,
               ),
             ),
           ),
@@ -970,9 +1030,10 @@ class _ShimmerBoxState extends State<_ShimmerBox>
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     )..repeat();
-    _anim = Tween<double>(begin: -1.5, end: 1.5).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
+    _anim = Tween<double>(
+      begin: -1.5,
+      end: 1.5,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -1021,10 +1082,11 @@ class _ProcessesPageState extends State<ProcessesPage> {
 
   Future<void> _fetchProcesses() async {
     try {
-      final result = await Process.run(
-        'ps',
-        ['-eo', 'pid,comm,%cpu,%mem', '--sort=-%cpu'],
-      );
+      final result = await Process.run('ps', [
+        '-eo',
+        'pid,comm,%cpu,%mem',
+        '--sort=-%cpu',
+      ]);
 
       final lines = result.stdout
           .toString()
@@ -1040,10 +1102,10 @@ class _ProcessesPageState extends State<ProcessesPage> {
         final parts = line.trim().split(RegExp(r'\s+'));
         if (parts.length >= 4) {
           parsed.add({
-            'pid':  parts[0],
+            'pid': parts[0],
             'name': parts[1],
-            'cpu':  double.tryParse(parts[2]) ?? 0.0,
-            'ram':  double.tryParse(parts[3]) ?? 0.0,
+            'cpu': double.tryParse(parts[2]) ?? 0.0,
+            'ram': double.tryParse(parts[3]) ?? 0.0,
           });
         }
       }
@@ -1059,7 +1121,10 @@ class _ProcessesPageState extends State<ProcessesPage> {
   void initState() {
     super.initState();
     _fetchProcesses();
-    _timer = Timer.periodic(const Duration(seconds: 2), (_) => _fetchProcesses());
+    _timer = Timer.periodic(
+      const Duration(seconds: 2),
+      (_) => _fetchProcesses(),
+    );
   }
 
   @override
@@ -1070,30 +1135,32 @@ class _ProcessesPageState extends State<ProcessesPage> {
 
   List<Map<String, dynamic>> get _filtered {
     final q = _searchQuery.toLowerCase();
-    var list = _processes.where((p) =>
-        (p['name'] as String).toLowerCase().contains(q) ||
-        p['pid'].toString().contains(q)).toList();
+    var list = _processes
+        .where(
+          (p) =>
+              (p['name'] as String).toLowerCase().contains(q) ||
+              p['pid'].toString().contains(q),
+        )
+        .toList();
 
     switch (_sortBy) {
       case 'cpu':
-        list.sort((a, b) =>
-            (b['cpu'] as double).compareTo(a['cpu'] as double));
+        list.sort((a, b) => (b['cpu'] as double).compareTo(a['cpu'] as double));
         break;
       case 'ram':
-        list.sort((a, b) =>
-            (b['ram'] as double).compareTo(a['ram'] as double));
+        list.sort((a, b) => (b['ram'] as double).compareTo(a['ram'] as double));
         break;
       case 'name':
-        list.sort((a, b) =>
-            (a['name'] as String).compareTo(b['name'] as String));
+        list.sort(
+          (a, b) => (a['name'] as String).compareTo(b['name'] as String),
+        );
         break;
     }
 
     return list;
   }
 
-  String _initial(String name) =>
-      name.isNotEmpty ? name[0].toUpperCase() : '?';
+  String _initial(String name) => name.isNotEmpty ? name[0].toUpperCase() : '?';
 
   Color _cpuColor(double cpu) {
     if (cpu >= 50) return AppColors.red;
@@ -1123,7 +1190,10 @@ class _ProcessesPageState extends State<ProcessesPage> {
               ),
               const SizedBox(width: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white10,
                   borderRadius: BorderRadius.circular(20),
@@ -1151,19 +1221,30 @@ class _ProcessesPageState extends State<ProcessesPage> {
                   style: const TextStyle(fontSize: 14),
                   decoration: InputDecoration(
                     hintText: "Search by name or PID…",
-                    hintStyle: const TextStyle(color: Colors.white24, fontSize: 14),
-                    prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Colors.white38),
+                    hintStyle: const TextStyle(
+                      color: Colors.white24,
+                      fontSize: 14,
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.search_rounded,
+                      size: 18,
+                      color: Colors.white38,
+                    ),
                     filled: true,
                     fillColor: AppColors.surface,
-                    contentPadding:
-                        const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 16,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide: BorderSide(color: AppColors.border),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide(color: AppColors.border.withOpacity(0.6)),
+                      borderSide: BorderSide(
+                        color: AppColors.border.withOpacity(0.6),
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -1173,11 +1254,23 @@ class _ProcessesPageState extends State<ProcessesPage> {
                 ),
               ),
               const SizedBox(width: 12),
-              _SortChip(label: "CPU",  active: _sortBy == "cpu",  onTap: () => setState(() => _sortBy = "cpu")),
+              _SortChip(
+                label: "CPU",
+                active: _sortBy == "cpu",
+                onTap: () => setState(() => _sortBy = "cpu"),
+              ),
               const SizedBox(width: 8),
-              _SortChip(label: "RAM",  active: _sortBy == "ram",  onTap: () => setState(() => _sortBy = "ram")),
+              _SortChip(
+                label: "RAM",
+                active: _sortBy == "ram",
+                onTap: () => setState(() => _sortBy = "ram"),
+              ),
               const SizedBox(width: 8),
-              _SortChip(label: "Name", active: _sortBy == "name", onTap: () => setState(() => _sortBy = "name")),
+              _SortChip(
+                label: "Name",
+                active: _sortBy == "name",
+                onTap: () => setState(() => _sortBy = "name"),
+              ),
             ],
           ),
 
@@ -1210,8 +1303,10 @@ class _ProcessesPageState extends State<ProcessesPage> {
                 : ListView.separated(
                     physics: const BouncingScrollPhysics(),
                     itemCount: list.length,
-                    separatorBuilder: (_, _) =>
-                        Divider(height: 1, color: AppColors.border.withOpacity(0.3)),
+                    separatorBuilder: (_, _) => Divider(
+                      height: 1,
+                      color: AppColors.border.withOpacity(0.3),
+                    ),
                     itemBuilder: (context, index) {
                       final proc = list[index];
                       final cpu = proc['cpu'] as double;
@@ -1220,7 +1315,9 @@ class _ProcessesPageState extends State<ProcessesPage> {
 
                       return Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 10),
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
                         decoration: BoxDecoration(
                           color: index.isEven
                               ? Colors.transparent
@@ -1230,8 +1327,7 @@ class _ProcessesPageState extends State<ProcessesPage> {
                           children: [
                             CircleAvatar(
                               radius: 18,
-                              backgroundColor:
-                                  _cpuColor(cpu).withOpacity(0.15),
+                              backgroundColor: _cpuColor(cpu).withOpacity(0.15),
                               child: Text(
                                 _initial(name),
                                 style: TextStyle(
@@ -1271,7 +1367,9 @@ class _ProcessesPageState extends State<ProcessesPage> {
                                   fontSize: 13,
                                   color: _cpuColor(cpu),
                                   fontWeight: FontWeight.w600,
-                                  fontFeatures: const [FontFeature.tabularFigures()],
+                                  fontFeatures: const [
+                                    FontFeature.tabularFigures(),
+                                  ],
                                 ),
                               ),
                             ),
@@ -1335,9 +1433,7 @@ class _SortChip extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: active
-              ? AppColors.cyan.withOpacity(0.15)
-              : AppColors.surface,
+          color: active ? AppColors.cyan.withOpacity(0.15) : AppColors.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: active
@@ -1387,7 +1483,10 @@ class SettingsPage extends StatelessWidget {
                 title: "Refresh rate",
                 subtitle: "How often stats are fetched",
                 trailing: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.surface2,
                     borderRadius: BorderRadius.circular(8),
@@ -1453,9 +1552,7 @@ class _SettingsSection extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.border.withOpacity(0.6)),
           ),
-          child: Column(
-            children: children,
-          ),
+          child: Column(children: children),
         ),
       ],
     );
@@ -1494,17 +1591,22 @@ class _SettingsTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    style: const TextStyle(
-                        fontSize: 14, fontWeight: FontWeight.w500)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(subtitle,
-                    style: const TextStyle(
-                        fontSize: 12, color: Colors.white38)),
+                Text(
+                  subtitle,
+                  style: const TextStyle(fontSize: 12, color: Colors.white38),
+                ),
               ],
             ),
           ),
-          ?trailing,
+          if (trailing != null) trailing!,
         ],
       ),
     );
