@@ -69,9 +69,12 @@ jobs:
       - name: Install Python dependencies
         run: |
           python3 -m pip install --break-system-packages \
+            flask \
+            flask-cors \
             psutil \
             gputil \
-            setuptools
+            setuptools \
+            pyinstaller
 
       # ─────────────────────────────────────────────
       # Install nfpm
@@ -264,12 +267,15 @@ jobs:
           find flutter-pkg/usr/lib/hardwaremon-flutter \
             -name "*.a" -delete
 
-          # Build backend binary
-          python3 -m pip install --break-system-packages pyinstaller
-
           cd hardwaremon
 
-          pyinstaller --onefile api.py
+          pyinstaller \
+          --onefile \
+          --name api \
+          --hidden-import flask \
+          --hidden-import flask_cors \
+          --hidden-import psutil \
+          api.py
 
           strip dist/api || true
           upx --best dist/api
@@ -289,18 +295,13 @@ jobs:
           cat <<'EOF' > flutter-pkg/usr/bin/hardwaremon-flutter
           #!/bin/bash
 
+          #!/bin/bash
+
           APP_DIR="/usr/lib/hardwaremon-flutter"
-          BACKEND_DIR="$APP_DIR/backend"
 
           cd "$APP_DIR"
 
-          "$BACKEND_DIR/api" &
-          BACKEND_PID=$!
-
           "$APP_DIR/hardwaremon-flutter"
-          
-          kill $BACKEND_PID 2>/dev/null || true
-          wait $BACKEND_PID 2>/dev/null || true
           EOF
 
           chmod +x flutter-pkg/usr/bin/hardwaremon-flutter
