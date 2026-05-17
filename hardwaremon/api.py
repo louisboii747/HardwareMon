@@ -4,6 +4,15 @@ import time
 import psutil
 from flask import Flask, jsonify
 from flask_cors import CORS
+import signal
+import sys
+
+def shutdown_handler(signum, frame):
+    print("Backend shutting down...")
+    sys.exit(0)
+
+signal.signal(signal.SIGTERM, shutdown_handler)
+signal.signal(signal.SIGINT, shutdown_handler)
 
 app = Flask(__name__)
 CORS(app)
@@ -87,4 +96,4 @@ def stats():
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=False)
+    app.run(host="127.0.0.1", port=5000, debug=False, threaded=True)

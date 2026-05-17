@@ -9,6 +9,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:flutter/services.dart';
 
 // ─── Global hardware info ────────────────────────────────────────────────────
 String cpuName = "—";
@@ -24,6 +25,10 @@ const String _kAppVersion = String.fromEnvironment(
 
 // ─── Entry point ─────────────────────────────────────────────────────────────
 // ─── Backend ───────────────────────────────────────────────────────────────
+
+// ─── Backend ───────────────────────────────────────────────────────────────
+
+Process? backendProcess;
 
 String getBackendExecutable() {
   final devPath = '${Directory.current.path}/../hardwaremon/dist/api';
@@ -43,19 +48,44 @@ Future<void> startBackend() async {
 
     debugPrint('Launching backend: $backendExecutable');
 
-    final process = await Process.start(backendExecutable, []);
+    backendProcess = await Process.start(
+      backendExecutable,
+      [],
+      mode: ProcessStartMode.normal,
+    );
 
-    process.stdout.transform(utf8.decoder).listen(debugPrint);
+    backendProcess!.stdout.transform(utf8.decoder).listen(debugPrint);
 
-    process.stderr.transform(utf8.decoder).listen(debugPrint);
+    backendProcess!.stderr.transform(utf8.decoder).listen(debugPrint);
 
-    process.exitCode.then((code) {
+    backendProcess!.exitCode.then((code) {
       debugPrint('Backend exited with code: $code');
     });
 
     debugPrint('HardwareMon backend started');
   } catch (e) {
     debugPrint('Backend start failed: $e');
+  }
+}
+
+Future<void> stopBackend() async {
+  try {
+    if (backendProcess == null) return;
+
+    backendProcess!.kill(ProcessSignal.sigterm);
+
+    final exited = await backendProcess!.exitCode.timeout(
+      const Duration(seconds: 2),
+      onTimeout: () => -1,
+    );
+
+    if (exited == -1) {
+      backendProcess!.kill(ProcessSignal.sigkill);
+    }
+
+    debugPrint('Backend stopped');
+  } catch (e) {
+    debugPrint('Failed to stop backend: $e');
   }
 }
 
@@ -79,8 +109,6 @@ Future<bool> waitForBackend() async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  debugPrint('NEW BACKEND CODE LOADED');
-
   await startBackend();
   await waitForBackend();
 
@@ -88,8 +116,33 @@ Future<void> main() async {
 }
 
 // ─── App root ─────────────────────────────────────────────────────────────────
-class HardwareMonApp extends StatelessWidget {
+class HardwareMonApp extends StatefulWidget {
   const HardwareMonApp({super.key});
+
+  @override
+  State<HardwareMonApp> createState() => _HardwareMonAppState();
+}
+
+class _HardwareMonAppState extends State<HardwareMonApp>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    stopBackend();
+    super.dispose();
+  }
+
+  @override
+  Future<AppExitResponse> didRequestAppExit() async {
+    await stopBackend();
+    return AppExitResponse.exit;
+  }
 
   @override
   Widget build(BuildContext context) {
