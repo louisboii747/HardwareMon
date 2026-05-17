@@ -426,14 +426,21 @@ jobs:
       # ─────────────────────────────────────────────
       # Prepare Cloudflare Pages
       # ─────────────────────────────────────────────
+
+      - name: Remove RPM files from Pages upload
+        run: |
+          rm -f repo/yum/*.rpm
+      
+      
       - name: Prepare Pages output
         run: |
           mkdir -p public/apt
           mkdir -p public/yum
 
           cp -r repo/apt/* public/apt/
-          cp -r repo/yum/* public/yum/
 
+          cp -r repo/yum/repodata public/yum/repodata
+        
           # DNF repo file
           cat <<'EOF' > public/yum/hardwaremon.repo
           [hardwaremon]
@@ -442,6 +449,23 @@ jobs:
           enabled=1
           gpgcheck=0
           EOF
+          
+          cat <<'EOF' > public/yum/install.sh
+          #!/bin/bash
+          set -e
+
+          LATEST=$(curl -s https://api.github.com/repos/louisboii747/HardwareMon/releases/latest \
+          | grep browser_download_url \
+          | grep hardwaremon-flutter.rpm \
+          | cut -d '"' -f 4)
+
+          echo "Installing HardwareMon Flutter..."
+
+          sudo dnf install -y "$LATEST"
+          EOF
+
+          chmod +x public/yum/install.sh
+
 
           # APT setup script
           cat <<'EOF' > public/apt/setup.sh
