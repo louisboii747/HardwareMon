@@ -234,7 +234,7 @@ jobs:
         working-directory: flutter_gui
         run: |
           flutter build linux --release \
-          --split-debug-info=flutter_gui/symbols \
+          --split-debug-info=symbols \
           --dart-define=APP_VERSION="${{ steps.version.outputs.version }}"
 
 
@@ -384,8 +384,6 @@ jobs:
           cp dist/hardwaremon.deb \
             repo/apt/pool/main/h/hardwaremon/
 
-          cp dist/hardwaremon-flutter.deb \
-            repo/apt/pool/main/h/hardwaremon/
 
           cd repo/apt
 
@@ -427,9 +425,10 @@ jobs:
       # Prepare Cloudflare Pages
       # ─────────────────────────────────────────────
 
-      - name: Remove RPM files from Pages upload
+      - name: Remove large files from Cloudflare Pages upload
         run: |
           rm -f repo/yum/*.rpm
+          rm -f repo/apt/pool/main/h/hardwaremon/hardwaremon-flutter.deb
       
       
       - name: Prepare Pages output
@@ -439,7 +438,8 @@ jobs:
 
           cp -r repo/apt/* public/apt/
 
-          cp -r repo/yum/repodata public/yum/repodata
+          mkdir -p public/yum/repodata
+          cp -r repo/yum/repodata/* public/yum/repodata/
         
           # DNF repo file
           cat <<'EOF' > public/yum/hardwaremon.repo
@@ -467,6 +467,29 @@ jobs:
           chmod +x public/yum/install.sh
 
 
+          # Flutter install script
+          cat <<'EOF' > public/apt/flutter.sh
+          #!/bin/bash
+          set -e
+
+          LATEST=$(curl -s https://api.github.com/repos/louisboii747/HardwareMon/releases/latest \
+          | grep browser_download_url \
+          | grep hardwaremon-flutter.deb \
+          | cut -d '"' -f 4)
+
+          echo "Installing HardwareMon Flutter..."
+
+          TMP_DEB="/tmp/hardwaremon-flutter.deb"
+
+          curl -L "$LATEST" -o "$TMP_DEB"
+
+          sudo apt install -y "$TMP_DEB"
+
+          rm -f "$TMP_DEB"
+          EOF
+
+          chmod +x public/apt/flutter.sh
+
           # APT setup script
           cat <<'EOF' > public/apt/setup.sh
           #!/bin/bash
@@ -485,7 +508,7 @@ jobs:
 
           echo ""
           echo "Flutter version:"
-          echo "sudo apt install hardwaremon-flutter"
+          echo "curl -fsSL https://hardwaremon.pages.dev/apt/flutter.sh | bash"
           EOF
 
           chmod +x public/apt/setup.sh
