@@ -61,7 +61,8 @@ jobs:
             liblzma-dev \
             zip \
             python3 \
-            python3-pip
+            python3-pip \
+            upx
       # ─────────────────────────────────────────────
       # Python dependencies
       # ─────────────────────────────────────────────
@@ -233,6 +234,7 @@ jobs:
         working-directory: flutter_gui
         run: |
           flutter build linux --release \
+          --split-debug-info=flutter_gui/symbols \
           --dart-define=APP_VERSION="${{ steps.version.outputs.version }}"
 
 
@@ -256,6 +258,12 @@ jobs:
 
           mkdir -p flutter-pkg/usr/lib/hardwaremon-flutter/backend
 
+          find flutter-pkg/usr/lib/hardwaremon-flutter \
+            -name "*.debug" -delete
+
+          find flutter-pkg/usr/lib/hardwaremon-flutter \
+            -name "*.a" -delete
+
           # Build backend binary
           python3 -m pip install --break-system-packages pyinstaller
 
@@ -264,6 +272,7 @@ jobs:
           pyinstaller --onefile api.py
 
           strip dist/api || true
+          upx --best dist/api
 
           cd ..
 
