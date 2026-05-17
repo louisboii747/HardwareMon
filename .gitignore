@@ -19,3 +19,10 @@ Windows/build.bat
 Windows/*.svg
 Windows/*make_icon.py
 !Windows/HardwareMon.spec
+backend-build/
+build/
+dist/
+*.spec
+__pycache__/
+*.pyc
+*.spec
