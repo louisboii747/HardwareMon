@@ -17,6 +17,8 @@
   <img src="https://img.shields.io/badge/Flutter-desktop-02569B?logo=flutter" alt="Flutter">
   <img src="https://img.shields.io/badge/GitHub_Actions-CI%2FCD-2088FF?logo=github-actions" alt="GitHub Actions">
   <img src="https://img.shields.io/badge/Cloudflare_Pages-hosted-orange?logo=cloudflare" alt="Cloudflare Pages">
+  <img src="https://img.shields.io/badge/APT-supported-red?logo=debian" alt="APT">
+  <img src="https://img.shields.io/badge/DNF-supported-294172?logo=fedora" alt="DNF">
   <img src="https://img.shields.io/badge/WinGet-supported-0078D4?logo=windows" alt="WinGet">
 </p>
 
@@ -62,6 +64,8 @@ Monitor live:
 * Running processes
 * System resource statistics
 
+---
+
 ## Cross Platform
 
 HardwareMon supports:
@@ -69,13 +73,18 @@ HardwareMon supports:
 * Linux
 * Windows
 
+---
+
 ## Native Packaging
 
-HardwareMon integrates directly with native package managers:
+HardwareMon integrates with:
 
 * APT
 * DNF
 * WinGet
+* GitHub Releases
+
+---
 
 ## Lightweight Architecture
 
@@ -113,9 +122,9 @@ https://github.com/louisboii747/HardwareMon/releases
 
 # Linux
 
-# APT (Ubuntu / Debian / Zorin OS)
+# Ubuntu / Debian / Zorin OS
 
-## Repository Setup
+## Setup Repository
 
 ```bash
 curl -fsSL https://hardwaremon.pages.dev/apt/setup.sh | bash
@@ -141,14 +150,6 @@ curl -fsSL https://hardwaremon.pages.dev/apt/flutter.sh | bash
 
 # Fedora / RPM-based Systems
 
-## Install Flutter Edition
-
-```bash
-curl -fsSL https://hardwaremon.pages.dev/yum/install.sh | bash
-```
-
----
-
 ## Install Stable RPM Edition
 
 ```bash
@@ -158,11 +159,19 @@ https://github.com/louisboii747/HardwareMon/releases/latest/download/hardwaremon
 
 ---
 
+## Install Flutter Edition
+
+```bash
+curl -fsSL https://hardwaremon.pages.dev/yum/install.sh | bash
+```
+
+---
+
 # Usage
 
 # GUI
 
-Launch from your desktop applications menu or run:
+Launch HardwareMon from your desktop applications menu or run:
 
 ```bash
 hardwaremon-gui
@@ -185,20 +194,20 @@ The Flutter edition is the next-generation HardwareMon interface.
 Goals of the Flutter migration include:
 
 * Modern desktop UI
-* Improved animations and responsiveness
+* Improved responsiveness
 * Better scalability
 * Cross-platform consistency
 * Cleaner architecture
 * Advanced monitoring dashboards
 
-The Flutter Linux edition currently uses a compiled backend binary bundled directly into the package.
+The Flutter Linux edition uses a compiled backend binary bundled directly into the package.
 
-This allows:
+This provides:
 
 * Faster startup
 * Easier installation
-* No Python runtime dependency for users
 * Cleaner Linux packaging
+* No Python runtime dependency for users
 
 The original Python/Tkinter edition will continue receiving updates alongside the Flutter version.
 
@@ -206,7 +215,17 @@ The original Python/Tkinter edition will continue receiving updates alongside th
 
 # Updating
 
+# Windows
+
+```powershell
+winget upgrade LouisHinchliffe.HardwareMon
+```
+
+---
+
 # Ubuntu / Debian
+
+## Stable Tkinter Edition
 
 ```bash
 sudo apt update
@@ -215,18 +234,33 @@ sudo apt upgrade hardwaremon
 
 ---
 
-# Fedora
+## Flutter Edition
+
+Re-run the installer script to install the latest release:
 
 ```bash
-sudo dnf upgrade --refresh
+curl -fsSL https://hardwaremon.pages.dev/apt/flutter.sh | bash
 ```
 
 ---
 
-# Windows
+# Fedora / RPM-based Systems
 
-```powershell
-winget upgrade LouisHinchliffe.HardwareMon
+## Stable RPM Tkinter Edition
+
+```bash
+sudo dnf install \
+https://github.com/louisboii747/HardwareMon/releases/latest/download/hardwaremon.rpm
+```
+
+---
+
+## Flutter Edition
+
+Re-run the installer script to install the latest release:
+
+```bash
+curl -fsSL https://hardwaremon.pages.dev/yum/install.sh | bash
 ```
 
 ---
@@ -271,13 +305,14 @@ HardwareMon uses automated CI/CD pipelines for:
 * WinGet publishing
 * Cloudflare Pages deployment
 
-The project uses:
+The project currently uses:
 
 * GitHub Actions
 * nfpm
 * Flutter desktop
 * PyInstaller
 * Cloudflare Pages
+* GitHub Releases
 
 ---
 
@@ -301,8 +336,8 @@ This architecture provides:
 Planned future improvements include:
 
 * Advanced system graphs
-* Process management tools
 * Historical performance tracking
+* Process management tools
 * Better GPU support
 * Linux auto-update improvements
 * Additional desktop effects and animations
@@ -318,14 +353,6 @@ HardwareMon is under active development.
 Both the legacy Python implementation and the modern Flutter edition are continuing to receive updates.
 
 The Python/Tkinter version is not deprecated and will continue receiving maintenance and feature improvements.
-
----
-
-# License
-
-This project is currently distributed through GitHub.
-
-A formal open-source license may be added in a future release.
 
 ---
 
