@@ -23,29 +23,35 @@ const String _kAppVersion = String.fromEnvironment(
 );
 
 // ─── Entry point ─────────────────────────────────────────────────────────────
-String getBackendDir() {
-  // Development environment
-  if (File('${Directory.current.path}/hardwaremon/api.py').existsSync()) {
-    return '${Directory.current.path}/hardwaremon';
+// ─── Backend ───────────────────────────────────────────────────────────────
+
+String getBackendExecutable() {
+  final devPath = '${Directory.current.path}/../hardwaremon/dist/api';
+
+  if (File(devPath).existsSync()) {
+    return devPath;
   }
 
-  // Installed Linux package
-  return '/usr/lib/hardwaremon-flutter/backend';
+  return '/usr/lib/hardwaremon-flutter/backend/api';
 }
 
 const backendApiUrl = 'http://127.0.0.1:5000/stats';
 
 Future<void> startBackend() async {
   try {
-    final backendDir = getBackendDir();
+    final backendExecutable = getBackendExecutable();
 
-    final process = await Process.start('$backendDir/venv/bin/python', [
-      '$backendDir/api.py',
-    ], workingDirectory: backendDir);
+    debugPrint('Launching backend: $backendExecutable');
+
+    final process = await Process.start(backendExecutable, []);
 
     process.stdout.transform(utf8.decoder).listen(debugPrint);
 
     process.stderr.transform(utf8.decoder).listen(debugPrint);
+
+    process.exitCode.then((code) {
+      debugPrint('Backend exited with code: $code');
+    });
 
     debugPrint('HardwareMon backend started');
   } catch (e) {
@@ -72,6 +78,8 @@ Future<bool> waitForBackend() async {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  debugPrint('NEW BACKEND CODE LOADED');
 
   await startBackend();
   await waitForBackend();

@@ -61,9 +61,7 @@ jobs:
             liblzma-dev \
             zip \
             python3 \
-            python3-pip \
-            python3-venv
-
+            python3-pip
       # ─────────────────────────────────────────────
       # Python dependencies
       # ─────────────────────────────────────────────
@@ -258,48 +256,24 @@ jobs:
 
           mkdir -p flutter-pkg/usr/lib/hardwaremon-flutter/backend
 
-          cp hardwaremon/api.py \
+          # Build backend binary
+          python3 -m pip install --break-system-packages pyinstaller
+
+          cd hardwaremon
+
+          pyinstaller --onefile api.py
+
+          strip dist/api || true
+
+          cd ..
+
+          # Copy backend binary
+          cp hardwaremon/dist/api \
             flutter-pkg/usr/lib/hardwaremon-flutter/backend/
 
-      - name: Build Flutter backend venv
-        run: |
-          cd flutter-pkg/usr/lib/hardwaremon-flutter/backend
+          chmod +x \
+            flutter-pkg/usr/lib/hardwaremon-flutter/backend/api
 
-          python3 -m venv venv
-
-          source venv/bin/activate
-
-          pip install --no-cache-dir \
-            flask \
-            flask-cors \
-            psutil \
-            gputil \
-            py-cpuinfo \
-            setuptools
-
-
-      - name: Slim Flutter backend venv
-        run: |
-          find flutter-pkg/usr/lib/hardwaremon-flutter/backend/venv \
-            -type d \( \
-              -name tests -o \
-              -name test -o \
-              -name __pycache__ \
-            \) -exec rm -rf {} + || true
-
-          find flutter-pkg/usr/lib/hardwaremon-flutter/backend/venv \
-            -type f \( \
-              -name "*.pyc" -o \
-              -name "*.pyo" \
-            \) -delete
-
-          find flutter-pkg/usr/lib/hardwaremon-flutter/backend/venv \
-          -path "*/site-packages/pip*" \
-          -exec rm -rf {} + || true
-
-          find flutter-pkg/usr/lib/hardwaremon-flutter/backend/venv \
-          -path "*/site-packages/setuptools*" \
-          -exec rm -rf {} + || true
 
       - name: Create Flutter launcher
         run: |
@@ -307,10 +281,17 @@ jobs:
           #!/bin/bash
 
           APP_DIR="/usr/lib/hardwaremon-flutter"
+          BACKEND_DIR="$APP_DIR/backend"
 
           cd "$APP_DIR"
 
-          exec "$APP_DIR/hardwaremon-flutter"
+          "$BACKEND_DIR/api" &
+          BACKEND_PID=$!
+
+          "$APP_DIR/hardwaremon-flutter"
+          
+          kill $BACKEND_PID 2>/dev/null || true
+          wait $BACKEND_PID 2>/dev/null || true
           EOF
 
           chmod +x flutter-pkg/usr/bin/hardwaremon-flutter
@@ -350,9 +331,6 @@ jobs:
           description: Flutter edition of HardwareMon
 
           homepage: https://github.com/louisboii747/HardwareMon
-
-          depends:
-            - python3
 
           contents:
             - src: flutter-pkg/usr/bin/hardwaremon-flutter
