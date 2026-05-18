@@ -151,7 +151,7 @@ jobs:
           # Icons
           mkdir -p pkg/usr/share/icons/hicolor/256x256/apps
 
-          cp hardwaremon/cpu.png \
+          cp hardwaremon/Logo.png \
             pkg/usr/share/icons/hicolor/256x256/apps/hardwaremon.png
 
       # ─────────────────────────────────────────────
@@ -322,7 +322,7 @@ jobs:
 
       - name: Copy Flutter icon
         run: |
-          cp hardwaremon/cpu.png \
+          cp hardwaremon/Logo.png \
             flutter-pkg/usr/share/icons/hicolor/256x256/apps/hardwaremon-flutter.png
 
       # ─────────────────────────────────────────────
