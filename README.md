@@ -1,7 +1,7 @@
 # HardwareMon
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/louisboii747/HardwareMon/main/hardwaremon/cpu.png" width="128" alt="HardwareMon Logo">
+  <img src="https://raw.githubusercontent.com/louisboii747/HardwareMon/main/Untitled design.png" width="128" alt="HardwareMon Logo">
 </p>
 
 <p align="center">
