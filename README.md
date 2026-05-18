@@ -22,6 +22,16 @@
   <img src="https://img.shields.io/badge/WinGet-supported-0078D4?logo=windows" alt="WinGet">
 </p>
 
+<p align="center">
+  🌐 <b>Official Website:</b><br>
+  <a href="https://gethardwaremon.pages.dev">https://gethardwaremon.pages.dev</a>
+</p>
+
+<p align="center">
+  The HardwareMon website contains downloads, screenshots, installation guides,
+  development updates, release information, and future project documentation.
+</p>
+
 ---
 
 # About
