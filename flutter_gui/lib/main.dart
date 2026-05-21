@@ -42,6 +42,8 @@ String getBackendExecutable() {
 
 const backendApiUrl = 'http://127.0.0.1:5000/stats';
 
+const backendHistoryUrl = 'http://127.0.0.1:5000/history';
+
 Future<void> startBackend() async {
   try {
     final backendExecutable = getBackendExecutable();
@@ -432,6 +434,37 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   // ── Data fetch ──────────────────────────────────────────────────────────
+
+  Future<void> _loadHistory() async {
+    try {
+      final response = await http.get(Uri.parse(backendHistoryUrl));
+
+      if (response.statusCode != 200) {
+        return;
+      }
+
+      final List<dynamic> data = jsonDecode(response.body);
+
+      final reversed = data.reversed.toList();
+
+      setState(() {
+        _cpuHistory.clear();
+        _ramHistory.clear();
+        _gpuTempHistory.clear();
+
+        for (final item in reversed) {
+          _cpuHistory.add((item['cpu_percent'] as num?)?.toDouble() ?? 0);
+
+          _ramHistory.add((item['ram_percent'] as num?)?.toDouble() ?? 0);
+
+          _gpuTempHistory.add((item['cpu_temp'] as num?)?.toDouble() ?? 0);
+        }
+      });
+    } catch (e) {
+      debugPrint("loadHistory error: $e");
+    }
+  }
+
   Future<void> _fetchStats() async {
     try {
       final response = await http
@@ -521,7 +554,11 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
+
+    _loadHistory();
+
     _fetchStats();
+
     _timer = Timer.periodic(const Duration(seconds: 2), (_) => _fetchStats());
   }
 

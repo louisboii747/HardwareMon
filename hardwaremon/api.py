@@ -1,11 +1,21 @@
 import platform
-import time
-
 import psutil
 from flask import Flask, jsonify
 from flask_cors import CORS
 import signal
 import sys
+import threading
+import time
+
+
+
+from database import (
+    initialize_database,
+    insert_system_stats,
+    get_recent_stats
+)
+
+initialize_database()
 
 def shutdown_handler(signum, frame):
     print("Backend shutting down...")
@@ -16,6 +26,23 @@ signal.signal(signal.SIGINT, shutdown_handler)
 
 app = Flask(__name__)
 CORS(app)
+
+def logging_loop():
+    while True:
+        cpu = psutil.cpu_percent()
+        ram = psutil.virtual_memory().percent
+
+        temp = 0
+
+        insert_system_stats(cpu, ram, temp)
+
+        time.sleep(5)
+
+
+threading.Thread(
+    target=logging_loop,
+    daemon=True
+).start()
 
 # ── Initialise net baseline ───────────────────────────────────────────────────
 _last_net  = psutil.net_io_counters()
@@ -94,6 +121,10 @@ def stats():
 
     return jsonify(data)
 
+
+@app.route("/history")
+def history():
+    return jsonify(get_recent_stats())
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=False, threaded=True)
