@@ -272,9 +272,9 @@ jobs:
           pyinstaller \
           --onefile \
           --name api \
-          --hidden-import flask \
-          --hidden-import flask_cors \
-          --hidden-import psutil \
+          --hidden-import sqlite3 \
+          --hidden-import database \
+          --add-data "database.py:." \
           api.py
 
           strip dist/api || true

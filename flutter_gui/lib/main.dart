@@ -31,21 +31,20 @@ const String _kAppVersion = String.fromEnvironment(
 Process? backendProcess;
 
 String getBackendExecutable() {
-  // Flatpak packaged backend
-  const flatpakPath = '/app/bin/backend/api.py';
+  // Installed package
+  const packagedPath = '/usr/lib/hardwaremon-flutter/backend/api';
 
-  if (File(flatpakPath).existsSync()) {
-    return flatpakPath;
+  if (File(packagedPath).existsSync()) {
+    return packagedPath;
   }
 
-  // Local development fallback
+  // Local dev
   final devPath = '${Directory.current.path}/../hardwaremon/api.py';
 
   return devPath;
 }
 
 const backendApiUrl = 'http://127.0.0.1:5000/stats';
-
 const backendHistoryUrl = 'http://127.0.0.1:5000/history';
 
 Future<void> startBackend() async {
@@ -54,9 +53,20 @@ Future<void> startBackend() async {
 
     debugPrint('Launching backend: $backendExecutable');
 
-    backendProcess = await Process.start('python3', [
-      backendExecutable,
-    ], mode: ProcessStartMode.normal);
+    // Production packaged binary
+    if (backendExecutable.endsWith('/api')) {
+      backendProcess = await Process.start(
+        backendExecutable,
+        [],
+        mode: ProcessStartMode.normal,
+      );
+    }
+    // Dev python script
+    else {
+      backendProcess = await Process.start('python3', [
+        backendExecutable,
+      ], mode: ProcessStartMode.normal);
+    }
 
     backendProcess!.stdout.transform(utf8.decoder).listen(debugPrint);
 
