@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=HardwareMon
+Exec=flutter_gui
+Icon=com.hardwaremon.HardwareMon
+Type=Application
+Categories=System;Monitor;
+StartupNotify=true

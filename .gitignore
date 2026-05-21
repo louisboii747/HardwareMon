@@ -26,3 +26,7 @@ dist/
 __pycache__/
 *.pyc
 *.spec
+.flatpak-builder/
+build-dir/
+python-packages/
+flutter_gui/build/

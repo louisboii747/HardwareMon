@@ -1,0 +1,48 @@
+app-id: com.hardwaremon.HardwareMon
+runtime: org.freedesktop.Platform
+runtime-version: '24.08'
+sdk: org.freedesktop.Sdk
+command: flutter_gui
+
+finish-args:
+  - --share=ipc
+  - --share=network
+  - --socket=x11
+  - --socket=wayland
+  - --device=all
+  - --filesystem=host
+  - --talk-name=org.freedesktop.Notifications
+  - --env=PYTHONPATH=/app/lib/python3.11/site-packages
+
+modules:
+  - name: python-dependencies
+    buildsystem: simple
+
+    build-commands:
+      - pip3 install --no-index --find-links=packages --prefix=/app psutil flask flask-cors GPUtil
+
+    sources:
+      - type: dir
+        path: ../python-packages
+        dest: packages
+
+  - name: hardwaremon
+    buildsystem: simple
+
+    build-commands:
+      - mkdir -p /app/bin
+      - cp -r . /app/bin/
+      - chmod +x /app/bin/flutter_gui
+      - chmod +x /app/bin/backend/api.py
+
+      - install -Dm644 assets/com.hardwaremon.HardwareMon.desktop /app/share/applications/com.hardwaremon.HardwareMon.desktop
+
+      - install -Dm644 assets/com.hardwaremon.HardwareMon.png /app/share/icons/hicolor/256x256/apps/com.hardwaremon.HardwareMon.png
+
+    sources:
+      - type: dir
+        path: ../flutter_gui/build/linux/x64/release/bundle
+
+      - type: dir
+        path: assets
+        dest: assets
