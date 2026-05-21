@@ -19,6 +19,7 @@
   <img src="https://img.shields.io/badge/Cloudflare_Pages-hosted-orange?logo=cloudflare" alt="Cloudflare Pages">
   <img src="https://img.shields.io/badge/APT-supported-red?logo=debian" alt="APT">
   <img src="https://img.shields.io/badge/DNF-supported-294172?logo=fedora" alt="DNF">
+  <img src="https://img.shields.io/badge/Flatpak-supported-4A90D9?logo=flatpak" alt="Flatpak">
   <img src="https://img.shields.io/badge/WinGet-supported-0078D4?logo=windows" alt="WinGet">
 </p>
 
@@ -51,6 +52,7 @@ HardwareMon currently includes:
 * Desktop graphical interfaces
 * Command-line monitoring tools
 * Native Linux packaging
+* Flatpak support
 * Windows installer support
 
 The project currently contains:
@@ -91,6 +93,7 @@ HardwareMon integrates with:
 
 * APT
 * DNF
+* Flatpak
 * WinGet
 * GitHub Releases
 
@@ -174,6 +177,79 @@ https://github.com/louisboii747/HardwareMon/releases/latest/download/hardwaremon
 ```bash
 curl -fsSL https://hardwaremon.pages.dev/yum/install.sh | bash
 ```
+
+---
+
+# Flatpak
+
+HardwareMon also provides an experimental Flatpak package for universal Linux distribution support.
+
+## Install Flatpak
+
+If Flatpak is not already installed:
+
+### Ubuntu / Debian
+
+```bash
+sudo apt install flatpak
+```
+
+### Fedora
+
+```bash
+sudo dnf install flatpak
+```
+
+---
+
+## Add Flathub
+
+```bash
+flatpak remote-add --if-not-exists flathub \
+https://flathub.org/repo/flathub.flatpakrepo
+```
+
+---
+
+## Install HardwareMon Flatpak
+
+```bash
+curl -L \
+https://github.com/louisboii747/HardwareMon/releases/latest/download/hardwaremon.flatpak \
+-o /tmp/hardwaremon.flatpak && \
+flatpak install --user -y /tmp/hardwaremon.flatpak
+```
+
+---
+
+## Launch HardwareMon
+
+```bash
+flatpak run com.hardwaremon.HardwareMon
+```
+
+---
+
+## Troubleshooting
+
+### xdg-document-portal.service is masked
+
+If launching the Flatpak shows:
+
+```text
+Can't get document portal:
+org.freedesktop.systemd1.UnitMasked:
+Unit xdg-document-portal.service is masked
+```
+
+Run:
+
+```bash
+systemctl --user unmask xdg-document-portal.service
+systemctl --user restart xdg-desktop-portal.service
+```
+
+Then launch HardwareMon again.
 
 ---
 
@@ -275,6 +351,19 @@ curl -fsSL https://hardwaremon.pages.dev/yum/install.sh | bash
 
 ---
 
+# Flatpak
+
+Reinstall the latest Flatpak release:
+
+```bash
+curl -L \
+https://github.com/louisboii747/HardwareMon/releases/latest/download/hardwaremon.flatpak \
+-o /tmp/hardwaremon.flatpak && \
+flatpak install --user -y /tmp/hardwaremon.flatpak
+```
+
+---
+
 # Development
 
 ## Clone Repository
@@ -310,6 +399,7 @@ HardwareMon uses automated CI/CD pipelines for:
 
 * Linux DEB packaging
 * Linux RPM packaging
+* Flatpak packaging
 * GitHub Releases
 * Windows installers
 * WinGet publishing
@@ -321,6 +411,7 @@ The project currently uses:
 * nfpm
 * Flutter desktop
 * PyInstaller
+* Flatpak Builder
 * Cloudflare Pages
 * GitHub Releases
 
@@ -351,6 +442,7 @@ Planned future improvements include:
 * Better GPU support
 * Linux auto-update improvements
 * Additional desktop effects and animations
+* Official Flathub repository support for one-click Linux installation
 * Expanded Windows support
 * Native macOS support exploration
 
@@ -370,16 +462,16 @@ The Python/Tkinter version is not deprecated and will continue receiving mainten
 
 ## GitHub Repository
 
-[https://github.com/louisboii747/HardwareMon](https://github.com/louisboii747/HardwareMon)
+https://github.com/louisboii747/HardwareMon
 
 ---
 
 ## Releases
 
-[https://github.com/louisboii747/HardwareMon/releases](https://github.com/louisboii747/HardwareMon/releases)
+https://github.com/louisboii747/HardwareMon/releases
 
 ---
 
 ## Linux Repository Hosting
 
-[https://hardwaremon.pages.dev](https://hardwaremon.pages.dev)
+https://hardwaremon.pages.dev
