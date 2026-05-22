@@ -256,8 +256,8 @@ jobs:
           cp -r flutter_gui/build/linux/x64/release/bundle/* \
             flutter-pkg/usr/lib/hardwaremon-flutter/
 
-          mv flutter-pkg/usr/lib/hardwaremon-flutter/flutter_gui \
-            flutter-pkg/usr/lib/hardwaremon-flutter/hardwaremon-flutter
+          mv flutter-pkg/usr/lib/hardwaremon-flutter/hardwaremon \
+          flutter-pkg/usr/lib/hardwaremon-flutter/hardwaremon-flutter
 
           mkdir -p flutter-pkg/usr/lib/hardwaremon-flutter/backend
 
@@ -705,8 +705,7 @@ jobs:
 
           sudo apt-get install -y \
             git \
-            openssh-client \
-            makepkg
+            openssh-client
 
 
       - name: Setup SSH
@@ -737,7 +736,6 @@ jobs:
           sed -i "s/^pkgver=.*/pkgver=${VERSION}/" PKGBUILD
           sed -i "s/^pkgrel=.*/pkgrel=1/" PKGBUILD
 
-          makepkg --printsrcinfo > .SRCINFO
 
       - name: Commit and push
         run: |
@@ -749,7 +747,7 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
 
-          git add PKGBUILD .SRCINFO
+          git add PKGBUILD
 
           git commit -m "Update to v${VERSION}" || exit 0
 
