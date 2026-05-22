@@ -717,10 +717,11 @@ jobs:
 
           chmod 600 ~/.ssh/aur
 
+          ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts
+
           cat <<EOF >> ~/.ssh/config
           Host aur.archlinux.org
             IdentityFile ~/.ssh/aur
-            StrictHostKeyChecking no
           EOF
 
       - name: Clone AUR repo
