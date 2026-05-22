@@ -712,18 +712,27 @@ jobs:
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
 
           echo "${{ secrets.AUR_SSH_PRIVATE_KEY }}" > ~/.ssh/aur
-
           chmod 600 ~/.ssh/aur
 
-          ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts
+          touch ~/.ssh/known_hosts
+          ssh-keyscan -H aur.archlinux.org >> ~/.ssh/known_hosts
 
-          cat <<EOF >> ~/.ssh/config
+          cat > ~/.ssh/config <<EOF
           Host aur.archlinux.org
+            HostName aur.archlinux.org
+            User aur
             IdentityFile ~/.ssh/aur
-            user aur
-          EOF   
+            StrictHostKeyChecking yes
+          EOF
+
+          chmod 600 ~/.ssh/config
+
+      - name: Debug SSH
+        run: |
+          ssh -T aur@aur.archlinux.org || true
 
       - name: Clone AUR repo
         run: |
