@@ -722,7 +722,8 @@ jobs:
           cat <<EOF >> ~/.ssh/config
           Host aur.archlinux.org
             IdentityFile ~/.ssh/aur
-          EOF
+            user aur
+          EOF   
 
       - name: Clone AUR repo
         run: |
