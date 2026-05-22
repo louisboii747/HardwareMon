@@ -742,12 +742,16 @@ jobs:
           VERSION="${{ github.ref_name }}"
           VERSION="${VERSION#v}"
 
+          useradd -m builder
+
+          chown -R builder:builder .
+
           cd aur
 
           sed -i "s/^pkgver=.*/pkgver=${VERSION}/" PKGBUILD
           sed -i "s/^pkgrel=.*/pkgrel=1/" PKGBUILD
 
-          makepkg --printsrcinfo > .SRCINFO
+          su builder -c "cd $(pwd) && makepkg --printsrcinfo > .SRCINFO"
 
       - name: Commit and push
         run: |
@@ -763,4 +767,4 @@ jobs:
 
           git commit -m "Update to v${VERSION}" || exit 0
 
-          git push
+          GIT_SSH_COMMAND="ssh -i /root/.ssh/id_ed25519" git push
