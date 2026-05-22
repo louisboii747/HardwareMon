@@ -31,17 +31,25 @@ const String _kAppVersion = String.fromEnvironment(
 Process? backendProcess;
 
 String getBackendExecutable() {
-  // Installed package
-  const packagedPath = '/usr/lib/hardwaremon-flutter/backend/api';
+  // Directory where the Flutter executable lives
+  final exeDir = File(Platform.resolvedExecutable).parent.path;
 
-  if (File(packagedPath).existsSync()) {
-    return packagedPath;
+  // Packaged backend binary
+  final packagedBackend = '$exeDir/backend/api';
+
+  if (File(packagedBackend).existsSync()) {
+    return packagedBackend;
   }
 
-  // Local dev
-  final devPath = '${Directory.current.path}/../hardwaremon/api.py';
+  // Packaged python script fallback
+  final packagedPython = '$exeDir/backend/api.py';
 
-  return devPath;
+  if (File(packagedPython).existsSync()) {
+    return packagedPython;
+  }
+
+  // Dev environment fallback
+  return '${Platform.script.toFilePath().split('/flutter_gui/').first}/hardwaremon/api.py';
 }
 
 const backendApiUrl = 'http://127.0.0.1:5000/stats';
@@ -53,19 +61,24 @@ Future<void> startBackend() async {
 
     debugPrint('Launching backend: $backendExecutable');
 
-    // Production packaged binary
-    if (backendExecutable.endsWith('/api')) {
+    // Compiled backend binary
+    if (!backendExecutable.endsWith('.py')) {
       backendProcess = await Process.start(
         backendExecutable,
         [],
         mode: ProcessStartMode.normal,
       );
     }
-    // Dev python script
+    // Python backend script
     else {
-      backendProcess = await Process.start('python3', [
-        backendExecutable,
-      ], mode: ProcessStartMode.normal);
+      final venvPython =
+          '${Platform.script.toFilePath().split('/flutter_gui/').first}/.venv/bin/python3';
+
+      backendProcess = await Process.start(
+        File(venvPython).existsSync() ? venvPython : 'python3',
+        [backendExecutable],
+        mode: ProcessStartMode.normal,
+      );
     }
 
     backendProcess!.stdout.transform(utf8.decoder).listen(debugPrint);

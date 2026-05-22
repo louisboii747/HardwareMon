@@ -11,6 +11,9 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
+linux-package/
+hardwaremon-linux-x86_64.tar.gz
+build/
 
 # IntelliJ related
 *.iml
