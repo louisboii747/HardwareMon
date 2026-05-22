@@ -698,15 +698,16 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    container:
+      image: archlinux:latest
+
     steps:
       - name: Install dependencies
         run: |
-          sudo apt-get update
-
-          sudo apt-get install -y \
+          pacman -Sy --noconfirm \
             git \
-            openssh-client
-
+            openssh \
+            base-devel
 
       - name: Setup SSH
         run: |
@@ -726,7 +727,7 @@ jobs:
         run: |
           git clone ssh://aur@aur.archlinux.org/hardwaremon-bin.git aur
 
-      - name: Update PKGBUILD
+      - name: Update PKGBUILD and SRCINFO
         run: |
           VERSION="${{ github.ref_name }}"
           VERSION="${VERSION#v}"
@@ -736,6 +737,7 @@ jobs:
           sed -i "s/^pkgver=.*/pkgver=${VERSION}/" PKGBUILD
           sed -i "s/^pkgrel=.*/pkgrel=1/" PKGBUILD
 
+          makepkg --printsrcinfo > .SRCINFO
 
       - name: Commit and push
         run: |
@@ -747,8 +749,8 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
 
-          git add PKGBUILD
+          git add PKGBUILD .SRCINFO
 
           git commit -m "Update to v${VERSION}" || exit 0
 
-          git push        
+          git push
