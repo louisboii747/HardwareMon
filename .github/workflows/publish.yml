@@ -711,24 +711,22 @@ jobs:
 
       - name: Setup SSH
         run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
+          mkdir -p /root/.ssh
+          chmod 700 /root/.ssh
 
-          echo "${{ secrets.AUR_SSH_PRIVATE_KEY }}" > ~/.ssh/aur
-          chmod 600 ~/.ssh/aur
+          echo "${{ secrets.AUR_SSH_PRIVATE_KEY }}" > /root/.ssh/id_ed25519
+          chmod 600 /root/.ssh/id_ed25519
 
-          touch ~/.ssh/known_hosts
-          ssh-keyscan -H aur.archlinux.org >> ~/.ssh/known_hosts
+          ssh-keyscan aur.archlinux.org > /root/.ssh/known_hosts
+          chmod 644 /root/.ssh/known_hosts
 
-          cat > ~/.ssh/config <<EOF
-          Host aur.archlinux.org
-            HostName aur.archlinux.org
-            User aur
-            IdentityFile ~/.ssh/aur
-            StrictHostKeyChecking yes
-          EOF
+          cat /root/.ssh/known_hosts
 
-          chmod 600 ~/.ssh/config
+      - name: Test SSH
+        run: |
+          ssh -o StrictHostKeyChecking=yes \
+              -i /root/.ssh/id_ed25519 \
+              -T aur@aur.archlinux.org || true
 
       - name: Debug SSH
         run: |
@@ -736,6 +734,7 @@ jobs:
 
       - name: Clone AUR repo
         run: |
+          GIT_SSH_COMMAND="ssh -i /root/.ssh/id_ed25519" \
           git clone ssh://aur@aur.archlinux.org/hardwaremon-bin.git aur
 
       - name: Update PKGBUILD and SRCINFO
