@@ -685,4 +685,72 @@ jobs:
 
           installers-regex: 'HardwareMonSetup-x64-([0-9.]+)\.exe$'
 
+
           token: ${{ secrets.WINGET_TOKEN }}
+
+  # ─────────────────────────────────────────────────────────────────
+  # AUR submission
+  # ─────────────────────────────────────────────────────────────────
+
+  aur-update:
+    needs:
+      - build
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+
+          sudo apt-get install -y \
+            git \
+            openssh-client \
+            makepkg
+
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+
+          echo "${{ secrets.AUR_SSH_PRIVATE_KEY }}" > ~/.ssh/aur
+
+          chmod 600 ~/.ssh/aur
+
+          cat <<EOF >> ~/.ssh/config
+          Host aur.archlinux.org
+            IdentityFile ~/.ssh/aur
+            StrictHostKeyChecking no
+          EOF
+
+      - name: Clone AUR repo
+        run: |
+          git clone ssh://aur@aur.archlinux.org/hardwaremon-bin.git aur
+
+      - name: Update PKGBUILD
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+
+          cd aur
+
+          sed -i "s/^pkgver=.*/pkgver=${VERSION}/" PKGBUILD
+          sed -i "s/^pkgrel=.*/pkgrel=1/" PKGBUILD
+
+          makepkg --printsrcinfo > .SRCINFO
+
+      - name: Commit and push
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+
+          cd aur
+
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+
+          git add PKGBUILD .SRCINFO
+
+          git commit -m "Update to v${VERSION}" || exit 0
+
+          git push        
