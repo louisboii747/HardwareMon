@@ -35,87 +35,41 @@
 
 ---
 
-# About
-
-HardwareMon is a modern hardware and performance monitoring application for Linux and Windows.
-
-The project is designed to provide a fast, lightweight, and clean way to monitor real-time system activity without unnecessary complexity.
-
-HardwareMon currently includes:
-
-* Real-time CPU monitoring
-* Memory and RAM statistics
-* GPU monitoring
-* Disk usage tracking
-* Network upload/download monitoring
-* Live process information
-* Desktop graphical interfaces
-* Command-line monitoring tools
-* Native Linux packaging
-* Flatpak support
-* Windows installer support
-
-The project currently contains:
-
-* A stable Python/Tkinter edition
-* A modern Flutter desktop edition under active development
-
----
-
 # Features
 
-## Real-Time Monitoring
-
-Monitor live:
-
-* CPU usage
-* RAM usage
-* GPU usage and temperature
-* Disk usage
-* Network throughput
-* Running processes
-* System resource statistics
-
----
-
-## Cross Platform
-
-HardwareMon supports:
-
-* Linux
-* Windows
+* Real-time CPU, RAM, GPU, disk and network monitoring
+* Modern Flutter desktop interface
+* Live process monitoring
+* VirusTotal process scanning integration
+* Native Linux packaging
+* APT, DNF and AUR repositories
+* Flatpak support
+* Windows installer + WinGet support
+* Automated GitHub Releases
+* Cross-platform architecture
+* GitHub Actions CI/CD pipelines
+* Cloudflare-hosted package repositories
 
 ---
 
-## Native Packaging
+# Platform Support
 
-HardwareMon integrates with:
-
-* APT
-* DNF
-* Flatpak
-* WinGet
-* GitHub Releases
-
----
-
-## Lightweight Architecture
-
-The Linux Flutter edition uses:
-
-* Native Flutter desktop rendering
-* A compiled backend API
-* Native Linux package formats
-* GitHub Releases distribution
-* Cloudflare Pages repository hosting
+| Platform        | Status      | Installation       |
+| --------------- | ----------- | ------------------ |
+| Windows         | ✅ Supported | WinGet / Installer |
+| Ubuntu / Debian | ✅ Supported | APT                |
+| Fedora          | ✅ Supported | DNF                |
+| Arch Linux      | ✅ Supported | AUR / yay          |
+| Flatpak         | ✅ Supported | Universal Linux    |
+| macOS           | 🚧 Planned  | -                  |
 
 ---
 
-# Installation
+# Quick Install
 
-# Windows
+## Windows
 
-## WinGet
+### WinGet
 
 ```powershell
 winget install LouisHinchliffe.HardwareMon
@@ -123,47 +77,42 @@ winget install LouisHinchliffe.HardwareMon
 
 ---
 
-## Standalone Installer
+## Arch Linux
 
-Download the latest installer from:
-
-```text
-https://github.com/louisboii747/HardwareMon/releases
-```
-
----
-
-# Linux
-
-# Ubuntu / Debian / Zorin OS
-
-## Setup Repository
+### yay
 
 ```bash
-curl -fsSL https://hardwaremon.pages.dev/apt/setup.sh | bash
+yay -S hardwaremon-bin
 ```
 
 ---
 
-## Install Stable Tkinter Edition
+## Ubuntu / Debian Systems
 
-```bash
-sudo apt install hardwaremon
-```
-
----
-
-## Install Flutter Edition
+### Flutter Edition
 
 ```bash
 curl -fsSL https://hardwaremon.pages.dev/apt/flutter.sh | bash
 ```
 
+### Legacy Tkinter Edition
+
+```bash
+curl -fsSL https://hardwaremon.pages.dev/apt/setup.sh | bash
+sudo apt install hardwaremon
+```
+
 ---
 
-# Fedora / RPM-based Systems
+## Fedora / RPM-based Systems
 
-## Install Stable RPM Edition
+### Flutter Edition
+
+```bash
+curl -fsSL https://hardwaremon.pages.dev/yum/install.sh | bash
+```
+
+### Legacy RPM Edition
 
 ```bash
 sudo dnf install \
@@ -172,46 +121,7 @@ https://github.com/louisboii747/HardwareMon/releases/latest/download/hardwaremon
 
 ---
 
-## Install Flutter Edition
-
-```bash
-curl -fsSL https://hardwaremon.pages.dev/yum/install.sh | bash
-```
-
----
-
-# Flatpak
-
-HardwareMon also provides an experimental Flatpak package for universal Linux distribution support.
-
-## Install Flatpak
-
-If Flatpak is not already installed:
-
-### Ubuntu / Debian
-
-```bash
-sudo apt install flatpak
-```
-
-### Fedora
-
-```bash
-sudo dnf install flatpak
-```
-
----
-
-## Add Flathub
-
-```bash
-flatpak remote-add --if-not-exists flathub \
-https://flathub.org/repo/flathub.flatpakrepo
-```
-
----
-
-## Install HardwareMon Flatpak
+## Flatpak
 
 ```bash
 curl -L \
@@ -220,9 +130,7 @@ https://github.com/louisboii747/HardwareMon/releases/latest/download/hardwaremon
 flatpak install --user -y /tmp/hardwaremon.flatpak
 ```
 
----
-
-## Launch HardwareMon
+Launch:
 
 ```bash
 flatpak run com.hardwaremon.HardwareMon
@@ -230,78 +138,11 @@ flatpak run com.hardwaremon.HardwareMon
 
 ---
 
-## Troubleshooting
-
-### xdg-document-portal.service is masked
-
-If launching the Flatpak shows:
-
-```text
-Can't get document portal:
-org.freedesktop.systemd1.UnitMasked:
-Unit xdg-document-portal.service is masked
-```
-
-Run:
-
-```bash
-systemctl --user unmask xdg-document-portal.service
-systemctl --user restart xdg-desktop-portal.service
-```
-
-Then launch HardwareMon again.
-
----
-
-# Usage
-
-# GUI
-
-Launch HardwareMon from your desktop applications menu or run:
-
-```bash
-hardwaremon-gui
-```
-
----
-
-# CLI
-
-```bash
-hardwaremon
-```
-
----
-
-# Flutter Edition
-
-The Flutter edition is the next-generation HardwareMon interface.
-
-Goals of the Flutter migration include:
-
-* Modern desktop UI
-* Improved responsiveness
-* Better scalability
-* Cross-platform consistency
-* Cleaner architecture
-* Advanced monitoring dashboards
-
-The Flutter Linux edition uses a compiled backend binary bundled directly into the package.
-
-This provides:
-
-* Faster startup
-* Easier installation
-* Cleaner Linux packaging
-* No Python runtime dependency for users
-
-The original Python/Tkinter edition will continue receiving updates alongside the Flutter version.
-
----
-
 # Updating
 
-# Windows
+---
+
+## Windows
 
 ```powershell
 winget upgrade LouisHinchliffe.HardwareMon
@@ -309,9 +150,25 @@ winget upgrade LouisHinchliffe.HardwareMon
 
 ---
 
-# Ubuntu / Debian
+## Arch Linux
 
-## Stable Tkinter Edition
+```bash
+yay -Syu hardwaremon-bin
+```
+
+---
+
+## Ubuntu / Debian
+
+### Flutter Edition
+
+Re-run the installer script:
+
+```bash
+curl -fsSL https://hardwaremon.pages.dev/apt/flutter.sh | bash
+```
+
+### Legacy Tkinter Edition
 
 ```bash
 sudo apt update
@@ -320,47 +177,64 @@ sudo apt upgrade hardwaremon
 
 ---
 
-## Flutter Edition
+## Fedora / RPM-based Systems
 
-Re-run the installer script to install the latest release:
+### Flutter Edition
 
-```bash
-curl -fsSL https://hardwaremon.pages.dev/apt/flutter.sh | bash
-```
-
----
-
-# Fedora / RPM-based Systems
-
-## Stable RPM Tkinter Edition
-
-```bash
-sudo dnf install \
-https://github.com/louisboii747/HardwareMon/releases/latest/download/hardwaremon.rpm
-```
-
----
-
-## Flutter Edition
-
-Re-run the installer script to install the latest release:
+Re-run the installer script:
 
 ```bash
 curl -fsSL https://hardwaremon.pages.dev/yum/install.sh | bash
 ```
 
----
-
-# Flatpak
-
-Reinstall the latest Flatpak release:
+### Legacy RPM Edition
 
 ```bash
-curl -L \
-https://github.com/louisboii747/HardwareMon/releases/latest/download/hardwaremon.flatpak \
--o /tmp/hardwaremon.flatpak && \
-flatpak install --user -y /tmp/hardwaremon.flatpak
+sudo dnf upgrade hardwaremon
 ```
+
+---
+
+## Flatpak
+
+```bash
+flatpak update
+```
+
+---
+
+# VirusTotal Integration
+
+HardwareMon includes optional VirusTotal integration for scanning running processes.
+
+Features include:
+
+* SHA256 process hash scanning
+* Process reputation lookups
+* Suspicious executable detection
+* Secure API-based analysis
+* Optional personal API key support
+
+This allows HardwareMon to help identify potentially malicious or suspicious software directly from the monitoring interface.
+
+---
+
+# Flutter Edition
+
+HardwareMon is actively transitioning toward a modern Flutter-based desktop interface.
+
+The Flutter edition includes:
+
+* Modern desktop UI
+* Smooth animations and transitions
+* Expanded monitoring dashboards
+* Better scalability
+* Cross-platform consistency
+* Bundled backend architecture
+
+The Linux Flutter builds bundle the backend directly into the application package for simpler installation and deployment.
+
+The original Python/Tkinter edition continues to receive maintenance and updates alongside the Flutter edition.
 
 ---
 
@@ -375,14 +249,6 @@ cd HardwareMon
 
 ---
 
-## Python Dependencies
-
-```bash
-pip install psutil gputil pillow flask
-```
-
----
-
 ## Flutter Development
 
 ```bash
@@ -393,42 +259,36 @@ flutter run -d linux
 
 ---
 
-# Build System
+## Python Dependencies
 
-HardwareMon uses automated CI/CD pipelines for:
-
-* Linux DEB packaging
-* Linux RPM packaging
-* Flatpak packaging
-* GitHub Releases
-* Windows installers
-* WinGet publishing
-* Cloudflare Pages deployment
-
-The project currently uses:
-
-* GitHub Actions
-* nfpm
-* Flutter desktop
-* PyInstaller
-* Flatpak Builder
-* Cloudflare Pages
-* GitHub Releases
+```bash
+pip install psutil gputil pillow flask
+```
 
 ---
 
-# Repository Hosting
+# Build & Release Infrastructure
 
-HardwareMon repositories and installation scripts are hosted on Cloudflare Pages.
+HardwareMon uses automated CI/CD pipelines for:
 
-Large binary packages are distributed through GitHub Releases.
+* DEB packaging
+* RPM packaging
+* Flatpak packaging
+* AUR releases
+* GitHub Releases
+* Windows installer generation
+* WinGet publishing
+* Cloudflare Pages deployment
 
-This architecture provides:
+Technologies used include:
 
-* Reliable global hosting
-* Fast package downloads
-* Lightweight repository infrastructure
-* Automated release deployment
+* Flutter Desktop
+* Python
+* PyInstaller
+* GitHub Actions
+* Flatpak Builder
+* nfpm
+* Cloudflare Pages
 
 ---
 
@@ -436,14 +296,14 @@ This architecture provides:
 
 Planned future improvements include:
 
-* Advanced system graphs
-* Historical performance tracking
-* Process management tools
-* Better GPU support
-* Linux auto-update improvements
-* Additional desktop effects and animations
-* Official Flathub repository support for one-click Linux installation
+* Historical monitoring and analytics
+* Advanced interactive graphs
+* Remote monitoring support
+* System tray integration
+* Custom dashboards
 * Expanded Windows support
+* Official Flathub publishing
+* Plugin architecture
 * Native macOS support exploration
 
 ---
@@ -452,9 +312,7 @@ Planned future improvements include:
 
 HardwareMon is under active development.
 
-Both the legacy Python implementation and the modern Flutter edition are continuing to receive updates.
-
-The Python/Tkinter version is not deprecated and will continue receiving maintenance and feature improvements.
+Both the legacy Python implementation and the modern Flutter edition continue to receive updates and improvements.
 
 ---
 
@@ -472,6 +330,10 @@ https://github.com/louisboii747/HardwareMon/releases
 
 ---
 
-## Linux Repository Hosting
+## Website
 
-https://hardwaremon.pages.dev
+https://gethardwaremon.pages.dev
+
+
+---
+
