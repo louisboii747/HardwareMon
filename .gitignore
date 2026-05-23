@@ -30,3 +30,8 @@ __pycache__/
 build-dir/
 python-packages/
 flutter_gui/build/
+.env
+config.json
+secrets.json
+hardwaremon/.env
+flutter_gui/.env

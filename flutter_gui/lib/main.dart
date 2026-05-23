@@ -1203,6 +1203,52 @@ class _ProcessesPageState extends State<ProcessesPage> {
   String _sortBy = "cpu"; // "cpu" | "ram" | "name"
   late Timer _timer;
 
+  Future<void> _checkVirusTotal(int pid) async {
+    try {
+      final response = await http.post(
+        Uri.parse("http://127.0.0.1:5000/virustotal/process"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"pid": pid}),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (!mounted) return;
+
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          backgroundColor: AppColors.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text("VirusTotal Result"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (data['success'] == true) ...[
+                Text("Malicious: ${data['malicious']}"),
+                Text("Suspicious: ${data['suspicious']}"),
+                Text("Undetected: ${data['undetected']}"),
+              ] else ...[
+                Text(data['error'] ?? data['message'] ?? "Unknown error"),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Close"),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      debugPrint("VirusTotal check failed: $e");
+    }
+  }
+
   Future<void> _fetchProcesses() async {
     try {
       final result = await Process.run('ps', [
@@ -1407,9 +1453,9 @@ class _ProcessesPageState extends State<ProcessesPage> {
                 SizedBox(width: 36),
                 SizedBox(width: 12),
                 Expanded(child: _ColHeader("Name")),
-                SizedBox(width: 80, child: _ColHeader("PID")),
-                SizedBox(width: 80, child: _ColHeader("CPU %")),
-                SizedBox(width: 80, child: _ColHeader("RAM %")),
+                SizedBox(width: 70, child: _ColHeader("PID")),
+                SizedBox(width: 70, child: _ColHeader("CPU %")),
+                SizedBox(width: 70, child: _ColHeader("RAM %")),
               ],
             ),
           ),
@@ -1438,8 +1484,8 @@ class _ProcessesPageState extends State<ProcessesPage> {
 
                       return Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
+                          horizontal: 8,
+                          vertical: 6,
                         ),
                         decoration: BoxDecoration(
                           color: index.isEven
@@ -1504,6 +1550,35 @@ class _ProcessesPageState extends State<ProcessesPage> {
                                   fontSize: 13,
                                   color: Colors.white54,
                                   fontFeatures: [FontFeature.tabularFigures()],
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(width: 12),
+
+                            GestureDetector(
+                              onTap: () => _checkVirusTotal(
+                                int.parse(proc['pid'].toString()),
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.cyan.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: AppColors.cyan.withOpacity(0.35),
+                                  ),
+                                ),
+                                child: const Text(
+                                  "Check VT",
+                                  style: TextStyle(
+                                    color: AppColors.cyan,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                             ),
