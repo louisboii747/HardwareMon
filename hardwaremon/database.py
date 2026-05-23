@@ -25,10 +25,55 @@ def initialize_database():
         )
     """)
 
+    initialize_settings_table(conn)
+    if get_setting("refresh_interval") is None:
+        set_setting("refresh_interval", "2")
+
     conn.commit()
     conn.close()
 
     print(f"SQLite database initialized: {DB_PATH}")
+
+
+def initialize_settings_table(conn):
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS settings (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        )
+    """)
+
+    conn.commit()
+
+def set_setting(key, value):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT OR REPLACE INTO settings (key, value)
+        VALUES (?, ?)
+    """, (key, value))
+
+    conn.commit()
+    conn.close()
+
+
+def get_setting(key):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT value FROM settings
+        WHERE key = ?
+    """, (key,))
+
+    row = cursor.fetchone()
+
+    conn.close()
+
+    return row["value"] if row else None
 
 
 def insert_system_stats(cpu_percent, ram_percent, cpu_temp):
@@ -64,3 +109,4 @@ def get_recent_stats(limit=100):
     conn.close()
 
     return [dict(row) for row in rows]
+

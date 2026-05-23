@@ -14,7 +14,9 @@ from virustotal import check_hash
 from database import (
     initialize_database,
     insert_system_stats,
-    get_recent_stats
+    get_recent_stats,
+    set_setting,
+    get_setting
 )
 
 # ─────────────────────────────────────────────
@@ -157,6 +159,53 @@ def virustotal_process():
 
     return jsonify(result)
 
+
+# ─────────────────────────────────────────────
+# VirusTotal Settings
+# ─────────────────────────────────────────────
+
+@app.route("/settings/virustotal", methods=["POST"])
+def save_virustotal_key():
+
+    data = request.get_json()
+
+    api_key = data.get("api_key")
+
+    if not api_key:
+        return jsonify({
+            "success": False,
+            "error": "No API key provided"
+        }), 400
+
+    set_setting("vt_api_key", api_key)
+
+    return jsonify({
+        "success": True
+    })
+
+@app.route("/settings/<key>", methods=["GET"])
+def get_app_setting(key):
+
+    value = get_setting(key)
+
+    return jsonify({
+        "success": True,
+        "value": value
+    })
+
+@app.route("/settings/refresh_interval", methods=["POST"])
+def save_refresh_interval():
+
+    data = request.get_json()
+
+    interval = str(data.get("interval", "2"))
+
+    set_setting("refresh_interval", interval)
+
+    return jsonify({
+        "success": True
+    })
+
 # ─────────────────────────────────────────────
 # Stats Endpoint
 # ─────────────────────────────────────────────
@@ -229,6 +278,9 @@ def stats():
 @app.route("/history")
 def history():
     return jsonify(get_recent_stats())
+
+
+
 
 # ─────────────────────────────────────────────
 # Main

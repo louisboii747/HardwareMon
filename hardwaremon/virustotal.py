@@ -1,12 +1,13 @@
 import requests
-import os
-
-VT_API_KEY = os.getenv("VT_API_KEY")
-
-if not VT_API_KEY:
-    raise RuntimeError("VT_API_KEY environment variable not set")
+from database import get_setting
 
 def check_hash(file_hash):
+    VT_API_KEY = get_setting("vt_api_key")
+    if not VT_API_KEY:
+        return {
+            "success": False,
+            "message": "VirusTotal API key not set."
+        }
 
     url = f"https://www.virustotal.com/api/v3/files/{file_hash}"
 
@@ -14,7 +15,18 @@ def check_hash(file_hash):
         "x-apikey": VT_API_KEY
     }
 
-    response = requests.get(url, headers=headers)
+    try:
+        response = requests.get(
+            url,
+            headers=headers,
+            timeout=10
+        )
+
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
 
     if response.status_code == 200:
 

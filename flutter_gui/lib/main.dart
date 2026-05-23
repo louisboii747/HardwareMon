@@ -67,6 +67,7 @@ Future<void> startBackend() async {
         backendExecutable,
         [],
         mode: ProcessStartMode.normal,
+        environment: {...Platform.environment},
       );
     }
     // Python backend script
@@ -78,6 +79,7 @@ Future<void> startBackend() async {
         File(venvPython).existsSync() ? venvPython : 'python3',
         [backendExecutable],
         mode: ProcessStartMode.normal,
+        environment: {...Platform.environment},
       );
     }
 
@@ -443,6 +445,8 @@ class _DashboardPageState extends State<DashboardPage> {
   bool _firstLoad = true;
   int _failCount = 0;
 
+  int _refreshSeconds = 2;
+
   late Timer _timer;
 
   // ── Colour helpers ──────────────────────────────────────────────────────
@@ -487,6 +491,20 @@ class _DashboardPageState extends State<DashboardPage> {
       });
     } catch (e) {
       debugPrint("loadHistory error: $e");
+    }
+  }
+
+  Future<void> _loadRefreshInterval() async {
+    try {
+      final response = await http.get(
+        Uri.parse("http://127.0.0.1:5000/settings/refresh_interval"),
+      );
+
+      final data = jsonDecode(response.body);
+
+      _refreshSeconds = int.tryParse(data["value"] ?? "2") ?? 2;
+    } catch (e) {
+      debugPrint("Failed to load dashboard refresh interval: $e");
     }
   }
 
@@ -580,11 +598,20 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
 
-    _loadHistory();
+    _initializeDashboard();
+  }
 
-    _fetchStats();
+  Future<void> _initializeDashboard() async {
+    await _loadRefreshInterval();
 
-    _timer = Timer.periodic(const Duration(seconds: 2), (_) => _fetchStats());
+    await _loadHistory();
+
+    await _fetchStats();
+
+    _timer = Timer.periodic(
+      Duration(seconds: _refreshSeconds),
+      (_) => _fetchStats(),
+    );
   }
 
   @override
@@ -1211,6 +1238,8 @@ class _ProcessesPageState extends State<ProcessesPage> {
         body: jsonEncode({"pid": pid}),
       );
 
+      if (!mounted) return;
+
       final data = jsonDecode(response.body);
 
       if (!mounted) return;
@@ -1653,8 +1682,99 @@ class _SortChip extends StatelessWidget {
 }
 
 // ─── Settings page ────────────────────────────────────────────────────────────
-class SettingsPage extends StatelessWidget {
+class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
+
+  @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
+  final TextEditingController _vtController = TextEditingController();
+
+  String _refreshInterval = "2";
+
+  final List<String> _refreshOptions = ["1", "2", "3", "5", "10"];
+
+  Future<void> _saveVirusTotalKey() async {
+    try {
+      final response = await http.post(
+        Uri.parse("http://127.0.0.1:5000/settings/virustotal"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"api_key": _vtController.text.trim()}),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            data["success"] == true
+                ? "VirusTotal API key saved"
+                : "Failed to save API key",
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint("Failed to save VT key: $e");
+    }
+  }
+
+  Future<void> _saveRefreshInterval(String value) async {
+    try {
+      setState(() {
+        _refreshInterval = value;
+      });
+
+      await http.post(
+        Uri.parse("http://127.0.0.1:5000/settings/refresh_interval"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"interval": value}),
+      );
+
+      if (!mounted) return;
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const HomePage()),
+        (route) => false,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Refresh interval updated to ${value}s")),
+      );
+    } catch (e) {
+      debugPrint("Failed to save refresh interval: $e");
+    }
+  }
+
+  Future<void> _loadRefreshInterval() async {
+    try {
+      final response = await http.get(
+        Uri.parse("http://127.0.0.1:5000/settings/refresh_interval"),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (!mounted) return;
+
+      setState(() {
+        _refreshInterval = data["value"] ?? "2";
+      });
+    } catch (e) {
+      debugPrint("Failed to load refresh interval: $e");
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    _loadRefreshInterval();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1671,49 +1791,116 @@ class SettingsPage extends StatelessWidget {
               letterSpacing: -0.5,
             ),
           ),
+
           const SizedBox(height: 24),
 
-          _SettingsSection(
-            title: "Appearance",
-            children: [
-              _SettingsTile(
-                icon: Icons.refresh_rounded,
-                title: "Refresh rate",
-                subtitle: "How often stats are fetched",
-                trailing: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: AppColors.border.withOpacity(0.6)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "VirusTotal API Key",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+
+                const SizedBox(height: 8),
+
+                const Text(
+                  "Used for process reputation scanning.",
+                  style: TextStyle(color: Colors.white38, fontSize: 13),
+                ),
+
+                const SizedBox(height: 16),
+
+                TextField(
+                  controller: _vtController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    hintText: "Enter VirusTotal API key",
+                    filled: true,
+                    fillColor: AppColors.surface2,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
+                ),
+
+                const SizedBox(height: 14),
+
+                ElevatedButton(
+                  onPressed: _saveVirusTotalKey,
+                  child: const Text("Save API Key"),
+                ),
+                const SizedBox(height: 20),
+
+                Container(
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: AppColors.surface2,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.border),
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: AppColors.border.withOpacity(0.6),
+                    ),
                   ),
-                  child: const Text(
-                    "2 seconds",
-                    style: TextStyle(fontSize: 13, color: Colors.white70),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Dashboard Refresh Interval",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      const Text(
+                        "Controls how often stats update.",
+                        style: TextStyle(color: Colors.white38, fontSize: 13),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      DropdownButtonFormField<String>(
+                        value: _refreshInterval,
+                        dropdownColor: AppColors.surface,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: AppColors.surface2,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        items: _refreshOptions.map((value) {
+                          return DropdownMenuItem(
+                            value: value,
+                            child: Text("$value seconds"),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            _saveRefreshInterval(value);
+                          }
+                        },
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
+          const SizedBox(height: 20),
 
-          const SizedBox(height: 16),
-
-          _SettingsSection(
-            title: "About",
-            children: [
-              _SettingsTile(
-                icon: Icons.info_outline_rounded,
-                title: "HardwareMon",
-                subtitle: "Cross-platform hardware monitor",
-                trailing: const Text(
-                  'v$_kAppVersion',
-                  style: TextStyle(fontSize: 13, color: Colors.white24),
-                ),
-              ),
-            ],
+          Text(
+            "HardwareMon $_kAppVersion",
+            style: const TextStyle(color: Colors.white38, fontSize: 12),
           ),
         ],
       ),
