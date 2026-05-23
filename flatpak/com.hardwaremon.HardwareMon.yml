@@ -2,7 +2,7 @@ app-id: com.hardwaremon.HardwareMon
 runtime: org.freedesktop.Platform
 runtime-version: '24.08'
 sdk: org.freedesktop.Sdk
-command: flutter_gui
+command: hardwaremon
 
 finish-args:
   - --share=ipc
@@ -31,8 +31,10 @@ modules:
 
     build-commands:
       - mkdir -p /app/bin
+
       - cp -r . /app/bin/
-      - chmod +x /app/bin/flutter_gui
+
+      - chmod +x /app/bin/hardwaremon
       - chmod +x /app/bin/backend/api.py
 
       - install -Dm644 assets/com.hardwaremon.HardwareMon.desktop /app/share/applications/com.hardwaremon.HardwareMon.desktop
