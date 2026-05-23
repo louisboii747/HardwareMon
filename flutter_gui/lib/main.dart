@@ -7,9 +7,12 @@ import 'dart:ui';
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gui/windows_ui/screens/shell_screen.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
+
+import 'windows_ui/screens/shell_screen.dart';
 
 // ─── Global hardware info ────────────────────────────────────────────────────
 String cpuName = "—";
@@ -138,9 +141,6 @@ Future<bool> waitForBackend() async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await startBackend();
-  await waitForBackend();
-
   runApp(const HardwareMonApp());
 }
 
@@ -182,7 +182,7 @@ class _HardwareMonAppState extends State<HardwareMonApp>
         scaffoldBackgroundColor: AppColors.bg,
         textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'Inter'),
       ),
-      home: const HomePage(),
+      home: const ShellScreen(),
     );
   }
 }
