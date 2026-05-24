@@ -12,8 +12,6 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 
-import 'windows_ui/screens/shell_screen.dart';
-
 // ─── Global hardware info ────────────────────────────────────────────────────
 String cpuName = "—";
 String gpuName = "—";
@@ -55,8 +53,8 @@ String getBackendExecutable() {
   return '${Platform.script.toFilePath().split('/flutter_gui/').first}/hardwaremon/api.py';
 }
 
-const backendApiUrl = 'http://127.0.0.1:5000/stats';
-const backendHistoryUrl = 'http://127.0.0.1:5000/history';
+const backendApiUrl = 'http://127.0.0.1:8000/stats';
+const backendHistoryUrl = 'http://127.0.0.1:8000/history';
 
 Future<void> startBackend() async {
   try {
@@ -974,106 +972,156 @@ class _AnimatedStatCardState extends State<_AnimatedStatCard> {
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
-      cursor: SystemMouseCursors.basic,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOut,
-        transform: Matrix4.identity()..translate(0.0, _hovered ? -2.0 : 0.0),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: _hovered
-                ? widget.data.color.withOpacity(0.5)
-                : AppColors.border.withOpacity(0.6),
-            width: 1.0,
+      cursor: SystemMouseCursors.click,
+
+      child: GestureDetector(
+        onTap: () {
+          showDialog(
+            context: context,
+
+            builder: (_) => AlertDialog(
+              backgroundColor: AppColors.surface,
+
+              title: const Text("It works 🎉"),
+
+              content: const Text(
+                "The stat card is receiving clicks correctly.",
+              ),
+
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+
+                  child: const Text("Close"),
+                ),
+              ],
+            ),
+          );
+        },
+
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
+          transform: Matrix4.identity()..translate(0.0, _hovered ? -2.0 : 0.0),
+
+          padding: const EdgeInsets.all(16),
+
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+
+            borderRadius: BorderRadius.circular(20),
+
+            border: Border.all(
+              color: _hovered
+                  ? widget.data.color.withOpacity(0.5)
+                  : AppColors.border.withOpacity(0.6),
+
+              width: 1.0,
+            ),
+
+            boxShadow: _hovered
+                ? [
+                    BoxShadow(
+                      color: widget.data.color.withOpacity(0.08),
+                      blurRadius: 20,
+                      spreadRadius: 2,
+                    ),
+                  ]
+                : [],
           ),
-          boxShadow: _hovered
-              ? [
-                  BoxShadow(
-                    color: widget.data.color.withOpacity(0.08),
-                    blurRadius: 20,
-                    spreadRadius: 2,
-                  ),
-                ]
-              : [],
-        ),
-        child: widget.isLoading
-            ? widget.skeleton
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: widget.data.color.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(10),
+
+          child: widget.isLoading
+              ? widget.skeleton
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+
+                          decoration: BoxDecoration(
+                            color: widget.data.color.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+
+                          child: Icon(
+                            widget.data.icon,
+                            size: 16,
+                            color: widget.data.color,
+                          ),
                         ),
-                        child: Icon(
-                          widget.data.icon,
-                          size: 16,
-                          color: widget.data.color,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.data.title,
-                              style: const TextStyle(
-                                color: Colors.white38,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                                letterSpacing: 0.3,
+
+                        const SizedBox(width: 10),
+
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+
+                            children: [
+                              Text(
+                                widget.data.title,
+
+                                style: const TextStyle(
+                                  color: Colors.white38,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  letterSpacing: 0.3,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 2),
-                            // Animated integer counter (if int value provided)
-                            widget.data.value != null
-                                ? TweenAnimationBuilder<double>(
-                                    tween: Tween(
-                                      begin: widget.data.prevValue.toDouble(),
-                                      end: widget.data.value!.toDouble(),
-                                    ),
-                                    duration: const Duration(milliseconds: 600),
-                                    curve: Curves.easeOut,
-                                    builder: (context, v, _) => Text(
-                                      "${v.round()}${widget.data.suffix ?? ''}",
+
+                              const SizedBox(height: 2),
+
+                              widget.data.value != null
+                                  ? TweenAnimationBuilder<double>(
+                                      tween: Tween(
+                                        begin: widget.data.prevValue.toDouble(),
+                                        end: widget.data.value!.toDouble(),
+                                      ),
+
+                                      duration: const Duration(
+                                        milliseconds: 600,
+                                      ),
+                                      curve: Curves.easeOut,
+
+                                      builder: (context, v, _) => Text(
+                                        "${v.round()}${widget.data.suffix ?? ''}",
+
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w700,
+                                          color: widget.data.color,
+
+                                          fontFeatures: const [
+                                            FontFeature.tabularFigures(),
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                  : Text(
+                                      widget.data.customLabel ?? "—",
+
                                       style: TextStyle(
-                                        fontSize: 20,
+                                        fontSize: 17,
                                         fontWeight: FontWeight.w700,
                                         color: widget.data.color,
+
                                         fontFeatures: const [
                                           FontFeature.tabularFigures(),
                                         ],
                                       ),
                                     ),
-                                  )
-                                : Text(
-                                    widget.data.customLabel ?? "—",
-                                    style: TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w700,
-                                      color: widget.data.color,
-                                      fontFeatures: const [
-                                        FontFeature.tabularFigures(),
-                                      ],
-                                    ),
-                                  ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  widget.sparkline,
-                ],
-              ),
+                      ],
+                    ),
+                    widget.sparkline,
+                  ],
+                ),
+        ),
       ),
     );
   }

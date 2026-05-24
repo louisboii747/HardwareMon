@@ -1,11 +1,78 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-
 import '../widgets/glass_panel.dart';
 import '../widgets/metric_card.dart';
+import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
-class ShellScreen extends StatelessWidget {
+class ShellScreen extends StatefulWidget {
   const ShellScreen({super.key});
+
+  @override
+  State<ShellScreen> createState() => _ShellScreenState();
+}
+
+class _ShellScreenState extends State<ShellScreen> {
+  int cpuUsage = 0;
+  List<double> cpuHistory = [];
+  List<double> ramHistory = [];
+  List<double> gpuTempHistory = [];
+  int ramUsage = 0;
+  int gpuTemp = 0;
+
+  String cpuName = 'Loading...';
+
+  Timer? timer;
+
+  Future<void> fetchStats() async {
+    try {
+      final response = await http.get(Uri.parse('http://127.0.0.1:8000/stats'));
+
+      final data = jsonDecode(response.body);
+
+      setState(() {
+        cpuUsage = data['cpu'] ?? 0;
+        ramUsage = data['ram'] ?? 0;
+        gpuTemp = data['gpu_temp'] ?? 0;
+
+        cpuHistory.add(cpuUsage.toDouble());
+        ramHistory.add(ramUsage.toDouble());
+        gpuTempHistory.add(gpuTemp.toDouble());
+
+        if (cpuHistory.length > 30) {
+          cpuHistory.removeAt(0);
+        }
+
+        if (ramHistory.length > 30) {
+          ramHistory.removeAt(0);
+        }
+
+        if (gpuTempHistory.length > 30) {
+          gpuTempHistory.removeAt(0);
+        }
+
+        cpuName = data['cpu_name'] ?? 'Unknown CPU';
+      });
+    } catch (e) {
+      debugPrint('Failed to fetch stats: $e');
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    fetchStats();
+
+    timer = Timer.periodic(const Duration(seconds: 1), (_) => fetchStats());
+  }
+
+  @override
+  void dispose() {
+    timer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -108,13 +175,13 @@ class ShellScreen extends StatelessWidget {
                                   flex: 2,
 
                                   child:
-                                      const MetricCard(
+                                      MetricCard(
                                             title: 'CPU Usage',
-                                            value: '24%',
-                                            subtitle:
-                                                'Ryzen 7 5800X • 12 threads active',
+                                            value: '$cpuUsage%',
+                                            subtitle: cpuName,
                                             icon: Icons.memory_rounded,
                                             accent: Colors.cyan,
+                                            graphPoints: cpuHistory,
                                           )
                                           .animate()
                                           .fadeIn(
@@ -136,13 +203,14 @@ class ShellScreen extends StatelessWidget {
                                     children: [
                                       Expanded(
                                         child:
-                                            const MetricCard(
+                                            MetricCard(
                                                   title: 'Memory',
-                                                  value: '18GB',
+                                                  value: '$ramUsage%',
                                                   subtitle:
-                                                      '48GB total • 37% usage',
+                                                      'System memory usage',
                                                   icon: Icons.storage_rounded,
                                                   accent: Colors.purple,
+                                                  graphPoints: ramHistory,
                                                 )
                                                 .animate()
                                                 .fadeIn(
@@ -161,14 +229,14 @@ class ShellScreen extends StatelessWidget {
 
                                       Expanded(
                                         child:
-                                            const MetricCard(
+                                            MetricCard(
                                                   title: 'GPU Temp',
-                                                  value: '61°',
-                                                  subtitle:
-                                                      'RTX 2070 • Stable thermal load',
+                                                  value: '$gpuTemp°',
+                                                  subtitle: 'Live telemetry',
                                                   icon:
                                                       Icons.graphic_eq_rounded,
                                                   accent: Colors.orange,
+                                                  graphPoints: gpuTempHistory,
                                                 )
                                                 .animate()
                                                 .fadeIn(
