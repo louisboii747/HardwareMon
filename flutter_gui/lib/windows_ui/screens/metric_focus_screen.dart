@@ -1,18 +1,24 @@
 import 'dart:ui';
-
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 class MetricFocusScreen extends StatefulWidget {
   final String title;
   final String value;
+  final String subtitle;
+  final IconData icon;
   final Color accent;
+  final List<double> graphPoints;
 
   const MetricFocusScreen({
     super.key,
     required this.title,
     required this.value,
+    required this.subtitle,
+    required this.icon,
     required this.accent,
+    required this.graphPoints,
   });
 
   @override
@@ -20,38 +26,64 @@ class MetricFocusScreen extends StatefulWidget {
 }
 
 class _MetricFocusScreenState extends State<MetricFocusScreen> {
-  final List<double> points = [24, 32, 28, 46, 40, 58, 52, 67, 62, 72, 66, 78];
+  late List<double> points;
   late double currentValue;
+  Timer? refreshTimer;
+  late List<double> previousPoints;
 
   @override
   void initState() {
     super.initState();
-    currentValue = points.last;
 
-    _startFakeTelemetry();
-  }
+    points = widget.graphPoints;
+    previousPoints = List.from(points);
 
-  void _startFakeTelemetry() {
-    Future.doWhile(() async {
-      await Future.delayed(const Duration(milliseconds: 900));
-
-      if (!mounted) return false;
+    currentValue = points.isNotEmpty ? points.last : 0;
+    refreshTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
 
       setState(() {
-        points.removeAt(0);
+        points = List.from(widget.graphPoints);
 
-        final next =
-            (40 +
-                    (points.last * 0.6) +
-                    (15 - (DateTime.now().millisecond % 30)))
-                .clamp(18, 95);
-
-        points.add(next.toDouble());
-        currentValue = next.toDouble();
+        currentValue = points.isNotEmpty ? points.last : 0;
       });
-
-      return true;
     });
+  }
+
+  @override
+  void dispose() {
+    refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  Widget _buildStat(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+
+      children: [
+        Text(
+          label,
+
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.45),
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+
+        const SizedBox(height: 6),
+
+        Text(
+          value,
+
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -1,
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -73,15 +105,28 @@ class _MetricFocusScreenState extends State<MetricFocusScreen> {
             top: -120,
             right: -120,
 
-            child: Container(
-              width: 320,
-              height: 320,
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.95, end: 1),
+              duration: const Duration(seconds: 3),
+              curve: Curves.easeInOut,
 
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
+              builder: (context, value, child) {
+                return Transform.scale(scale: value, child: child);
+              },
 
-                gradient: RadialGradient(
-                  colors: [widget.accent.withOpacity(0.12), Colors.transparent],
+              child: Container(
+                width: 320,
+                height: 320,
+
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+
+                  gradient: RadialGradient(
+                    colors: [
+                      widget.accent.withOpacity(0.12),
+                      Colors.transparent,
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -103,46 +148,86 @@ class _MetricFocusScreenState extends State<MetricFocusScreen> {
 
                   const Spacer(),
 
-                  Text(
-                    widget.title,
+                  Row(
+                    children: [
+                      Icon(widget.icon, color: widget.accent, size: 28),
 
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
-                      fontSize: 22,
-                      fontWeight: FontWeight.w600,
-                    ),
+                      const SizedBox(width: 12),
+
+                      Text(
+                        widget.title,
+
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 22,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
 
                   const SizedBox(height: 12),
 
                   TweenAnimationBuilder<double>(
-                    tween: Tween(begin: currentValue, end: currentValue),
+                    tween: Tween(begin: 0, end: currentValue),
 
-                    duration: const Duration(milliseconds: 600),
+                    duration: const Duration(milliseconds: 900),
                     curve: Curves.easeOutCubic,
 
                     builder: (context, value, _) {
-                      return AnimatedScale(
-                        duration: const Duration(milliseconds: 400),
-                        curve: Curves.easeOutCubic,
-                        scale: 1.0,
+                      return Text(
+                        "${value.round()}%",
 
-                        child: Text(
-                          "${value.round()}%",
-
-                          style: TextStyle(
-                            fontSize: 120,
-                            height: 0.9,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -6,
-                            color: widget.accent,
-                          ),
+                        style: TextStyle(
+                          fontSize: 120,
+                          height: 0.9,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -6,
+                          color: widget.accent,
                         ),
                       );
                     },
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 10),
+
+                  Text(
+                    widget.subtitle,
+
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.45),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  Row(
+                    children: [
+                      _buildStat(
+                        "Average",
+                        points.isNotEmpty
+                            ? "${(points.reduce((a, b) => a + b) / points.length).round()}%"
+                            : "--",
+                      ),
+
+                      const SizedBox(width: 28),
+
+                      _buildStat(
+                        "Peak",
+                        points.isNotEmpty
+                            ? "${points.reduce((a, b) => a > b ? a : b).round()}%"
+                            : "--",
+                      ),
+
+                      const SizedBox(width: 28),
+
+                      _buildStat("Samples", "${points.length}"),
+                    ],
+                  ),
+
+                  const SizedBox(height: 28),
 
                   Container(
                     height: 260,
@@ -172,60 +257,77 @@ class _MetricFocusScreenState extends State<MetricFocusScreen> {
                       ],
                     ),
 
-                    child: LineChart(
-                      LineChartData(
-                        minX: 0,
-                        maxX: 11,
-                        minY: 0,
-                        maxY: 100,
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0, end: 1),
+                      duration: const Duration(milliseconds: 900),
+                      curve: Curves.easeOutCubic,
 
-                        gridData: FlGridData(
-                          show: true,
-                          drawVerticalLine: false,
+                      builder: (context, value, child) {
+                        return Transform.scale(
+                          scale: 0.985 + (value * 0.015),
 
-                          getDrawingHorizontalLine: (_) {
-                            return FlLine(
-                              color: Colors.white.withOpacity(0.04),
-                              strokeWidth: 1,
-                            );
-                          },
-                        ),
+                          child: Opacity(opacity: value, child: child),
+                        );
+                      },
 
-                        titlesData: const FlTitlesData(show: false),
+                      child: LineChart(
+                        LineChartData(
+                          minX: 0,
+                          maxX: points.isEmpty
+                              ? 30
+                              : points.length.toDouble() - 1,
+                          minY: 0,
+                          maxY: 100,
 
-                        borderData: FlBorderData(show: false),
+                          gridData: FlGridData(
+                            show: true,
+                            drawVerticalLine: false,
 
-                        lineBarsData: [
-                          LineChartBarData(
-                            isCurved: true,
-                            curveSmoothness: 0.35,
+                            getDrawingHorizontalLine: (_) {
+                              return FlLine(
+                                color: Colors.white.withOpacity(0.04),
+                                strokeWidth: 1,
+                              );
+                            },
+                          ),
 
-                            spots: List.generate(
-                              points.length,
-                              (i) => FlSpot(i.toDouble(), points[i]),
-                            ),
+                          titlesData: const FlTitlesData(show: false),
 
-                            color: widget.accent,
-                            barWidth: 4,
-                            isStrokeCapRound: true,
+                          borderData: FlBorderData(show: false),
 
-                            dotData: const FlDotData(show: false),
+                          lineBarsData: [
+                            LineChartBarData(
+                              isCurved: true,
+                              curveSmoothness: 0.55,
+                              preventCurveOverShooting: true,
 
-                            belowBarData: BarAreaData(
-                              show: true,
+                              spots: List.generate(
+                                points.length,
+                                (i) => FlSpot(i.toDouble(), points[i]),
+                              ),
 
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
+                              color: widget.accent,
+                              barWidth: 4,
+                              isStrokeCapRound: true,
 
-                                colors: [
-                                  widget.accent.withOpacity(0.28),
-                                  widget.accent.withOpacity(0.02),
-                                ],
+                              dotData: const FlDotData(show: false),
+
+                              belowBarData: BarAreaData(
+                                show: true,
+
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+
+                                  colors: [
+                                    widget.accent.withOpacity(0.28),
+                                    widget.accent.withOpacity(0.02),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),

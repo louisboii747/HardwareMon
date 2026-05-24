@@ -6,6 +6,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+import 'pages/dashboard_page.dart';
+import 'pages/performance_page.dart';
+import 'pages/processes_page.dart';
+import 'pages/settings_page.dart';
+
 class ShellScreen extends StatefulWidget {
   const ShellScreen({super.key});
 
@@ -15,13 +20,16 @@ class ShellScreen extends StatefulWidget {
 
 class _ShellScreenState extends State<ShellScreen> {
   int cpuUsage = 0;
-  List<double> cpuHistory = [];
-  List<double> ramHistory = [];
-  List<double> gpuTempHistory = [];
   int ramUsage = 0;
   int gpuTemp = 0;
 
+  int selectedIndex = 0;
+
   String cpuName = 'Loading...';
+
+  List<double> cpuHistory = [];
+  List<double> ramHistory = [];
+  List<double> gpuTempHistory = [];
 
   Timer? timer;
 
@@ -74,6 +82,103 @@ class _ShellScreenState extends State<ShellScreen> {
     super.dispose();
   }
 
+  Widget buildDashboard() {
+    return Row(
+      children: [
+        Expanded(
+          flex: 2,
+
+          child:
+              MetricCard(
+                    title: 'CPU Usage',
+                    value: '$cpuUsage%',
+                    subtitle: cpuName,
+                    icon: Icons.memory_rounded,
+                    accent: Colors.cyan,
+                    graphPoints: cpuHistory,
+                  )
+                  .animate()
+                  .fadeIn(duration: 700.ms, curve: Curves.easeOutCubic)
+                  .slideY(
+                    begin: 0.08,
+                    end: 0,
+                    duration: 700.ms,
+                    curve: Curves.easeOutCubic,
+                  ),
+        ),
+
+        const SizedBox(width: 24),
+
+        Expanded(
+          child: Column(
+            children: [
+              Expanded(
+                child:
+                    MetricCard(
+                          title: 'Memory',
+                          value: '$ramUsage%',
+                          subtitle: 'System memory usage',
+                          icon: Icons.storage_rounded,
+                          accent: Colors.purple,
+                          graphPoints: ramHistory,
+                        )
+                        .animate()
+                        .fadeIn(delay: 120.ms, duration: 700.ms)
+                        .slideY(
+                          begin: 0.08,
+                          end: 0,
+                          duration: 700.ms,
+                          curve: Curves.easeOutCubic,
+                        ),
+              ),
+
+              const SizedBox(height: 24),
+
+              Expanded(
+                child:
+                    MetricCard(
+                          title: 'GPU Temp',
+                          value: '$gpuTemp°',
+                          subtitle: 'Live telemetry',
+                          icon: Icons.graphic_eq_rounded,
+                          accent: Colors.orange,
+                          graphPoints: gpuTempHistory,
+                        )
+                        .animate()
+                        .fadeIn(delay: 220.ms, duration: 700.ms)
+                        .slideY(
+                          begin: 0.08,
+                          end: 0,
+                          duration: 700.ms,
+                          curve: Curves.easeOutCubic,
+                        ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget getCurrentPage() {
+    switch (selectedIndex) {
+      case 0:
+        return buildDashboard();
+
+      case 1:
+        return const ProcessesPage();
+
+      case 2:
+        return const PerformancePage();
+
+      case 3:
+        return const SettingsPage();
+
+      default:
+        return buildDashboard();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -82,16 +187,17 @@ class _ShellScreenState extends State<ShellScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
+
             colors: [Color(0xFF050505), Color(0xFF090909), Color(0xFF04070D)],
           ),
         ),
 
         child: Stack(
           children: [
-            // Ambient glow
             Positioned(
               top: -120,
               left: -120,
+
               child: Container(
                 width: 400,
                 height: 400,
@@ -112,7 +218,6 @@ class _ShellScreenState extends State<ShellScreen> {
 
                 child: Row(
                   children: [
-                    // Sidebar
                     SizedBox(
                       width: 88,
 
@@ -129,18 +234,55 @@ class _ShellScreenState extends State<ShellScreen> {
 
                             const SizedBox(height: 32),
 
-                            const _DockItem(
+                            _DockItem(
                               icon: Icons.dashboard_rounded,
-                              active: true,
+                              active: selectedIndex == 0,
+
+                              onTap: () {
+                                setState(() {
+                                  selectedIndex = 0;
+                                });
+                              },
                             ),
 
                             const SizedBox(height: 12),
 
-                            const _DockItem(icon: Icons.analytics_rounded),
+                            _DockItem(
+                              icon: Icons.list_rounded,
+                              active: selectedIndex == 1,
+
+                              onTap: () {
+                                setState(() {
+                                  selectedIndex = 1;
+                                });
+                              },
+                            ),
 
                             const SizedBox(height: 12),
 
-                            const _DockItem(icon: Icons.settings_rounded),
+                            _DockItem(
+                              icon: Icons.analytics_rounded,
+                              active: selectedIndex == 2,
+
+                              onTap: () {
+                                setState(() {
+                                  selectedIndex = 2;
+                                });
+                              },
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            _DockItem(
+                              icon: Icons.settings_rounded,
+                              active: selectedIndex == 3,
+
+                              onTap: () {
+                                setState(() {
+                                  selectedIndex = 3;
+                                });
+                              },
+                            ),
                           ],
                         ),
                       ),
@@ -148,7 +290,6 @@ class _ShellScreenState extends State<ShellScreen> {
 
                     const SizedBox(width: 24),
 
-                    // Main area
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -169,91 +310,31 @@ class _ShellScreenState extends State<ShellScreen> {
                           const SizedBox(height: 32),
 
                           Expanded(
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  flex: 2,
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 450),
 
-                                  child:
-                                      MetricCard(
-                                            title: 'CPU Usage',
-                                            value: '$cpuUsage%',
-                                            subtitle: cpuName,
-                                            icon: Icons.memory_rounded,
-                                            accent: Colors.cyan,
-                                            graphPoints: cpuHistory,
-                                          )
-                                          .animate()
-                                          .fadeIn(
-                                            duration: 700.ms,
-                                            curve: Curves.easeOutCubic,
-                                          )
-                                          .slideY(
-                                            begin: 0.08,
-                                            end: 0,
-                                            duration: 700.ms,
-                                            curve: Curves.easeOutCubic,
-                                          ),
-                                ),
+                              switchInCurve: Curves.easeOutCubic,
+                              switchOutCurve: Curves.easeOutCubic,
 
-                                const SizedBox(width: 24),
+                              transitionBuilder: (child, animation) {
+                                return FadeTransition(
+                                  opacity: animation,
 
-                                Expanded(
-                                  child: Column(
-                                    children: [
-                                      Expanded(
-                                        child:
-                                            MetricCard(
-                                                  title: 'Memory',
-                                                  value: '$ramUsage%',
-                                                  subtitle:
-                                                      'System memory usage',
-                                                  icon: Icons.storage_rounded,
-                                                  accent: Colors.purple,
-                                                  graphPoints: ramHistory,
-                                                )
-                                                .animate()
-                                                .fadeIn(
-                                                  delay: 120.ms,
-                                                  duration: 700.ms,
-                                                )
-                                                .slideY(
-                                                  begin: 0.08,
-                                                  end: 0,
-                                                  duration: 700.ms,
-                                                  curve: Curves.easeOutCubic,
-                                                ),
-                                      ),
+                                  child: SlideTransition(
+                                    position: Tween<Offset>(
+                                      begin: const Offset(0.03, 0),
+                                      end: Offset.zero,
+                                    ).animate(animation),
 
-                                      const SizedBox(height: 24),
-
-                                      Expanded(
-                                        child:
-                                            MetricCard(
-                                                  title: 'GPU Temp',
-                                                  value: '$gpuTemp°',
-                                                  subtitle: 'Live telemetry',
-                                                  icon:
-                                                      Icons.graphic_eq_rounded,
-                                                  accent: Colors.orange,
-                                                  graphPoints: gpuTempHistory,
-                                                )
-                                                .animate()
-                                                .fadeIn(
-                                                  delay: 220.ms,
-                                                  duration: 700.ms,
-                                                )
-                                                .slideY(
-                                                  begin: 0.08,
-                                                  end: 0,
-                                                  duration: 700.ms,
-                                                  curve: Curves.easeOutCubic,
-                                                ),
-                                      ),
-                                    ],
+                                    child: child,
                                   ),
-                                ),
-                              ],
+                                );
+                              },
+
+                              child: KeyedSubtree(
+                                key: ValueKey(selectedIndex),
+                                child: getCurrentPage(),
+                              ),
                             ),
                           ),
                         ],
@@ -273,8 +354,13 @@ class _ShellScreenState extends State<ShellScreen> {
 class _DockItem extends StatefulWidget {
   final IconData icon;
   final bool active;
+  final VoidCallback onTap;
 
-  const _DockItem({required this.icon, this.active = false});
+  const _DockItem({
+    required this.icon,
+    required this.onTap,
+    this.active = false,
+  });
 
   @override
   State<_DockItem> createState() => _DockItemState();
@@ -289,23 +375,37 @@ class _DockItemState extends State<_DockItem> {
       onEnter: (_) => setState(() => hovering = true),
       onExit: (_) => setState(() => hovering = false),
 
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
+      child: GestureDetector(
+        onTap: widget.onTap,
 
-        width: 52,
-        height: 52,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
 
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
+          width: 52,
+          height: 52,
 
-          color: widget.active || hovering
-              ? Colors.white.withOpacity(0.08)
-              : Colors.transparent,
-        ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
 
-        child: Icon(
-          widget.icon,
-          color: widget.active ? Colors.white : Colors.white.withOpacity(0.7),
+            color: widget.active || hovering
+                ? Colors.white.withOpacity(0.08)
+                : Colors.transparent,
+
+            boxShadow: widget.active
+                ? [
+                    BoxShadow(
+                      color: Colors.cyan.withOpacity(0.18),
+                      blurRadius: 20,
+                      spreadRadius: 1,
+                    ),
+                  ]
+                : [],
+          ),
+
+          child: Icon(
+            widget.icon,
+            color: widget.active ? Colors.white : Colors.white.withOpacity(0.7),
+          ),
         ),
       ),
     );

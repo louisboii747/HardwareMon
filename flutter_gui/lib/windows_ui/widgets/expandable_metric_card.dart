@@ -1,13 +1,28 @@
 import 'package:flutter/material.dart';
 
+import '../screens/metric_focus_screen.dart';
+
 class ExpandableMetricCard extends StatelessWidget {
   final Widget closedChild;
+
   final String title;
+  final String value;
+  final String subtitle;
+
+  final IconData icon;
+  final Color accent;
+
+  final List<double> graphPoints;
 
   const ExpandableMetricCard({
     super.key,
     required this.closedChild,
     required this.title,
+    required this.value,
+    required this.subtitle,
+    required this.icon,
+    required this.accent,
+    required this.graphPoints,
   });
 
   @override
@@ -23,58 +38,39 @@ class ExpandableMetricCard extends StatelessWidget {
             context,
 
             PageRouteBuilder(
-              transitionDuration: const Duration(milliseconds: 400),
+              transitionDuration: const Duration(milliseconds: 700),
+              reverseTransitionDuration: const Duration(milliseconds: 500),
+
+              opaque: false,
 
               pageBuilder: (_, __, ___) {
-                return Scaffold(
-                  backgroundColor: const Color(0xFF050505),
-
-                  body: SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32),
-
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-
-                        children: [
-                          IconButton(
-                            onPressed: () => Navigator.pop(context),
-
-                            icon: const Icon(Icons.close, color: Colors.white),
-                          ),
-
-                          const SizedBox(height: 32),
-
-                          Text(
-                            title,
-
-                            style: const TextStyle(
-                              fontSize: 48,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          const Text(
-                            'Expanded analytics view coming next...',
-
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 18,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                return MetricFocusScreen(
+                  title: title,
+                  value: value,
+                  subtitle: subtitle,
+                  icon: icon,
+                  accent: accent,
+                  graphPoints: graphPoints,
                 );
               },
 
-              transitionsBuilder: (_, animation, __, child) {
-                return FadeTransition(opacity: animation, child: child);
-              },
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                    return FadeTransition(
+                      opacity: animation,
+
+                      child: ScaleTransition(
+                        scale: Tween<double>(begin: 0.98, end: 1).animate(
+                          CurvedAnimation(
+                            parent: animation,
+                            curve: Curves.easeOutCubic,
+                          ),
+                        ),
+
+                        child: child,
+                      ),
+                    );
+                  },
             ),
           );
         },

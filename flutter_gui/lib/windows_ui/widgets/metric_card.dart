@@ -50,7 +50,10 @@ class _MetricCardState extends State<MetricCard> {
                 return MetricFocusScreen(
                   title: widget.title,
                   value: widget.value,
+                  subtitle: widget.subtitle,
                   accent: widget.accent,
+                  icon: widget.icon,
+                  graphPoints: widget.graphPoints,
                 );
               },
 
