@@ -1,75 +1,130 @@
 # HardwareMon
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/louisboii747/HardwareMon/main/Untitled design.png" width="128" alt="HardwareMon Logo">
+  <img src="https://raw.githubusercontent.com/louisboii747/HardwareMon/main/Untitled%20design.png" width="128" alt="HardwareMon Logo">
 </p>
 
 <p align="center">
-  <b>Modern system monitoring for Linux and Windows.</b>
+  <b>Modern cross-platform system monitoring for Linux and Windows.</b>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/github/v/release/louisboii747/HardwareMon" alt="Release">
-  <img src="https://img.shields.io/github/downloads/louisboii747/HardwareMon/total" alt="Downloads">
-  <img src="https://img.shields.io/badge/Linux-supported-2bbc8a?logo=linux" alt="Linux">
-  <img src="https://img.shields.io/badge/Windows-supported-0078D6?logo=windows" alt="Windows">
-  <img src="https://img.shields.io/badge/Python-3.x-blue?logo=python" alt="Python">
-  <img src="https://img.shields.io/badge/Flutter-desktop-02569B?logo=flutter" alt="Flutter">
-  <img src="https://img.shields.io/badge/GitHub_Actions-CI%2FCD-2088FF?logo=github-actions" alt="GitHub Actions">
-  <img src="https://img.shields.io/badge/Cloudflare_Pages-hosted-orange?logo=cloudflare" alt="Cloudflare Pages">
-  <img src="https://img.shields.io/badge/APT-supported-red?logo=debian" alt="APT">
-  <img src="https://img.shields.io/badge/DNF-supported-294172?logo=fedora" alt="DNF">
-  <img src="https://img.shields.io/badge/Flatpak-supported-4A90D9?logo=flatpak" alt="Flatpak">
-  <img src="https://img.shields.io/badge/WinGet-supported-0078D4?logo=windows" alt="WinGet">
+  Real-time hardware analytics, cinematic Flutter UI, native Linux packaging,
+  Windows installers, automated repositories, and bundled backend architecture.
 </p>
 
-<p align="center">
-  🌐 <b>Official Website:</b><br>
-  <a href="https://gethardwaremon.pages.dev">https://gethardwaremon.pages.dev</a>
-</p>
+---
 
 <p align="center">
-  The HardwareMon website contains downloads, screenshots, installation guides,
-  development updates, release information, and future project documentation.
+
+<img src="https://img.shields.io/github/v/release/louisboii747/HardwareMon" alt="Release">
+<img src="https://img.shields.io/github/downloads/louisboii747/HardwareMon/total" alt="Downloads">
+
+<img src="https://img.shields.io/badge/Linux-supported-2bbc8a?logo=linux" alt="Linux">
+<img src="https://img.shields.io/badge/Windows-supported-0078D6?logo=windows" alt="Windows">
+
+<img src="https://img.shields.io/badge/Flutter-desktop-02569B?logo=flutter" alt="Flutter">
+<img src="https://img.shields.io/badge/FastAPI-backend-009688?logo=fastapi" alt="FastAPI">
+
+<img src="https://img.shields.io/badge/APT-supported-red?logo=debian" alt="APT">
+<img src="https://img.shields.io/badge/DNF-supported-294172?logo=fedora" alt="DNF">
+<img src="https://img.shields.io/badge/AUR-supported-1793D1?logo=arch-linux" alt="AUR">
+<img src="https://img.shields.io/badge/WinGet-supported-0078D4?logo=windows" alt="WinGet">
+
+<img src="https://img.shields.io/badge/GitHub_Actions-CI%2FCD-2088FF?logo=github-actions" alt="GitHub Actions">
+<img src="https://img.shields.io/badge/Cloudflare_Pages-hosted-orange?logo=cloudflare" alt="Cloudflare Pages">
+
 </p>
+
+---
+
+# Website
+
+🌐 https://gethardwaremon.pages.dev
+
+The HardwareMon website contains:
+
+* Downloads
+* Screenshots
+* Installation guides
+* Development updates
+* Release information
+* Linux repository setup
+* Future documentation
 
 ---
 
 # Features
 
-* Real-time CPU, RAM, GPU, disk and network monitoring
-* Modern Flutter desktop interface
+## Monitoring
+
+* Real-time CPU monitoring
+* RAM and memory analytics
+* GPU monitoring
+* Disk usage monitoring
+* Network monitoring
 * Live process monitoring
+* Animated telemetry graphs
+* Real-time metric history
+* Expandable monitoring cards
+* Immersive focus-mode analytics views
+
+---
+
+## User Interface
+
+* Modern Flutter desktop interface
+* Cinematic dark workstation aesthetic
+* Smooth animations and transitions
+* Floating glass-style UI panels
+* Animated dashboards
+* Responsive multi-page layout
+* Sidebar navigation system
+* Interactive telemetry cards
+* Cross-platform desktop architecture
+
+---
+
+## Security & Diagnostics
+
 * VirusTotal process scanning integration
-* Native Linux packaging
-* APT, DNF and AUR repositories
-* Flatpak support
-* Windows installer + WinGet support
-* Automated GitHub Releases
-* Cross-platform architecture
-* GitHub Actions CI/CD pipelines
-* Cloudflare-hosted package repositories
+* SHA256 process hashing
+* Suspicious executable detection
+* Secure API-based process analysis
+
+---
+
+## Distribution & Packaging
+
+* Native Linux DEB packages
+* Native Linux RPM packages
+* APT repository support
+* DNF repository support
+* AUR support
+* Windows installer support
+* WinGet support
+* GitHub Releases automation
+* Cloudflare-hosted repositories
 
 ---
 
 # Platform Support
 
-| Platform        | Status      | Installation       |
+| Platform        | Status      | Distribution       |
 | --------------- | ----------- | ------------------ |
-| Windows         | ✅ Supported | WinGet / Installer |
+| Windows         | ✅ Supported | Installer / WinGet |
 | Ubuntu / Debian | ✅ Supported | APT                |
 | Fedora          | ✅ Supported | DNF                |
-| Arch Linux      | ✅ Supported | AUR / yay          |
-| Flatpak         | ✅ Supported | Universal Linux    |
-| macOS           | 🚧 Planned  | -                  |
+| Arch Linux      | ✅ Supported | AUR                |
+| macOS           | 🚧 Planned  | Future             |
 
 ---
 
-# Quick Install
+# Installation
 
-## Windows
+# Windows
 
-### WinGet
+## WinGet
 
 ```powershell
 winget install LouisHinchliffe.HardwareMon
@@ -77,70 +132,71 @@ winget install LouisHinchliffe.HardwareMon
 
 ---
 
-## Arch Linux
+## Manual Installer
 
-### yay
+Download the latest Windows installer from:
 
-```bash
-yay -S hardwaremon-bin
-```
+https://github.com/louisboii747/HardwareMon/releases
 
 ---
 
-## Ubuntu / Debian Systems
+# Ubuntu / Debian
 
-### Flutter Edition
+Add the HardwareMon repository:
 
 ```bash
-curl -fsSL https://hardwaremon.pages.dev/apt/flutter.sh | bash
+echo "deb [trusted=yes] https://hardwaremon.pages.dev/apt stable main" \
+| sudo tee /etc/apt/sources.list.d/hardwaremon.list
 ```
 
-### Legacy Tkinter Edition
+Update repositories:
 
 ```bash
-curl -fsSL https://hardwaremon.pages.dev/apt/setup.sh | bash
+sudo apt update
+```
+
+Install HardwareMon:
+
+```bash
 sudo apt install hardwaremon
 ```
 
 ---
 
-## Fedora / RPM-based Systems
+# Fedora
 
-### Flutter Edition
+Add the repository:
 
 ```bash
-curl -fsSL https://hardwaremon.pages.dev/yum/install.sh | bash
+sudo dnf config-manager addrepo \
+--from-repofile=https://hardwaremon.pages.dev/yum/hardwaremon.repo
 ```
 
-### Legacy RPM Edition
+Install HardwareMon:
 
 ```bash
-sudo dnf install \
-https://github.com/louisboii747/HardwareMon/releases/latest/download/hardwaremon.rpm
+sudo dnf install hardwaremon
 ```
 
 ---
 
-## Flatpak
+# Arch Linux
+
+## yay
 
 ```bash
-curl -L \
-https://github.com/louisboii747/HardwareMon/releases/latest/download/hardwaremon.flatpak \
--o /tmp/hardwaremon.flatpak && \
-flatpak install --user -y /tmp/hardwaremon.flatpak
+yay -S hardwaremon-bin
 ```
 
-Launch:
+## paru
 
 ```bash
-flatpak run com.hardwaremon.HardwareMon
+paru -S hardwaremon-bin
 ```
 
 ---
 
 # Updating
-
----
 
 ## Windows
 
@@ -150,91 +206,116 @@ winget upgrade LouisHinchliffe.HardwareMon
 
 ---
 
-## Arch Linux
-
-```bash
-yay -Syu hardwaremon-bin
-```
-
----
-
 ## Ubuntu / Debian
-
-### Flutter Edition
-
-Re-run the installer script:
-
-```bash
-curl -fsSL https://hardwaremon.pages.dev/apt/flutter.sh | bash
-```
-
-### Legacy Tkinter Edition
 
 ```bash
 sudo apt update
-sudo apt upgrade hardwaremon
+sudo apt upgrade
 ```
 
 ---
 
-## Fedora / RPM-based Systems
-
-### Flutter Edition
-
-Re-run the installer script:
+## Fedora
 
 ```bash
-curl -fsSL https://hardwaremon.pages.dev/yum/install.sh | bash
+sudo dnf upgrade
 ```
 
-### Legacy RPM Edition
+---
+
+## Arch Linux
 
 ```bash
-sudo dnf upgrade hardwaremon
+yay -Syu
 ```
 
 ---
 
-## Flatpak
+# Architecture
 
-```bash
-flatpak update
-```
+HardwareMon uses a modern split architecture:
+
+## Frontend
+
+* Flutter Desktop
+* Cross-platform UI framework
+* Animated desktop interface
+* Real-time telemetry visualisation
+
+## Backend
+
+* FastAPI backend
+* Python telemetry services
+* Hardware monitoring APIs
+* Process analytics
+* System statistics collection
+
+The backend is bundled directly into Linux and Windows builds for simplified deployment and installation.
 
 ---
 
-# VirusTotal Integration
+# Windows Version
 
-HardwareMon includes optional VirusTotal integration for scanning running processes.
+The Windows version is actively evolving into a cinematic workstation-style monitoring experience.
 
-Features include:
+Current Windows development includes:
 
-* SHA256 process hash scanning
-* Process reputation lookups
-* Suspicious executable detection
-* Secure API-based analysis
-* Optional personal API key support
+* Animated dashboard system
+* Interactive telemetry cards
+* Focus-mode analytics views
+* Multi-page navigation architecture
+* Live graph rendering
+* Real hardware telemetry
+* LibreHardwareMonitor integration
+* Acrylic/glass-inspired UI styling
+* Smooth animated transitions
 
-This allows HardwareMon to help identify potentially malicious or suspicious software directly from the monitoring interface.
+The Windows UI is built using Flutter Desktop with a modular architecture designed for future scalability.
 
 ---
 
-# Flutter Edition
+# Linux Distribution
 
-HardwareMon is actively transitioning toward a modern Flutter-based desktop interface.
+HardwareMon includes fully automated Linux packaging infrastructure.
 
-The Flutter edition includes:
+Supported distribution methods:
 
-* Modern desktop UI
-* Smooth animations and transitions
-* Expanded monitoring dashboards
-* Better scalability
-* Cross-platform consistency
-* Bundled backend architecture
+* APT repositories
+* DNF repositories
+* AUR packages
+* Direct GitHub Releases
 
-The Linux Flutter builds bundle the backend directly into the application package for simpler installation and deployment.
+Linux packages include:
 
-The original Python/Tkinter edition continues to receive maintenance and updates alongside the Flutter edition.
+* Native desktop entries
+* Application icons
+* Bundled backend binaries
+* Repository metadata
+* Automated updates through system package managers
+
+---
+
+# CI/CD Infrastructure
+
+HardwareMon uses automated GitHub Actions pipelines for:
+
+* Linux DEB packaging
+* Linux RPM packaging
+* AUR publishing
+* Windows installer generation
+* WinGet publishing
+* GitHub Releases
+* Cloudflare Pages deployment
+* Repository metadata generation
+
+Technologies used include:
+
+* Flutter Desktop
+* FastAPI
+* PyInstaller
+* GitHub Actions
+* nfpm
+* Cloudflare Pages
 
 ---
 
@@ -244,51 +325,39 @@ The original Python/Tkinter edition continues to receive maintenance and updates
 
 ```bash
 git clone https://github.com/louisboii747/HardwareMon.git
+
 cd HardwareMon
 ```
 
 ---
 
-## Flutter Development
+# Flutter Development
 
 ```bash
 cd flutter_gui
+
 flutter pub get
+
+flutter run -d windows
+```
+
+Linux:
+
+```bash
 flutter run -d linux
 ```
 
 ---
 
-## Python Dependencies
+# Backend Development
 
 ```bash
-pip install psutil gputil pillow flask
+cd backend_fastapi
+
+pip install fastapi uvicorn psutil
+
+python main.py
 ```
-
----
-
-# Build & Release Infrastructure
-
-HardwareMon uses automated CI/CD pipelines for:
-
-* DEB packaging
-* RPM packaging
-* Flatpak packaging
-* AUR releases
-* GitHub Releases
-* Windows installer generation
-* WinGet publishing
-* Cloudflare Pages deployment
-
-Technologies used include:
-
-* Flutter Desktop
-* Python
-* PyInstaller
-* GitHub Actions
-* Flatpak Builder
-* nfpm
-* Cloudflare Pages
 
 ---
 
@@ -296,15 +365,17 @@ Technologies used include:
 
 Planned future improvements include:
 
-* Historical monitoring and analytics
-* Advanced interactive graphs
+* Historical monitoring database
+* Long-term analytics
+* Per-core CPU visualisations
+* Expanded GPU telemetry
 * Remote monitoring support
 * System tray integration
-* Custom dashboards
-* Expanded Windows support
-* Official Flathub publishing
+* Custom dashboard layouts
 * Plugin architecture
-* Native macOS support exploration
+* Detachable analytics windows
+* Alerts and notifications
+* Native macOS exploration
 
 ---
 
@@ -312,7 +383,14 @@ Planned future improvements include:
 
 HardwareMon is under active development.
 
-Both the legacy Python implementation and the modern Flutter edition continue to receive updates and improvements.
+The project is evolving into a modern cross-platform monitoring platform focused on:
+
+* performance
+* desktop experience
+* packaging automation
+* scalable architecture
+* cinematic UI design
+* real-time telemetry systems
 
 ---
 
@@ -333,7 +411,3 @@ https://github.com/louisboii747/HardwareMon/releases
 ## Website
 
 https://gethardwaremon.pages.dev
-
-
----
-
