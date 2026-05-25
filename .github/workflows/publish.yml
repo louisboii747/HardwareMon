@@ -114,18 +114,18 @@ jobs:
       # ─────────────────────────────────────────────
       - name: Build backend binary
         run: |
-            cd hardwaremon
+          cd hardwaremon
 
-            pyinstaller \
-              --onefile \
-              --name api \
-              --hidden-import sqlite3 \
-              --hidden-import database \
-              --add-data "database.py:." \
-              api.py
+          pyinstaller \
+            --onefile \
+            --name api \
+            --hidden-import sqlite3 \
+            --hidden-import database \
+            --add-data "database.py:." \
+            api.py
 
-            strip dist/api || true
-            upx --best dist/api
+          strip dist/api || true
+          upx --best dist/api
 
 
       # ─────────────────────────────────────────────
@@ -145,15 +145,16 @@ jobs:
           mv pkg/usr/lib/hardwaremon/hardwaremon \
             pkg/usr/lib/hardwaremon/hardwaremon-bin
 
-          cp backend_fastapi/dist/api \
+          cp hardwaremon/dist/api \
             pkg/usr/lib/hardwaremon/backend/
 
           chmod +x \
             pkg/usr/lib/hardwaremon/backend/api
 
-      # ─────────────────────────────────────────────
-      # Create launcher
-      # ─────────────────────────────────────────────
+
+# ─────────────────────────────────────────────
+# Create launcher
+# ──────────────────────────────────────────────
       - name: Create launcher
         run: |
           cat <<'EOF' > pkg/usr/bin/hardwaremon
@@ -163,10 +164,18 @@ jobs:
 
           cd "$APP_DIR"
 
-          "$APP_DIR/hardwaremon-bin"
-          EOF
+          # Start backend
+          "$APP_DIR/backend/api" &
+          BACKEND_PID=$!
 
+          # Launch Flutter app
+          "$APP_DIR/hardwaremon-bin"
+
+          # Cleanup backend after app exits
+          kill $BACKEND_PID
+          EOF
           chmod +x pkg/usr/bin/hardwaremon
+
 
       # ─────────────────────────────────────────────
       # Create desktop entry
