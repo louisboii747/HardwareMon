@@ -19,6 +19,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # ─────────────────────────────────────
+      # Flutter
+      # ─────────────────────────────────────
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -28,6 +32,10 @@ jobs:
         run: |
           cd flutter_gui
           flutter pub get
+
+      # ─────────────────────────────────────
+      # Python backend
+      # ─────────────────────────────────────
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -43,11 +51,19 @@ jobs:
       - name: Build backend executable
         run: |
           cd flutter_gui/backend_fastapi
-          pyinstaller --onefile main.py --name backend
+          pyinstaller backend.spec
+
+      # ─────────────────────────────────────
+      # Inno Setup
+      # ─────────────────────────────────────
 
       - name: Install Inno Setup
         run: |
           choco install innosetup -y
+
+      # ─────────────────────────────────────
+      # Build installer
+      # ─────────────────────────────────────
 
       - name: Build installer
         shell: pwsh
@@ -55,11 +71,19 @@ jobs:
           cd installer
           ./build_installer.ps1
 
+      # ─────────────────────────────────────
+      # GitHub Release
+      # ─────────────────────────────────────
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           files: installer/Output/*.exe
+
+  # ─────────────────────────────────────────
+  # Winget
+  # ─────────────────────────────────────────
 
   winget:
     needs:
@@ -72,7 +96,5 @@ jobs:
         uses: vedantmgoyal2009/winget-releaser@v2
         with:
           identifier: LouisHinchliffe.HardwareMon
-
           installers-regex: 'HardwareMon-.*\.exe$'
-
-          token: ${{ secrets.WINGET_TOKEN }}          
+          token: ${{ secrets.WINGET_TOKEN }}
