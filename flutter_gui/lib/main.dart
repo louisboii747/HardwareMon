@@ -36,7 +36,7 @@ String getBackendExecutable() {
   final exeDir = File(Platform.resolvedExecutable).parent.path;
 
   if (Platform.isWindows) {
-    return '$exeDir/backend/backend.exe';
+    return '$exeDir/backend.exe';
   }
 
   return '$exeDir/backend/backend';
