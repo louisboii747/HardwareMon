@@ -68,6 +68,8 @@ jobs:
       - name: Install Python dependencies
         run: |
           python3 -m pip install --break-system-packages \
+            flask \
+            flask-cors \
             fastapi \
             uvicorn \
             psutil \
