@@ -58,4 +58,21 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          generate_release_notes: true
           files: installer/Output/*.exe
+
+  winget:
+    needs:
+      - build-windows
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Submit package to winget
+        uses: vedantmgoyal2009/winget-releaser@v2
+        with:
+          identifier: LouisHinchliffe.HardwareMon
+
+          installers-regex: 'HardwareMon-.*\.exe$'
+
+          token: ${{ secrets.WINGET_TOKEN }}          
