@@ -65,3 +65,6 @@ flutter_gui/backend_fastapi/dist/
 
 # PyInstaller temp
 *.spec
+
+# Allow HardwareMon.spec for PyInstaller
+!hardwaremon/api.spec

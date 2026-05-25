@@ -119,20 +119,11 @@ jobs:
         run: |
           cd hardwaremon
 
-          pyinstaller \
-            --onefile \
-            --name api \
-            --hidden-import flask \
-            --hidden-import flask_cors \
-            --hidden-import sqlite3 \
-            --hidden-import database \
-            --hidden-import process_scanner \
-            --add-data "database.py:." \
-            --add-data "process_scanner.py:." \
-            api.py
+          pyinstaller api.spec
 
           strip dist/api || true
           upx --best dist/api
+
 
 
 
