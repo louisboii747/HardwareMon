@@ -1,14 +1,15 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:flutter_gui/windows_ui/core/backend_config.dart';
 
 import '../models/process_info.dart';
 
 class ProcessService {
+  static final String baseUrl = BackendConfig.baseUrl;
+
   static Future<List<ProcessInfo>> fetchProcesses() async {
-    final response = await http.get(
-      Uri.parse('http://127.0.0.1:8000/processes'),
-    );
+    final response = await http.get(Uri.parse('$baseUrl/processes'));
 
     if (response.statusCode != 200) {
       throw Exception('Failed to load processes');
@@ -20,9 +21,7 @@ class ProcessService {
   }
 
   static Future<void> killProcess(int pid) async {
-    final response = await http.post(
-      Uri.parse('http://127.0.0.1:8000/kill/$pid'),
-    );
+    final response = await http.post(Uri.parse('$baseUrl/kill/$pid'));
 
     if (response.statusCode != 200) {
       throw Exception('Failed to kill process');

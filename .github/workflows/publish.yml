@@ -123,8 +123,8 @@ jobs:
 
           pyinstaller api.spec
 
-          strip dist/api || true
-          upx --best dist/api
+          strip dist/backend || true
+          upx --best dist/backend
 
 
 
@@ -146,11 +146,11 @@ jobs:
           mv pkg/usr/lib/hardwaremon/hardwaremon \
             pkg/usr/lib/hardwaremon/hardwaremon-bin
 
-          cp hardwaremon/dist/api \
+          cp hardwaremon/dist/backend \
             pkg/usr/lib/hardwaremon/backend/
 
           chmod +x \
-            pkg/usr/lib/hardwaremon/backend/api
+            pkg/usr/lib/hardwaremon/backend/backend
 
 
 # ─────────────────────────────────────────────
@@ -166,7 +166,7 @@ jobs:
           cd "$APP_DIR"
 
           # Start backend
-          "$APP_DIR/backend/api" &
+          "$APP_DIR/backend/backend" &
           BACKEND_PID=$!
 
           # Launch Flutter app

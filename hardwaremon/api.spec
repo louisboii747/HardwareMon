@@ -55,7 +55,7 @@ exe = EXE(
 
     [],
 
-    name='api',
+    name='backend',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

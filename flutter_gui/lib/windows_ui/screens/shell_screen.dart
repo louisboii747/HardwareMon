@@ -5,7 +5,7 @@ import '../widgets/metric_card.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-
+import '../core/backend_config.dart';
 import 'pages/dashboard_page.dart';
 import 'pages/performance_page.dart';
 import 'pages/processes_page.dart';
@@ -35,7 +35,9 @@ class _ShellScreenState extends State<ShellScreen> {
 
   Future<void> fetchStats() async {
     try {
-      final response = await http.get(Uri.parse('http://127.0.0.1:8000/stats'));
+      final response = await http.get(
+        Uri.parse('${BackendConfig.baseUrl}/stats'),
+      );
 
       final data = jsonDecode(response.body);
 

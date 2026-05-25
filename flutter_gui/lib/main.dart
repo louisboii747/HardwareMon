@@ -7,6 +7,7 @@ import 'dart:ui';
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gui/windows_ui/core/backend_config.dart';
 import 'package:flutter_gui/windows_ui/screens/shell_screen.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -35,14 +36,14 @@ String getBackendExecutable() {
   final exeDir = File(Platform.resolvedExecutable).parent.path;
 
   if (Platform.isWindows) {
-    return '$exeDir\\backend\\backend.exe';
+    return '$exeDir/backend/backend.exe';
   }
 
-  return '$exeDir/backend/api';
+  return '$exeDir/backend/backend';
 }
 
-const backendApiUrl = 'http://127.0.0.1:8000/stats';
-const backendHistoryUrl = 'http://127.0.0.1:8000/history';
+final backendApiUrl = '${BackendConfig.baseUrl}/stats';
+final backendHistoryUrl = '${BackendConfig.baseUrl}/history';
 
 Future<void> startBackend() async {
   try {
@@ -128,9 +129,7 @@ Future<bool> waitForBackend() async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  if (Platform.isWindows) {
-    await startBackend();
-  }
+  await startBackend();
 
   await waitForBackend();
 
@@ -490,7 +489,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Future<void> _loadRefreshInterval() async {
     try {
       final response = await http.get(
-        Uri.parse("http://127.0.0.1:8000/settings/refresh_interval"),
+        Uri.parse("$backendApiUrl/refresh_interval"),
       );
 
       final data = jsonDecode(response.body);
@@ -1276,7 +1275,7 @@ class _ProcessesPageState extends State<ProcessesPage> {
   Future<void> _checkVirusTotal(int pid) async {
     try {
       final response = await http.post(
-        Uri.parse("http://127.0.0.1:8000/virustotal/process"),
+        Uri.parse("$backendApiUrl/virustotal/process"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({"pid": pid}),
       );
@@ -1742,7 +1741,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _saveVirusTotalKey() async {
     try {
       final response = await http.post(
-        Uri.parse("http://127.0.0.1:8000/settings/virustotal"),
+        Uri.parse("$backendApiUrl/settings/virustotal"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({"api_key": _vtController.text.trim()}),
       );
@@ -1772,7 +1771,7 @@ class _SettingsPageState extends State<SettingsPage> {
       });
 
       await http.post(
-        Uri.parse("http://127.0.0.1:8000/settings/refresh_interval"),
+        Uri.parse("$backendApiUrl/settings/refresh_interval"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({"interval": value}),
       );
@@ -1797,7 +1796,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _loadRefreshInterval() async {
     try {
       final response = await http.get(
-        Uri.parse("http://127.0.0.1:8000/settings/refresh_interval"),
+        Uri.parse("$backendApiUrl/settings/refresh_interval"),
       );
 
       final data = jsonDecode(response.body);
