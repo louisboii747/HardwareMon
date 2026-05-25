@@ -1,0 +1,61 @@
+name: Windows Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    env:
+      APP_VERSION: ${{ github.ref_name }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Flutter pub get
+        run: |
+          cd flutter_gui
+          flutter pub get
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install backend dependencies
+        run: |
+          cd flutter_gui/backend_fastapi
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build backend executable
+        run: |
+          cd flutter_gui/backend_fastapi
+          pyinstaller --onefile main.py --name backend
+
+      - name: Install Inno Setup
+        run: |
+          choco install innosetup -y
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          cd installer
+          ./build_installer.ps1
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: installer/Output/*.exe
