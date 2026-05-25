@@ -40,7 +40,7 @@
 
 # Website
 
-🌐 https://gethardwaremon.pages.dev
+🌐 [https://gethardwaremon.pages.dev](https://gethardwaremon.pages.dev)
 
 The HardwareMon website contains:
 
@@ -51,6 +51,26 @@ The HardwareMon website contains:
 * Release information
 * Linux repository setup
 * Future documentation
+
+---
+
+# HardwareMon Evolution
+
+HardwareMon originally began as a small Python/Tkinter hardware monitor created during early experimentation with Linux system telemetry.
+
+The project has since been completely rebuilt into a modern cross-platform monitoring platform using:
+
+* Flutter Desktop
+* FastAPI
+* LibreHardwareMonitor
+* Real-time telemetry APIs
+* Automated CI/CD pipelines
+* Native Linux packaging
+* Windows installer infrastructure
+
+The legacy Tkinter interface and older Python GUI implementations have now been fully removed from the project and are no longer maintained.
+
+HardwareMon now uses a unified Flutter frontend architecture across Linux and Windows with a bundled backend system for telemetry collection and process analytics.
 
 ---
 
@@ -85,7 +105,7 @@ The HardwareMon website contains:
 
 ---
 
-## Security & Diagnostics
+## Security & Diagnostics (Slowly being introduced)
 
 * VirusTotal process scanning integration
 * SHA256 process hashing
@@ -136,7 +156,7 @@ winget install LouisHinchliffe.HardwareMon
 
 Download the latest Windows installer from:
 
-https://github.com/louisboii747/HardwareMon/releases
+[https://github.com/louisboii747/HardwareMon/releases](https://github.com/louisboii747/HardwareMon/releases)
 
 ---
 
@@ -231,26 +251,38 @@ yay -Syu
 
 ---
 
-# Architecture
+# Modern Architecture
 
-HardwareMon uses a modern split architecture:
+HardwareMon now uses a fully modular frontend/backend architecture.
 
-## Frontend
+## Frontend Layer
 
-* Flutter Desktop
-* Cross-platform UI framework
-* Animated desktop interface
-* Real-time telemetry visualisation
+Built entirely with Flutter Desktop:
 
-## Backend
+* Windows support
+* Linux support
+* Shared UI codebase
+* Animated workstation-style interface
+* Realtime telemetry rendering
+* Expandable analytics views
+* Multi-page navigation system
+* Cross-platform desktop framework
 
-* FastAPI backend
-* Python telemetry services
-* Hardware monitoring APIs
-* Process analytics
-* System statistics collection
+---
 
-The backend is bundled directly into Linux and Windows builds for simplified deployment and installation.
+## Backend Layer
+
+Built using FastAPI and Python telemetry services:
+
+* Hardware telemetry APIs
+* Process monitoring
+* System analytics
+* Temperature monitoring
+* Live metric streaming
+* Process security scanning
+* JSON-based telemetry endpoints
+
+The backend is bundled directly with release builds and automatically launched by the Flutter application.
 
 ---
 
@@ -290,8 +322,22 @@ Linux packages include:
 * Native desktop entries
 * Application icons
 * Bundled backend binaries
+* Automatic backend launching
 * Repository metadata
 * Automated updates through system package managers
+
+---
+
+# Legacy Components
+
+The following legacy components have been removed:
+
+* Tkinter GUI
+* Older Python desktop interfaces
+* Legacy launcher systems
+* Previous monolithic UI architecture
+
+Any remaining issues, references, or deprecated code related to these legacy systems are considered unsupported and may be ignored during development moving forward.
 
 ---
 
@@ -398,16 +444,16 @@ The project is evolving into a modern cross-platform monitoring platform focused
 
 ## GitHub Repository
 
-https://github.com/louisboii747/HardwareMon
+[https://github.com/louisboii747/HardwareMon](https://github.com/louisboii747/HardwareMon)
 
 ---
 
 ## Releases
 
-https://github.com/louisboii747/HardwareMon/releases
+[https://github.com/louisboii747/HardwareMon/releases](https://github.com/louisboii747/HardwareMon/releases)
 
 ---
 
 ## Website
 
-https://gethardwaremon.pages.dev
+[https://gethardwaremon.pages.dev](https://gethardwaremon.pages.dev)
