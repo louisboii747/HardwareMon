@@ -159,6 +159,33 @@ def virustotal_process():
 
     return jsonify(result)
 
+@app.route("/processes")
+def get_processes():
+    processes = []
+
+    for proc in psutil.process_iter([
+        'pid',
+        'name',
+        'cpu_percent',
+        'memory_percent'
+    ]):
+        try:
+            processes.append({
+                "pid": proc.info["pid"],
+                "name": proc.info["name"],
+                "cpu": proc.info["cpu_percent"],
+                "ram": round(proc.info["memory_percent"], 1),
+            })
+        except Exception:
+            pass
+
+    processes.sort(
+        key=lambda p: p["cpu"],
+        reverse=True
+    )
+
+    return jsonify(processes[:60])
+
 
 # ─────────────────────────────────────────────
 # VirusTotal Settings

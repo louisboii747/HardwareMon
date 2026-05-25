@@ -153,15 +153,17 @@ jobs:
             pkg/usr/lib/hardwaremon/backend/backend
 
 
-# ─────────────────────────────────────────────
-# Create launcher
-# ──────────────────────────────────────────────
+      # ─────────────────────────────────────────────
+      # Create launcher
+      # ─────────────────────────────────────────────
       - name: Create launcher
         run: |
           cat <<'EOF' > pkg/usr/bin/hardwaremon
           #!/bin/bash
 
           APP_DIR="/usr/lib/hardwaremon"
+
+          export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
 
           cd "$APP_DIR"
 
@@ -175,6 +177,7 @@ jobs:
           # Cleanup backend after app exits
           kill $BACKEND_PID
           EOF
+
           chmod +x pkg/usr/bin/hardwaremon
 
 

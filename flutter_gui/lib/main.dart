@@ -1322,36 +1322,21 @@ class _ProcessesPageState extends State<ProcessesPage> {
 
   Future<void> _fetchProcesses() async {
     try {
-      final result = await Process.run('ps', [
-        '-eo',
-        'pid,comm,%cpu,%mem',
-        '--sort=-%cpu',
-      ]);
+      final response = await http.get(
+        Uri.parse('${BackendConfig.baseUrl}/processes'),
+      );
 
-      final lines = result.stdout
-          .toString()
-          .split('\n')
-          .skip(1)
-          .where((l) => l.trim().isNotEmpty)
-          .take(60)
-          .toList();
-
-      final parsed = <Map<String, dynamic>>[];
-
-      for (final line in lines) {
-        final parts = line.trim().split(RegExp(r'\s+'));
-        if (parts.length >= 4) {
-          parsed.add({
-            'pid': parts[0],
-            'name': parts[1],
-            'cpu': double.tryParse(parts[2]) ?? 0.0,
-            'ram': double.tryParse(parts[3]) ?? 0.0,
-          });
-        }
+      if (response.statusCode != 200) {
+        return;
       }
 
+      final List<dynamic> data = jsonDecode(response.body);
+
       if (!mounted) return;
-      setState(() => _processes = parsed);
+
+      setState(() {
+        _processes = data.map((e) => Map<String, dynamic>.from(e)).toList();
+      });
     } catch (e) {
       debugPrint("fetchProcesses error: $e");
     }
