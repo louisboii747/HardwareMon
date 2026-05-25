@@ -73,6 +73,8 @@ jobs:
             fastapi \
             uvicorn \
             psutil \
+            requests \
+            urllib3 \
             pyinstaller
 
       # ─────────────────────────────────────────────

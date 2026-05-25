@@ -20,6 +20,8 @@ a = Analysis(
         'flask',
         'flask_cors',
         'sqlite3',
+        'requests',
+        'urllib3',
         'database',
         'process_scanner',
         'hash_utils',
