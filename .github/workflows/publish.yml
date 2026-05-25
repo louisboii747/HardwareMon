@@ -114,6 +114,7 @@ jobs:
       # ─────────────────────────────────────────────
       # Build FastAPI backend
       # ─────────────────────────────────────────────
+
       - name: Build backend binary
         run: |
           cd hardwaremon
@@ -121,13 +122,18 @@ jobs:
           pyinstaller \
             --onefile \
             --name api \
+            --hidden-import flask \
+            --hidden-import flask_cors \
             --hidden-import sqlite3 \
             --hidden-import database \
+            --hidden-import process_scanner \
             --add-data "database.py:." \
+            --add-data "process_scanner.py:." \
             api.py
 
           strip dist/api || true
           upx --best dist/api
+
 
 
       # ─────────────────────────────────────────────
@@ -223,6 +229,8 @@ jobs:
           contents:
             - src: pkg/usr/bin/hardwaremon
               dst: /usr/bin/hardwaremon
+              file_info:
+                mode: 0755
 
             - src: pkg/usr/lib/hardwaremon/
               dst: /usr/lib/hardwaremon/
