@@ -36,3 +36,17 @@ config.json
 secrets.json
 hardwaremon/.env
 flutter_gui/.env
+
+# Installer
+installer/staging/
+installer/Output/
+
+# Flutter
+flutter_gui/build/
+
+# Python backend builds
+flutter_gui/backend_fastapi/build/
+flutter_gui/backend_fastapi/dist/
+
+# PyInstaller temp
+*.spec

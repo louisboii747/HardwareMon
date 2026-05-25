@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from telemetry.system import router as system_router
+from routes.processes import router as processes_router
 
 app = FastAPI(
     title="HardwareMon Backend",
@@ -7,6 +8,7 @@ app = FastAPI(
 )
 
 app.include_router(system_router)
+app.include_router(processes_router)
 
 @app.get("/")
 async def root():
@@ -14,3 +16,12 @@ async def root():
         "status": "online",
         "backend": "HardwareMon FastAPI"
     }
+
+import uvicorn
+
+if __name__ == "__main__":
+    uvicorn.run(
+        app,
+        host="127.0.0.1",
+        port=8000
+    )
