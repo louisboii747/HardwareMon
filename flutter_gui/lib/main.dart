@@ -34,7 +34,11 @@ Process? backendProcess;
 String getBackendExecutable() {
   final exeDir = File(Platform.resolvedExecutable).parent.path;
 
-  return '$exeDir\\backend\\backend.exe';
+  if (Platform.isWindows) {
+    return '$exeDir\\backend\\backend.exe';
+  }
+
+  return '$exeDir/backend/api';
 }
 
 const backendApiUrl = 'http://127.0.0.1:8000/stats';
@@ -124,7 +128,10 @@ Future<bool> waitForBackend() async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await startBackend();
+  if (Platform.isWindows) {
+    await startBackend();
+  }
+
   await waitForBackend();
 
   runApp(const HardwareMonApp());
