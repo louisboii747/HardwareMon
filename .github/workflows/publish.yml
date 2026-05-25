@@ -4,13 +4,10 @@ on:
   push:
     tags:
       - "v*.*.*"
+
   workflow_dispatch:
 
 jobs:
-
-  # ─────────────────────────────────────────────────────────────────
-  # Linux build + repositories
-  # ─────────────────────────────────────────────────────────────────
   build:
     runs-on: ubuntu-latest
 
@@ -18,22 +15,15 @@ jobs:
       contents: write
 
     steps:
+
       # ─────────────────────────────────────────────
       # Checkout
       # ─────────────────────────────────────────────
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       # ─────────────────────────────────────────────
-      # Node.js
-      # ─────────────────────────────────────────────
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      # ─────────────────────────────────────────────
-      # Flutter
+      # Setup Flutter
       # ─────────────────────────────────────────────
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -41,13 +31,21 @@ jobs:
           channel: stable
 
       # ─────────────────────────────────────────────
+      # Setup Node.js
+      # ─────────────────────────────────────────────
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # ─────────────────────────────────────────────
       # Install Linux dependencies
       # ─────────────────────────────────────────────
-      - name: Install dependencies
+      - name: Install Linux dependencies
         run: |
-          sudo apt-get update
+          sudo apt update
 
-          sudo apt-get install -y \
+          sudo apt install -y \
             dpkg-dev \
             apt-utils \
             createrepo-c \
@@ -63,17 +61,16 @@ jobs:
             python3 \
             python3-pip \
             upx
+
       # ─────────────────────────────────────────────
-      # Python dependencies
+      # Install Python dependencies
       # ─────────────────────────────────────────────
       - name: Install Python dependencies
         run: |
           python3 -m pip install --break-system-packages \
-            flask \
-            flask-cors \
+            fastapi \
+            uvicorn \
             psutil \
-            gputil \
-            setuptools \
             pyinstaller
 
       # ─────────────────────────────────────────────
@@ -83,13 +80,6 @@ jobs:
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
           echo "$HOME/go/bin" >> $GITHUB_PATH
-
-      # ─────────────────────────────────────────────
-      # Clean workspace
-      # ─────────────────────────────────────────────
-      - name: Clean workspace
-        run: |
-          rm -rf dist repo public pkg flutter-pkg
 
       # ─────────────────────────────────────────────
       # Get version
@@ -103,59 +93,103 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       # ─────────────────────────────────────────────
-      # Prepare Tkinter package files
+      # Flutter dependencies
       # ─────────────────────────────────────────────
-      - name: Prepare package files
+      - name: Flutter pub get
+        working-directory: flutter_gui
+        run: flutter pub get
+
+      # ─────────────────────────────────────────────
+      # Build Flutter Linux app
+      # ─────────────────────────────────────────────
+      - name: Build Flutter Linux app
+        working-directory: flutter_gui
         run: |
-          mkdir -p pkg/opt/hardwaremon
-          mkdir -p pkg/bin
+          flutter build linux --release \
+            --split-debug-info=symbols \
+            --dart-define=APP_VERSION="${{ steps.version.outputs.version }}"
 
-          VERSION="${{ steps.version.outputs.version }}"
+      # ─────────────────────────────────────────────
+      # Build FastAPI backend
+      # ─────────────────────────────────────────────
+      - name: Build backend binary
+        run: |
+          cd backend_fastapi
 
-          echo "Injecting version $VERSION"
+          pyinstaller \
+            --onefile \
+            --name api \
+            main.py
 
-          sed -i "s/^VERSION = .*/VERSION = \"${VERSION}\"/" hardwaremon/hardwaremon.py
-          sed -i "s/^VERSION = .*/VERSION = \"${VERSION}\"/" hardwaremon/hardwaremon_gui.py
+          strip dist/api || true
+          upx --best dist/api
 
-          cp hardwaremon/* pkg/opt/hardwaremon/
-
-          # CLI launcher
-          cat <<'EOF' > pkg/bin/hardwaremon
-          #!/bin/bash
-          exec python3 /opt/hardwaremon/hardwaremon.py "$@"
-          EOF
-
-          # GUI launcher
-          cat <<'EOF' > pkg/bin/hardwaremon-gui
-          #!/bin/bash
-          exec python3 /opt/hardwaremon/hardwaremon_gui.py "$@"
-          EOF
-
-          chmod +x pkg/bin/hardwaremon
-          chmod +x pkg/bin/hardwaremon-gui
-
-          # Desktop entry
+      # ─────────────────────────────────────────────
+      # Prepare package structure
+      # ─────────────────────────────────────────────
+      - name: Prepare package
+        run: |
+          mkdir -p pkg/usr/bin
+          mkdir -p pkg/usr/lib/hardwaremon
+          mkdir -p pkg/usr/lib/hardwaremon/backend
           mkdir -p pkg/usr/share/applications
+          mkdir -p pkg/usr/share/icons/hicolor/256x256/apps
 
+          cp -r flutter_gui/build/linux/x64/release/bundle/* \
+            pkg/usr/lib/hardwaremon/
+
+          mv pkg/usr/lib/hardwaremon/hardwaremon \
+            pkg/usr/lib/hardwaremon/hardwaremon-bin
+
+          cp backend_fastapi/dist/api \
+            pkg/usr/lib/hardwaremon/backend/
+
+          chmod +x \
+            pkg/usr/lib/hardwaremon/backend/api
+
+      # ─────────────────────────────────────────────
+      # Create launcher
+      # ─────────────────────────────────────────────
+      - name: Create launcher
+        run: |
+          cat <<'EOF' > pkg/usr/bin/hardwaremon
+          #!/bin/bash
+
+          APP_DIR="/usr/lib/hardwaremon"
+
+          cd "$APP_DIR"
+
+          "$APP_DIR/hardwaremon-bin"
+          EOF
+
+          chmod +x pkg/usr/bin/hardwaremon
+
+      # ─────────────────────────────────────────────
+      # Create desktop entry
+      # ─────────────────────────────────────────────
+      - name: Create desktop entry
+        run: |
           cat <<'EOF' > pkg/usr/share/applications/hardwaremon.desktop
           [Desktop Entry]
           Name=HardwareMon
-          Comment=System monitoring tool
-          Exec=hardwaremon-gui
+          Comment=Modern system monitoring platform
+          Exec=hardwaremon
           Icon=hardwaremon
           Terminal=false
           Type=Application
           Categories=System;Monitor;
           EOF
 
-          # Icons
-          mkdir -p pkg/usr/share/icons/hicolor/256x256/apps
-
+      # ─────────────────────────────────────────────
+      # Copy icon
+      # ─────────────────────────────────────────────
+      - name: Copy icon
+        run: |
           cp hardwaremon/Logo.png \
             pkg/usr/share/icons/hicolor/256x256/apps/hardwaremon.png
 
       # ─────────────────────────────────────────────
-      # Create Tkinter nfpm config
+      # Create nfpm config
       # ─────────────────────────────────────────────
       - name: Create nfpm config
         run: |
@@ -167,34 +201,17 @@ jobs:
 
           maintainer: Louis Hinchliffe <louishinchliffe11@gmail.com>
 
-          description: HardwareMon system monitor
+          description: Modern cross-platform system monitor
 
           homepage: https://github.com/louisboii747/HardwareMon
 
-          depends:
-            - python3
-            - python3-tk
-            - python3-pil
-            - python3-psutil
-
-          overrides:
-            rpm:
-              depends:
-                - python3
-                - python3-tkinter
-                - python3-pillow
-                - python3-pillow-tk
-                - python3-psutil
-
           contents:
-            - src: pkg/bin/hardwaremon
+            - src: pkg/usr/bin/hardwaremon
               dst: /usr/bin/hardwaremon
 
-            - src: pkg/bin/hardwaremon-gui
-              dst: /usr/bin/hardwaremon-gui
-
-            - src: pkg/opt/hardwaremon/
-              dst: /opt/hardwaremon/
+            - src: pkg/usr/lib/hardwaremon/
+              dst: /usr/lib/hardwaremon/
+              type: tree
 
             - src: pkg/usr/share/applications/hardwaremon.desktop
               dst: /usr/share/applications/hardwaremon.desktop
@@ -204,7 +221,7 @@ jobs:
           EOF
 
       # ─────────────────────────────────────────────
-      # Build Tkinter packages
+      # Build packages
       # ─────────────────────────────────────────────
       - name: Create dist folder
         run: mkdir -p dist
@@ -224,167 +241,15 @@ jobs:
             --target dist/hardwaremon.rpm
 
       # ─────────────────────────────────────────────
-      # Flutter dependencies
-      # ─────────────────────────────────────────────
-      - name: Install Flutter dependencies
-        working-directory: flutter_gui
-        run: flutter pub get
-
-      # ─────────────────────────────────────────────
-      # Build Flutter Linux app
-      # ─────────────────────────────────────────────
-      - name: Build Flutter Linux app
-        working-directory: flutter_gui
-        run: |
-          flutter build linux --release \
-          --split-debug-info=symbols \
-          --dart-define=APP_VERSION="${{ steps.version.outputs.version }}"
-
-
-      # ─────────────────────────────────────────────
-      # Prepare Flutter package
-      # ─────────────────────────────────────────────
-      - name: Prepare Flutter package
-        run: |
-          mkdir -p flutter-pkg/usr/bin
-          mkdir -p flutter-pkg/usr/lib/hardwaremon-flutter
-          mkdir -p flutter-pkg/usr/share/applications
-          mkdir -p flutter-pkg/usr/share/icons/hicolor/256x256/apps
-
-      - name: Copy Flutter files
-        run: |
-          cp -r flutter_gui/build/linux/x64/release/bundle/* \
-            flutter-pkg/usr/lib/hardwaremon-flutter/
-
-          mv flutter-pkg/usr/lib/hardwaremon-flutter/hardwaremon \
-          flutter-pkg/usr/lib/hardwaremon-flutter/hardwaremon-flutter
-
-          mkdir -p flutter-pkg/usr/lib/hardwaremon-flutter/backend
-
-          find flutter-pkg/usr/lib/hardwaremon-flutter \
-            -name "*.debug" -delete
-
-          find flutter-pkg/usr/lib/hardwaremon-flutter \
-            -name "*.a" -delete
-
-          cd hardwaremon
-
-          pyinstaller \
-          --onefile \
-          --name api \
-          --hidden-import sqlite3 \
-          --hidden-import database \
-          --add-data "database.py:." \
-          api.py
-
-          strip dist/api || true
-          upx --best dist/api
-
-          cd ..
-
-          # Copy backend binary
-          cp hardwaremon/dist/api \
-            flutter-pkg/usr/lib/hardwaremon-flutter/backend/
-
-          chmod +x \
-            flutter-pkg/usr/lib/hardwaremon-flutter/backend/api
-
-
-      - name: Create Flutter launcher
-        run: |
-          cat <<'EOF' > flutter-pkg/usr/bin/hardwaremon-flutter
-          #!/bin/bash
-
-          #!/bin/bash
-
-          APP_DIR="/usr/lib/hardwaremon-flutter"
-
-          cd "$APP_DIR"
-
-          "$APP_DIR/hardwaremon-flutter"
-          EOF
-
-          chmod +x flutter-pkg/usr/bin/hardwaremon-flutter
-
-          
-      - name: Create Flutter desktop entry
-        run: |
-          cat <<'EOF' > flutter-pkg/usr/share/applications/hardwaremon-flutter.desktop
-          [Desktop Entry]
-          Name=HardwareMon Flutter
-          Comment=Flutter version of HardwareMon
-          Exec=hardwaremon-flutter
-          Icon=hardwaremon-flutter
-          Terminal=false
-          Type=Application
-          Categories=System;Monitor;
-          EOF
-
-      - name: Copy Flutter icon
-        run: |
-          cp hardwaremon/Logo.png \
-            flutter-pkg/usr/share/icons/hicolor/256x256/apps/hardwaremon-flutter.png
-
-      # ─────────────────────────────────────────────
-      # Create Flutter nfpm config
-      # ─────────────────────────────────────────────
-      - name: Create Flutter nfpm config
-        run: |
-          cat <<EOF > flutter-nfpm.yaml
-          name: hardwaremon-flutter
-          arch: amd64
-          platform: linux
-          version: "${{ steps.version.outputs.version }}"
-
-          maintainer: Louis Hinchliffe <louishinchliffe11@gmail.com>
-
-          description: Flutter edition of HardwareMon
-
-          homepage: https://github.com/louisboii747/HardwareMon
-
-          contents:
-            - src: flutter-pkg/usr/bin/hardwaremon-flutter
-              dst: /usr/bin/hardwaremon-flutter
-
-            - src: flutter-pkg/usr/lib/hardwaremon-flutter/
-              dst: /usr/lib/hardwaremon-flutter/
-              type: tree
-
-            - src: flutter-pkg/usr/share/applications/hardwaremon-flutter.desktop
-              dst: /usr/share/applications/hardwaremon-flutter.desktop
-
-            - src: flutter-pkg/usr/share/icons/hicolor/256x256/apps/hardwaremon-flutter.png
-              dst: /usr/share/icons/hicolor/256x256/apps/hardwaremon-flutter.png
-          EOF
-
-      # ─────────────────────────────────────────────
-      # Build Flutter packages
-      # ─────────────────────────────────────────────
-      - name: Build Flutter DEB
-        run: |
-          nfpm pkg \
-            --config flutter-nfpm.yaml \
-            --packager deb \
-            --target dist/hardwaremon-flutter.deb
-
-      - name: Build Flutter RPM
-        run: |
-          nfpm pkg \
-            --config flutter-nfpm.yaml \
-            --packager rpm \
-            --target dist/hardwaremon-flutter.rpm
-
-      # ─────────────────────────────────────────────
       # Build APT repository
       # ─────────────────────────────────────────────
-      - name: Build APT repo
+      - name: Build APT repository
         run: |
           mkdir -p repo/apt/pool/main/h/hardwaremon
           mkdir -p repo/apt/dists/stable/main/binary-amd64
 
           cp dist/hardwaremon.deb \
             repo/apt/pool/main/h/hardwaremon/
-
 
           cd repo/apt
 
@@ -411,38 +276,28 @@ jobs:
       # ─────────────────────────────────────────────
       # Build DNF repository
       # ─────────────────────────────────────────────
-      - name: Build DNF repo
+      - name: Build DNF repository
         run: |
           mkdir -p repo/yum
 
           cp dist/hardwaremon.rpm repo/yum/
-          cp dist/hardwaremon-flutter.rpm repo/yum/
 
           cd repo/yum
 
           createrepo_c .
 
       # ─────────────────────────────────────────────
-      # Prepare Cloudflare Pages
+      # Prepare Cloudflare Pages output
       # ─────────────────────────────────────────────
-
-      - name: Remove large files from Cloudflare Pages upload
-        run: |
-          rm -f repo/yum/*.rpm
-          rm -f repo/apt/pool/main/h/hardwaremon/hardwaremon-flutter.deb
-      
-      
       - name: Prepare Pages output
         run: |
           mkdir -p public/apt
           mkdir -p public/yum
 
           cp -r repo/apt/* public/apt/
+          cp -r repo/yum/* public/yum/
 
-          mkdir -p public/yum/repodata
-          cp -r repo/yum/repodata/* public/yum/repodata/
-        
-          # DNF repo file
+          # Fedora repo file
           cat <<'EOF' > public/yum/hardwaremon.repo
           [hardwaremon]
           name=HardwareMon Repository
@@ -450,69 +305,6 @@ jobs:
           enabled=1
           gpgcheck=0
           EOF
-          
-          cat <<'EOF' > public/yum/install.sh
-          #!/bin/bash
-          set -e
-
-          LATEST=$(curl -s https://api.github.com/repos/louisboii747/HardwareMon/releases/latest \
-          | grep browser_download_url \
-          | grep hardwaremon-flutter.rpm \
-          | cut -d '"' -f 4)
-
-          echo "Installing HardwareMon Flutter..."
-
-          sudo dnf install -y "$LATEST"
-          EOF
-
-          chmod +x public/yum/install.sh
-
-
-          # Flutter install script
-          cat <<'EOF' > public/apt/flutter.sh
-          #!/bin/bash
-          set -e
-
-          LATEST=$(curl -s https://api.github.com/repos/louisboii747/HardwareMon/releases/latest \
-          | grep browser_download_url \
-          | grep hardwaremon-flutter.deb \
-          | cut -d '"' -f 4)
-
-          echo "Installing HardwareMon Flutter..."
-
-          TMP_DEB="/tmp/hardwaremon-flutter.deb"
-
-          curl -L "$LATEST" -o "$TMP_DEB"
-
-          sudo apt install -y "$TMP_DEB"
-
-          rm -f "$TMP_DEB"
-          EOF
-
-          chmod +x public/apt/flutter.sh
-
-          # APT setup script
-          cat <<'EOF' > public/apt/setup.sh
-          #!/bin/bash
-          set -e
-
-          echo "Adding HardwareMon repository..."
-
-          echo "deb [trusted=yes] https://hardwaremon.pages.dev/apt stable main" \
-          | sudo tee /etc/apt/sources.list.d/hardwaremon.list > /dev/null
-
-          sudo apt update
-
-          echo ""
-          echo "Tkinter version:"
-          echo "sudo apt install hardwaremon"
-
-          echo ""
-          echo "Flutter version:"
-          echo "curl -fsSL https://hardwaremon.pages.dev/apt/flutter.sh | bash"
-          EOF
-
-          chmod +x public/apt/setup.sh
 
           # Homepage
           cat <<'EOF' > public/index.html
@@ -528,7 +320,7 @@ jobs:
       # ─────────────────────────────────────────────
       # Deploy Cloudflare Pages
       # ─────────────────────────────────────────────
-      - name: Deploy to Cloudflare Pages
+      - name: Deploy Cloudflare Pages
         run: |
           npx wrangler pages deploy public \
             --project-name=hardwaremon \
@@ -537,7 +329,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       # ─────────────────────────────────────────────
-      # GitHub Release
+      # Create GitHub Release
       # ─────────────────────────────────────────────
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -547,85 +339,3 @@ jobs:
           files: |
             dist/hardwaremon.deb
             dist/hardwaremon.rpm
-            dist/hardwaremon-flutter.deb
-            dist/hardwaremon-flutter.rpm
-
-            
-  # ─────────────────────────────────────────────────────────────────
-  # AUR submission/update
-  # ─────────────────────────────────────────────────────────────────
-
-  aur-update:
-    needs:
-      - build
-
-    runs-on: ubuntu-latest
-
-    container:
-      image: archlinux:latest
-
-    steps:
-      - name: Install dependencies
-        run: |
-          pacman -Sy --noconfirm \
-            git \
-            openssh \
-            base-devel
-
-      - name: Setup SSH
-        run: |
-          mkdir -p /root/.ssh
-          chmod 700 /root/.ssh
-
-          echo "${{ secrets.AUR_SSH_PRIVATE_KEY }}" > /root/.ssh/id_ed25519
-          chmod 600 /root/.ssh/id_ed25519
-
-          ssh-keyscan aur.archlinux.org > /root/.ssh/known_hosts
-          chmod 644 /root/.ssh/known_hosts
-
-          cat /root/.ssh/known_hosts
-
-      - name: Test SSH
-        run: |
-          ssh -o StrictHostKeyChecking=yes \
-              -i /root/.ssh/id_ed25519 \
-              -T aur@aur.archlinux.org || true
-
-      - name: Clone AUR repo
-        run: |
-          GIT_SSH_COMMAND="ssh -i /root/.ssh/id_ed25519" \
-          git clone ssh://aur@aur.archlinux.org/hardwaremon-bin.git aur
-
-      - name: Update PKGBUILD and SRCINFO
-        run: |
-          VERSION="${{ github.ref_name }}"
-          VERSION="${VERSION#v}"
-
-          useradd -m builder
-
-          cd aur
-
-          chown -R builder:builder .
-
-          sed -i "s/^pkgver=.*/pkgver=${VERSION}/" PKGBUILD
-          sed -i "s/^pkgrel=.*/pkgrel=1/" PKGBUILD
-
-          su builder -c "cd $(realpath .) && makepkg --printsrcinfo > .SRCINFO"
-
-      - name: Commit and push
-        run: |
-          VERSION="${{ github.ref_name }}"
-          VERSION="${VERSION#v}"
-
-          cd aur
-
-          chown -R root:root .
-
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-
-          git add PKGBUILD .SRCINFO
-
-          git commit -m "Update to v${VERSION}" || exit 0
-
-          GIT_SSH_COMMAND="ssh -i /root/.ssh/id_ed25519" git push
