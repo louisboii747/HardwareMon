@@ -7,6 +7,7 @@ import 'dart:ui';
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gui/windows_ui/screens/shell_screen.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
@@ -31,29 +32,13 @@ const String _kAppVersion = String.fromEnvironment(
 Process? backendProcess;
 
 String getBackendExecutable() {
-  // Directory where the Flutter executable lives
   final exeDir = File(Platform.resolvedExecutable).parent.path;
 
-  // Packaged backend binary
-  final packagedBackend = '$exeDir/backend/api';
-
-  if (File(packagedBackend).existsSync()) {
-    return packagedBackend;
-  }
-
-  // Packaged python script fallback
-  final packagedPython = '$exeDir/backend/api.py';
-
-  if (File(packagedPython).existsSync()) {
-    return packagedPython;
-  }
-
-  // Dev environment fallback
-  return '${Platform.script.toFilePath().split('/flutter_gui/').first}/hardwaremon/api.py';
+  return '$exeDir\\backend\\backend.exe';
 }
 
-const backendApiUrl = 'http://127.0.0.1:5000/stats';
-const backendHistoryUrl = 'http://127.0.0.1:5000/history';
+const backendApiUrl = 'http://127.0.0.1:8000/stats';
+const backendHistoryUrl = 'http://127.0.0.1:8000/history';
 
 Future<void> startBackend() async {
   try {
@@ -67,6 +52,7 @@ Future<void> startBackend() async {
         backendExecutable,
         [],
         mode: ProcessStartMode.normal,
+        workingDirectory: Directory(backendExecutable).parent.path,
         environment: {...Platform.environment},
       );
     }
@@ -182,7 +168,7 @@ class _HardwareMonAppState extends State<HardwareMonApp>
         scaffoldBackgroundColor: AppColors.bg,
         textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'Inter'),
       ),
-      home: const HomePage(),
+      home: const ShellScreen(),
     );
   }
 }
@@ -497,7 +483,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Future<void> _loadRefreshInterval() async {
     try {
       final response = await http.get(
-        Uri.parse("http://127.0.0.1:5000/settings/refresh_interval"),
+        Uri.parse("http://127.0.0.1:8000/settings/refresh_interval"),
       );
 
       final data = jsonDecode(response.body);
@@ -974,106 +960,156 @@ class _AnimatedStatCardState extends State<_AnimatedStatCard> {
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
-      cursor: SystemMouseCursors.basic,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOut,
-        transform: Matrix4.identity()..translate(0.0, _hovered ? -2.0 : 0.0),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: _hovered
-                ? widget.data.color.withOpacity(0.5)
-                : AppColors.border.withOpacity(0.6),
-            width: 1.0,
+      cursor: SystemMouseCursors.click,
+
+      child: GestureDetector(
+        onTap: () {
+          showDialog(
+            context: context,
+
+            builder: (_) => AlertDialog(
+              backgroundColor: AppColors.surface,
+
+              title: const Text("It works 🎉"),
+
+              content: const Text(
+                "The stat card is receiving clicks correctly.",
+              ),
+
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+
+                  child: const Text("Close"),
+                ),
+              ],
+            ),
+          );
+        },
+
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
+          transform: Matrix4.identity()..translate(0.0, _hovered ? -2.0 : 0.0),
+
+          padding: const EdgeInsets.all(16),
+
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+
+            borderRadius: BorderRadius.circular(20),
+
+            border: Border.all(
+              color: _hovered
+                  ? widget.data.color.withOpacity(0.5)
+                  : AppColors.border.withOpacity(0.6),
+
+              width: 1.0,
+            ),
+
+            boxShadow: _hovered
+                ? [
+                    BoxShadow(
+                      color: widget.data.color.withOpacity(0.08),
+                      blurRadius: 20,
+                      spreadRadius: 2,
+                    ),
+                  ]
+                : [],
           ),
-          boxShadow: _hovered
-              ? [
-                  BoxShadow(
-                    color: widget.data.color.withOpacity(0.08),
-                    blurRadius: 20,
-                    spreadRadius: 2,
-                  ),
-                ]
-              : [],
-        ),
-        child: widget.isLoading
-            ? widget.skeleton
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: widget.data.color.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(10),
+
+          child: widget.isLoading
+              ? widget.skeleton
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+
+                          decoration: BoxDecoration(
+                            color: widget.data.color.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+
+                          child: Icon(
+                            widget.data.icon,
+                            size: 16,
+                            color: widget.data.color,
+                          ),
                         ),
-                        child: Icon(
-                          widget.data.icon,
-                          size: 16,
-                          color: widget.data.color,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.data.title,
-                              style: const TextStyle(
-                                color: Colors.white38,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                                letterSpacing: 0.3,
+
+                        const SizedBox(width: 10),
+
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+
+                            children: [
+                              Text(
+                                widget.data.title,
+
+                                style: const TextStyle(
+                                  color: Colors.white38,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  letterSpacing: 0.3,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 2),
-                            // Animated integer counter (if int value provided)
-                            widget.data.value != null
-                                ? TweenAnimationBuilder<double>(
-                                    tween: Tween(
-                                      begin: widget.data.prevValue.toDouble(),
-                                      end: widget.data.value!.toDouble(),
-                                    ),
-                                    duration: const Duration(milliseconds: 600),
-                                    curve: Curves.easeOut,
-                                    builder: (context, v, _) => Text(
-                                      "${v.round()}${widget.data.suffix ?? ''}",
+
+                              const SizedBox(height: 2),
+
+                              widget.data.value != null
+                                  ? TweenAnimationBuilder<double>(
+                                      tween: Tween(
+                                        begin: widget.data.prevValue.toDouble(),
+                                        end: widget.data.value!.toDouble(),
+                                      ),
+
+                                      duration: const Duration(
+                                        milliseconds: 600,
+                                      ),
+                                      curve: Curves.easeOut,
+
+                                      builder: (context, v, _) => Text(
+                                        "${v.round()}${widget.data.suffix ?? ''}",
+
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w700,
+                                          color: widget.data.color,
+
+                                          fontFeatures: const [
+                                            FontFeature.tabularFigures(),
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                  : Text(
+                                      widget.data.customLabel ?? "—",
+
                                       style: TextStyle(
-                                        fontSize: 20,
+                                        fontSize: 17,
                                         fontWeight: FontWeight.w700,
                                         color: widget.data.color,
+
                                         fontFeatures: const [
                                           FontFeature.tabularFigures(),
                                         ],
                                       ),
                                     ),
-                                  )
-                                : Text(
-                                    widget.data.customLabel ?? "—",
-                                    style: TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w700,
-                                      color: widget.data.color,
-                                      fontFeatures: const [
-                                        FontFeature.tabularFigures(),
-                                      ],
-                                    ),
-                                  ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  widget.sparkline,
-                ],
-              ),
+                      ],
+                    ),
+                    widget.sparkline,
+                  ],
+                ),
+        ),
       ),
     );
   }
@@ -1233,7 +1269,7 @@ class _ProcessesPageState extends State<ProcessesPage> {
   Future<void> _checkVirusTotal(int pid) async {
     try {
       final response = await http.post(
-        Uri.parse("http://127.0.0.1:5000/virustotal/process"),
+        Uri.parse("http://127.0.0.1:8000/virustotal/process"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({"pid": pid}),
       );
@@ -1699,7 +1735,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _saveVirusTotalKey() async {
     try {
       final response = await http.post(
-        Uri.parse("http://127.0.0.1:5000/settings/virustotal"),
+        Uri.parse("http://127.0.0.1:8000/settings/virustotal"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({"api_key": _vtController.text.trim()}),
       );
@@ -1729,7 +1765,7 @@ class _SettingsPageState extends State<SettingsPage> {
       });
 
       await http.post(
-        Uri.parse("http://127.0.0.1:5000/settings/refresh_interval"),
+        Uri.parse("http://127.0.0.1:8000/settings/refresh_interval"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({"interval": value}),
       );
@@ -1754,7 +1790,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _loadRefreshInterval() async {
     try {
       final response = await http.get(
-        Uri.parse("http://127.0.0.1:5000/settings/refresh_interval"),
+        Uri.parse("http://127.0.0.1:8000/settings/refresh_interval"),
       );
 
       final data = jsonDecode(response.body);

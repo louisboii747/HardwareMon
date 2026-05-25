@@ -56,3 +56,12 @@ flutter_gui/windows/flutter/generated_plugins.cmake
 # Build outputs
 build/
 dist/
+# Flutter
+flutter_gui/build/
+
+# Python backend builds
+flutter_gui/backend_fastapi/build/
+flutter_gui/backend_fastapi/dist/
+
+# PyInstaller temp
+*.spec
