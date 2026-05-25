@@ -114,15 +114,19 @@ jobs:
       # ─────────────────────────────────────────────
       - name: Build backend binary
         run: |
-          cd backend_fastapi
+            cd hardwaremon
 
-          pyinstaller \
-            --onefile \
-            --name api \
-            main.py
+            pyinstaller \
+              --onefile \
+              --name api \
+              --hidden-import sqlite3 \
+              --hidden-import database \
+              --add-data "database.py:." \
+              api.py
 
-          strip dist/api || true
-          upx --best dist/api
+            strip dist/api || true
+            upx --best dist/api
+
 
       # ─────────────────────────────────────────────
       # Prepare package structure
