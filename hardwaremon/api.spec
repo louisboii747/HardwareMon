@@ -14,9 +14,6 @@ a = Analysis(
         ('process_scanner.py', '.'),
         ('hash_utils.py', '.'),
         ('virustotal.py', '.'),
-        ('settings.py', '.'),
-        ('history.py', '.'),
-        ('scanner.py', '.'),
     ],
 
     hiddenimports=[
@@ -27,9 +24,6 @@ a = Analysis(
         'process_scanner',
         'hash_utils',
         'virustotal',
-        'settings',
-        'history',
-        'scanner',
     ],
 
     hookspath=[],
