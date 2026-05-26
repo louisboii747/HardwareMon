@@ -1,11 +1,15 @@
 # -*- mode: python ; coding: utf-8 -*-
 
-
 a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[
+        (
+            "third_party/LibreHardwareMonitor/*",
+            "third_party/LibreHardwareMonitor"
+        ),
+    ],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -14,6 +18,7 @@ a = Analysis(
     noarchive=False,
     optimize=0,
 )
+
 pyz = PYZ(a.pure)
 
 exe = EXE(

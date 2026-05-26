@@ -4,6 +4,7 @@ import time
 import platform
 import subprocess
 import requests
+import ctypes
 
 IS_WINDOWS = platform.system() == "Windows"
 
@@ -33,22 +34,45 @@ def start_lhm():
 
     base = get_base_path()
 
-    lhm_path = os.path.join(
-        base,
-        "third_party",
-        "LibreHardwareMonitor",
-        "LibreHardwareMonitor.exe"
-    )
+    if getattr(sys, "frozen", False):
+        lhm_path = os.path.join(
+            base,
+            "_internal",
+            "third_party",
+            "LibreHardwareMonitor",
+            "LibreHardwareMonitor.exe"
+        )
+    else:
+        lhm_path = os.path.join(
+            base,
+            "third_party",
+            "LibreHardwareMonitor",
+            "LibreHardwareMonitor.exe"
+        )
 
     if not os.path.exists(lhm_path):
-        print("LibreHardwareMonitor.exe not found")
+        print(f"LibreHardwareMonitor not found: {lhm_path}")
         return
 
-    subprocess.Popen(
-        [lhm_path],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL
-    )
+    try:
+        subprocess.Popen(
+            [lhm_path],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+
+    except OSError as e:
+        if e.winerror == 740:
+            ctypes.windll.shell32.ShellExecuteW(
+                None,
+                "runas",
+                lhm_path,
+                None,
+                None,
+                0
+            )
+        else:
+            raise
 
     print("Started LibreHardwareMonitor")
 
