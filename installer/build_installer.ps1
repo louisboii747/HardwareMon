@@ -38,9 +38,8 @@ Copy-Item `
 Write-Host "Copying backend executable..."
 
 Copy-Item `
-    "../flutter_gui/backend_fastapi/dist/backend/*" `
-    "staging/" `
-    -Recurse -Force
+    "../flutter_gui/backend_fastapi/dist/main.exe" `
+    "staging/backend.exe"
 
 # Set installer version
 if (-not $env:APP_VERSION) {
