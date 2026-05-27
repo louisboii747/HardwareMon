@@ -39,7 +39,7 @@ String getBackendExecutable() {
     return '$exeDir/backend.exe';
   }
 
-  return '$exeDir/backend/backend';
+  return '$exeDir/backend';
 }
 
 final backendApiUrl = '${BackendConfig.baseUrl}/stats';
@@ -118,7 +118,9 @@ Future<bool> waitForBackend() async {
         debugPrint('Backend connected');
         return true;
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint("Backend wait error: $e");
+    }
 
     await Future.delayed(const Duration(milliseconds: 500));
   }
@@ -975,12 +977,6 @@ class _AnimatedStatCardState extends State<_AnimatedStatCard> {
 
             builder: (_) => AlertDialog(
               backgroundColor: AppColors.surface,
-
-              title: const Text("It works 🎉"),
-
-              content: const Text(
-                "The stat card is receiving clicks correctly.",
-              ),
 
               actions: [
                 TextButton(

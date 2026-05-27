@@ -10,48 +10,66 @@ IS_WINDOWS = platform.system() == "Windows"
 
 
 def get_base_path():
+    # PyInstaller build
     if getattr(sys, "frozen", False):
-        return os.path.dirname(sys.executable)
+        return getattr(
+            sys,
+            "_MEIPASS",
+            os.path.dirname(sys.executable)
+        )
 
-    return os.path.dirname(os.path.abspath(__file__))
+    # Running from source
+    return os.path.dirname(
+        os.path.abspath(__file__)
+    )
 
 
 def start_lhm():
     if not IS_WINDOWS:
         return
 
+    # Already running?
     try:
         requests.get(
             "http://127.0.0.1:8085/data.json",
             timeout=1
         )
-
         print("LibreHardwareMonitor already running")
         return
 
-    except:
+    except Exception:
         pass
 
     base = get_base_path()
 
-    if getattr(sys, "frozen", False):
-        lhm_path = os.path.join(
+    # Candidate locations
+    possible_paths = [
+        os.path.join(
+            base,
+            "third_party",
+            "LibreHardwareMonitor",
+            "LibreHardwareMonitor.exe"
+        ),
+
+        os.path.join(
             base,
             "_internal",
             "third_party",
             "LibreHardwareMonitor",
             "LibreHardwareMonitor.exe"
         )
-    else:
-        lhm_path = os.path.join(
-            base,
-            "third_party",
-            "LibreHardwareMonitor",
-            "LibreHardwareMonitor.exe"
-        )
+    ]
 
-    if not os.path.exists(lhm_path):
-        print(f"LibreHardwareMonitor not found: {lhm_path}")
+    lhm_path = next(
+        (p for p in possible_paths if os.path.exists(p)),
+        None
+    )
+
+    print(f"Base path: {base}")
+    print(f"LHM path: {lhm_path}")
+
+    if not lhm_path:
+        print("LibreHardwareMonitor not found")
         return
 
     try:
@@ -62,7 +80,7 @@ def start_lhm():
         )
 
     except OSError as e:
-        if e.winerror == 740:
+        if getattr(e, "winerror", None) == 740:
             ctypes.windll.shell32.ShellExecuteW(
                 None,
                 "runas",
