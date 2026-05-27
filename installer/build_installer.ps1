@@ -16,17 +16,33 @@ if (Test-Path "staging") {
 
 New-Item -ItemType Directory -Path "staging" | Out-Null
 
+# ─────────────────────────────────────────────────────
 # Build Flutter Windows release
+# ─────────────────────────────────────────────────────
+
 Write-Host "Building Flutter Windows release..."
 
 Set-Location "../flutter_gui"
 
 flutter build windows --release
 
-# Return to installer folder
-Set-Location "../installer"
+# ─────────────────────────────────────────────────────
+# Build backend executable
+# ─────────────────────────────────────────────────────
 
+Write-Host "Building backend..."
+
+Set-Location "backend_fastapi"
+
+pyinstaller main.spec --clean
+
+# Return to installer folder
+Set-Location "../../installer"
+
+# ─────────────────────────────────────────────────────
 # Copy Flutter release files
+# ─────────────────────────────────────────────────────
+
 Write-Host "Copying Flutter release files..."
 
 Copy-Item `
@@ -34,21 +50,30 @@ Copy-Item `
     "staging/" `
     -Recurse
 
+# ─────────────────────────────────────────────────────
 # Copy backend executable
+# ─────────────────────────────────────────────────────
+
 Write-Host "Copying backend executable..."
 
 Copy-Item `
     "../flutter_gui/backend_fastapi/dist/main.exe" `
     "staging/backend.exe"
 
+# ─────────────────────────────────────────────────────
 # Set installer version
+# ─────────────────────────────────────────────────────
+
 if (-not $env:APP_VERSION) {
     $env:APP_VERSION = "dev-build"
 }
 
 Write-Host "Installer version: $env:APP_VERSION"
 
+# ─────────────────────────────────────────────────────
 # Compile installer
+# ─────────────────────────────────────────────────────
+
 Write-Host "Compiling installer..."
 
 $inno = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
