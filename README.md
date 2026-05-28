@@ -54,26 +54,6 @@ The HardwareMon website contains:
 
 ---
 
-# HardwareMon Evolution
-
-HardwareMon originally began as a small Python/Tkinter hardware monitor created during early experimentation with Linux system telemetry.
-
-The project has since been completely rebuilt into a modern cross-platform monitoring platform using:
-
-* Flutter Desktop
-* FastAPI
-* LibreHardwareMonitor
-* Real-time telemetry APIs
-* Automated CI/CD pipelines
-* Native Linux packaging
-* Windows installer infrastructure
-
-The legacy Tkinter interface and older Python GUI implementations have now been fully removed from the project and are no longer maintained.
-
-HardwareMon now uses a unified Flutter frontend architecture across Linux and Windows with a bundled backend system for telemetry collection and process analytics.
-
----
-
 # Features
 
 ## Monitoring
@@ -128,6 +108,27 @@ HardwareMon now uses a unified Flutter frontend architecture across Linux and Wi
 
 ---
 
+
+# HardwareMon Evolution
+
+HardwareMon originally began as a small Python/Tkinter hardware monitor created during early experimentation with Linux system telemetry.
+
+The project has since been completely rebuilt into a modern cross-platform monitoring platform using:
+
+* Flutter Desktop
+* FastAPI
+* LibreHardwareMonitor
+* Real-time telemetry APIs
+* Automated CI/CD pipelines
+* Native Linux packaging
+* Windows installer infrastructure
+
+The legacy Tkinter interface and older Python GUI implementations have now been fully removed from the project and are no longer maintained.
+
+HardwareMon now uses a unified Flutter frontend architecture across Linux and Windows with a bundled backend system for telemetry collection and process analytics.
+
+---
+
 # Platform Support
 
 | Platform        | Status      | Distribution       |
@@ -135,7 +136,7 @@ HardwareMon now uses a unified Flutter frontend architecture across Linux and Wi
 | Windows         | ✅ Supported | Installer / WinGet |
 | Ubuntu / Debian | ✅ Supported | APT                |
 | Fedora          | ✅ Supported | DNF                |
-| Arch Linux      | ✅ Supported | AUR                |
+| Arch Linux      | ⌛ Coming Soon | AUR                |
 | macOS           | 🚧 Planned  | Future             |
 
 ---
@@ -200,7 +201,7 @@ sudo dnf install hardwaremon
 
 ---
 
-# Arch Linux
+# Arch Linux (Coming Soon!)
 
 ## yay
 
@@ -238,12 +239,13 @@ sudo apt upgrade
 ## Fedora
 
 ```bash
-sudo dnf upgrade
+sudo dnf makecache --refresh # refreshes repository data, needed for updating on DNF
+sudo dnf update
 ```
 
 ---
 
-## Arch Linux
+## Arch Linux (Coming Soon)
 
 ```bash
 yay -Syu
