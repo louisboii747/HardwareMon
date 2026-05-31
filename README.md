@@ -40,7 +40,7 @@
 
 # Website
 
-🌐 [https://gethardwaremon.pages.dev](https://gethardwaremon.pages.dev)
+🌐 [https://hardwaremon-site.pages.dev/](https://hardwaremon-site.pages.dev/)
 
 The HardwareMon website contains:
 
