@@ -458,4 +458,4 @@ The project is evolving into a modern cross-platform monitoring platform focused
 
 ## Website
 
-[https://gethardwaremon.pages.dev](https://gethardwaremon.pages.dev)
+[https://hardwaremon-site.pages.dev/](https://hardwaremon-site.pages.dev/)
