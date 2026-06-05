@@ -38,3 +38,19 @@ target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
 
 # Run the Flutter tool portions of the build. This must not be removed.
 add_dependencies(${BINARY_NAME} flutter_assemble)
+
+# ------------------------------------------------------------------
+# HardwareMon backend deployment
+# ------------------------------------------------------------------
+
+add_custom_command(
+    TARGET ${BINARY_NAME} POST_BUILD
+
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/../backend_fastapi/dist/backend.exe"
+        "$<TARGET_FILE_DIR:${BINARY_NAME}>/backend.exe"
+
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/../backend_fastapi/third_party"
+        "$<TARGET_FILE_DIR:${BINARY_NAME}>/third_party"
+)
