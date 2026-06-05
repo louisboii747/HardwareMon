@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=HardwareMon
-Exec=flutter_gui
+Exec=hardwaremon
 Icon=com.hardwaremon.HardwareMon
 Type=Application
 Categories=System;Monitor;

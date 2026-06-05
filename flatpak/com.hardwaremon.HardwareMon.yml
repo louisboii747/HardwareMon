@@ -1,6 +1,6 @@
 app-id: com.hardwaremon.HardwareMon
 runtime: org.freedesktop.Platform
-runtime-version: '24.08'
+runtime-version: "24.08"
 sdk: org.freedesktop.Sdk
 command: hardwaremon
 
@@ -12,20 +12,8 @@ finish-args:
   - --device=all
   - --filesystem=host
   - --talk-name=org.freedesktop.Notifications
-  - --env=PYTHONPATH=/app/lib/python3.11/site-packages
 
 modules:
-  - name: python-dependencies
-    buildsystem: simple
-
-    build-commands:
-      - pip3 install --no-index --find-links=packages --prefix=/app psutil flask flask-cors GPUtil
-
-    sources:
-      - type: dir
-        path: ../python-packages
-        dest: packages
-
   - name: hardwaremon
     buildsystem: simple
 
@@ -35,7 +23,9 @@ modules:
       - cp -r . /app/bin/
 
       - chmod +x /app/bin/hardwaremon
-      - chmod +x /app/bin/backend/api.py
+
+      # PyInstaller backend executable
+      - chmod +x /app/bin/backend/backend || true
 
       - install -Dm644 assets/com.hardwaremon.HardwareMon.desktop /app/share/applications/com.hardwaremon.HardwareMon.desktop
 
