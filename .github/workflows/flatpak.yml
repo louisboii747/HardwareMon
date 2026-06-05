@@ -15,129 +15,99 @@ jobs:
       contents: write
 
     steps:
-      # ─────────────────────────────────────────────
-      # Checkout
-      # ─────────────────────────────────────────────
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ─────────────────────────────────────────────
-      # Flutter
-      # ─────────────────────────────────────────────
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
 
-      # ─────────────────────────────────────────────
-      # Install dependencies
-      # ─────────────────────────────────────────────
-      - name: Install dependencies
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build dependencies
         run: |
           sudo apt-get update
 
           sudo apt-get install -y \
             flatpak \
             flatpak-builder \
-            python3-pip \
             clang \
             cmake \
             ninja-build \
             pkg-config \
             libgtk-3-dev \
-            liblzma-dev
+            liblzma-dev \
+            python3-pip \
+            python3-venv
 
-      # ─────────────────────────────────────────────
-      # Install Flatpak runtimes
-      # ─────────────────────────────────────────────
       - name: Install Flatpak runtimes
         run: |
-          flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          flatpak remote-add --user --if-not-exists flathub \
+            https://flathub.org/repo/flathub.flatpakrepo
 
-          flatpak install --user -y flathub org.freedesktop.Platform//24.08
-          flatpak install --user -y flathub org.freedesktop.Sdk//24.08
+          flatpak install --user -y \
+            flathub org.freedesktop.Platform//24.08
 
-      # ─────────────────────────────────────────────
-      # Flutter dependencies
-      # ─────────────────────────────────────────────
-      - name: Install Flutter dependencies
+          flatpak install --user -y \
+            flathub org.freedesktop.Sdk//24.08
+
+      - name: Flutter pub get
         working-directory: flutter_gui
         run: flutter pub get
 
-      # ─────────────────────────────────────────────
-      # Build Flutter Linux app
-      # ─────────────────────────────────────────────
       - name: Build Flutter Linux app
         working-directory: flutter_gui
-        run: |
-          flutter build linux --release
+        run: flutter build linux --release
 
-      # ─────────────────────────────────────────────
-      # Prepare backend
-      # ─────────────────────────────────────────────
-      - name: Prepare backend
+      - name: Install backend dependencies
+        working-directory: flutter_gui/backend_fastapi
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build backend executable
+        working-directory: flutter_gui/backend_fastapi
+        run: |
+          pyinstaller backend.spec
+
+      - name: Copy backend into bundle
         run: |
           mkdir -p flutter_gui/build/linux/x64/release/bundle/backend
 
-          cp hardwaremon/api.py \
+          cp \
+            flutter_gui/backend_fastapi/dist/backend \
             flutter_gui/build/linux/x64/release/bundle/backend/
 
-          cp hardwaremon/database.py \
-            flutter_gui/build/linux/x64/release/bundle/backend/
+          chmod +x \
+            flutter_gui/build/linux/x64/release/bundle/backend/backend
 
-      # ─────────────────────────────────────────────
-      # Download Python dependencies
-      # ─────────────────────────────────────────────
-      - name: Download Python dependencies
-        run: |
-          mkdir -p python-packages
-
-          pip download \
-            psutil \
-            flask \
-            flask-cors \
-            GPUtil \
-            setuptools \
-            wheel \
-            -d python-packages
-
-      # ─────────────────────────────────────────────
-      # Build Flatpak
-      # ─────────────────────────────────────────────
       - name: Build Flatpak
         run: |
           flatpak-builder build-dir \
             flatpak/com.hardwaremon.HardwareMon.yml \
             --force-clean
 
-      # ─────────────────────────────────────────────
-      # Export Flatpak repo
-      # ─────────────────────────────────────────────
-      - name: Export Flatpak repo
+      - name: Export Flatpak repository
         run: |
           flatpak build-export repo build-dir
 
-      # ─────────────────────────────────────────────
-      # Create Flatpak bundle
-      # ─────────────────────────────────────────────
       - name: Create Flatpak bundle
         run: |
-          flatpak build-bundle repo \
+          flatpak build-bundle \
+            repo \
             hardwaremon.flatpak \
             com.hardwaremon.HardwareMon
 
-      # ─────────────────────────────────────────────
-      # Upload artifact
-      # ─────────────────────────────────────────────
-      - name: Upload Flatpak artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: hardwaremon-flatpak
           path: hardwaremon.flatpak
 
-      # ─────────────────────────────────────────────
-      # Upload to GitHub Release
-      # ─────────────────────────────────────────────
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:

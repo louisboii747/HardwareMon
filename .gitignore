@@ -79,3 +79,4 @@ python-packages/
 
 *.egg-info/
 *.egg
+.idea/
