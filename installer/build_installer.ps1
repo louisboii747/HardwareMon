@@ -17,12 +17,22 @@ if (Test-Path "staging") {
 New-Item -ItemType Directory -Path "staging" | Out-Null
 
 # ─────────────────────────────────────────────────────
+# Build Flutter Windows release
+# ─────────────────────────────────────────────────────
+
+Write-Host "Building Flutter Windows release..."
+
+Set-Location "../flutter_gui"
+
+flutter build windows --release
+
+# ─────────────────────────────────────────────────────
 # Build backend executable
 # ─────────────────────────────────────────────────────
 
 Write-Host "Building backend..."
 
-Set-Location "../flutter_gui/backend_fastapi"
+Set-Location "backend_fastapi"
 
 pyinstaller backend.spec --clean
 
