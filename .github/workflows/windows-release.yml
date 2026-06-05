@@ -3,7 +3,7 @@ name: Windows Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 permissions:
   contents: write
@@ -33,6 +33,13 @@ jobs:
           cd flutter_gui
           flutter pub get
 
+      - name: Build Flutter app
+        run: |
+          cd flutter_gui
+          flutter clean
+          flutter pub get
+          flutter build windows --release
+
       # ─────────────────────────────────────
       # Python backend
       # ─────────────────────────────────────
@@ -40,7 +47,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install backend dependencies
         run: |
