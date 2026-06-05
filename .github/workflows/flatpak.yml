@@ -78,8 +78,8 @@ jobs:
         run: |
           mkdir -p flutter_gui/build/linux/x64/release/bundle/backend
 
-          cp \
-            flutter_gui/backend_fastapi/dist/backend \
+          cp -a \
+            flutter_gui/backend_fastapi/dist/backend/. \
             flutter_gui/build/linux/x64/release/bundle/backend/
 
           chmod +x \
