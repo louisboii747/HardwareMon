@@ -33,13 +33,6 @@ jobs:
           cd flutter_gui
           flutter pub get
 
-      - name: Build Flutter app
-        run: |
-          cd flutter_gui
-          flutter clean
-          flutter pub get
-          flutter build windows --release
-
       # ─────────────────────────────────────
       # Python backend
       # ─────────────────────────────────────
