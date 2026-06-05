@@ -5,7 +5,7 @@
 #define MyAppName "HardwareMon"
 #define MyAppVersion GetEnv("APP_VERSION")
 #define MyAppPublisher "LouisDev"
-#define MyAppURL "https://gethardwaremon.pages.dev"
+#define MyAppURL "https://hardwaremon-site.pages.dev"
 #define MyAppExeName "flutter_gui.exe"
 
 [Setup]
