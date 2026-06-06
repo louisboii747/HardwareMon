@@ -10,18 +10,10 @@ IS_WINDOWS = platform.system() == "Windows"
 
 
 def get_base_path():
-    # PyInstaller build
     if getattr(sys, "frozen", False):
-        return getattr(
-            sys,
-            "_MEIPASS",
-            os.path.dirname(sys.executable)
-        )
+        return os.path.dirname(sys.executable)
 
-    # Running from source
-    return os.path.dirname(
-        os.path.abspath(__file__)
-    )
+    return os.path.dirname(os.path.abspath(__file__))
 
 
 def start_lhm():
@@ -30,10 +22,7 @@ def start_lhm():
 
     # Already running?
     try:
-        requests.get(
-            "http://127.0.0.1:8085/data.json",
-            timeout=1
-        )
+        requests.get("http://127.0.0.1:8085/data.json", timeout=1)
         print("LibreHardwareMonitor already running")
         return
 
@@ -44,26 +33,13 @@ def start_lhm():
 
     # Candidate locations
     possible_paths = [
+        os.path.join(base, "third_party", "LibreHardwareMonitor", "LibreHardwareMonitor.exe"),
         os.path.join(
-            base,
-            "third_party",
-            "LibreHardwareMonitor",
-            "LibreHardwareMonitor.exe"
+            base, "_internal", "third_party", "LibreHardwareMonitor", "LibreHardwareMonitor.exe"
         ),
-
-        os.path.join(
-            base,
-            "_internal",
-            "third_party",
-            "LibreHardwareMonitor",
-            "LibreHardwareMonitor.exe"
-        )
     ]
 
-    lhm_path = next(
-        (p for p in possible_paths if os.path.exists(p)),
-        None
-    )
+    lhm_path = next((p for p in possible_paths if os.path.exists(p)), None)
 
     print(f"Base path: {base}")
     print(f"LHM path: {lhm_path}")
@@ -73,22 +49,11 @@ def start_lhm():
         return
 
     try:
-        subprocess.Popen(
-            [lhm_path],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
-        )
+        subprocess.Popen([lhm_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     except OSError as e:
         if getattr(e, "winerror", None) == 740:
-            ctypes.windll.shell32.ShellExecuteW(
-                None,
-                "runas",
-                lhm_path,
-                None,
-                None,
-                0
-            )
+            ctypes.windll.shell32.ShellExecuteW(None, "runas", lhm_path, None, None, 0)
         else:
             raise
 
