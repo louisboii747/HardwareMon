@@ -17,27 +17,27 @@ if (Test-Path "staging") {
 New-Item -ItemType Directory -Path "staging" | Out-Null
 
 # ─────────────────────────────────────────────────────
-# Build Flutter Windows release
-# ─────────────────────────────────────────────────────
-
-Write-Host "Building Flutter Windows release..."
-
-Set-Location "../flutter_gui"
-
-flutter build windows --release
-
-# ─────────────────────────────────────────────────────
 # Build backend executable
 # ─────────────────────────────────────────────────────
 
 Write-Host "Building backend..."
 
-Set-Location "backend_fastapi"
+Set-Location "../flutter_gui/backend_fastapi"
 
-pyinstaller backend.spec --clean
+pyinstaller backend.spec --clean -y
+
+# ─────────────────────────────────────────────────────
+# Build Flutter Windows release
+# ─────────────────────────────────────────────────────
+
+Write-Host "Building Flutter Windows release..."
+
+Set-Location ".."
+
+flutter build windows --release
 
 # Return to installer folder
-Set-Location "../../installer"
+Set-Location "../installer"
 
 # ─────────────────────────────────────────────────────
 # Copy Flutter release files
