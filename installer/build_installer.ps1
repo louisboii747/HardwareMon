@@ -60,8 +60,9 @@ Copy-Item `
 Write-Host "Copying backend executable..."
 
 Copy-Item `
-    "../flutter_gui/backend_fastapi/dist/backend/backend.exe" `
-    "staging/backend.exe" `
+    "../flutter_gui/backend_fastapi/dist/backend/*" `
+    "staging/" `
+    -Recurse `
     -Force
 
 # ─────────────────────────────────────────────────────
