@@ -25,6 +25,8 @@ Write-Host "Building backend..."
 Set-Location "../flutter_gui/backend_fastapi"
 
 pyinstaller backend.spec --clean -y
+Write-Host "Backend dist contents:"
+Get-ChildItem dist -Recurse
 
 # ─────────────────────────────────────────────────────
 # Build Flutter Windows release
@@ -58,7 +60,7 @@ Copy-Item `
 Write-Host "Copying backend executable..."
 
 Copy-Item `
-    "../flutter_gui/backend_fastapi/dist/backend.exe" `
+    "../flutter_gui/backend_fastapi/dist/backend/backend.exe" `
     "staging/backend.exe" `
     -Force
 

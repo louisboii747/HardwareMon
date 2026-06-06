@@ -47,7 +47,7 @@ add_custom_command(
     TARGET ${BINARY_NAME} POST_BUILD
 
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_SOURCE_DIR}/../backend_fastapi/dist/backend.exe"
+        "${CMAKE_SOURCE_DIR}/../backend_fastapi/dist/backend/backend.exe"
         "$<TARGET_FILE_DIR:${BINARY_NAME}>/backend.exe"
 
     COMMAND ${CMAKE_COMMAND} -E copy_directory
