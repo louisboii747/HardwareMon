@@ -12,6 +12,15 @@ class TelemetryService extends ChangeNotifier {
   int ramUsage = 0;
   int gpuTemp = 0;
 
+  double cpuPower = 0;
+  double cpuClock = 0;
+
+  double ramUsed = 0;
+  double ramAvailable = 0;
+  double ramTotal = 0;
+
+  double get cpuClockGHz => cpuClock / 1000;
+
   String cpuName = 'Loading...';
 
   final List<double> cpuHistory = [];
@@ -32,7 +41,12 @@ class TelemetryService extends ChangeNotifier {
       cpuTemp = data['cpu_temp'] ?? 0;
       ramUsage = data['ram'] ?? 0;
       gpuTemp = data['gpu_temp'] ?? 0;
+      cpuPower = (data['cpu_power'] ?? 0).toDouble();
+      cpuClock = (data['cpu_clock'] ?? 0).toDouble();
 
+      ramUsed = (data['ram_used'] ?? 0).toDouble();
+      ramAvailable = (data['ram_available'] ?? 0).toDouble();
+      ramTotal = (data['ram_total'] ?? 0).toDouble();
       cpuName = data['cpu_name'] ?? 'Unknown CPU';
 
       cpuHistory.add(cpuUsage.toDouble());

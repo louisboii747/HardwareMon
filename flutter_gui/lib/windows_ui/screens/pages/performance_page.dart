@@ -33,18 +33,14 @@ class PerformancePage extends StatelessWidget {
               mainAxisSpacing: 12,
               childAspectRatio: 1.6,
               children: [
-                SizedBox(
-                  height: 240,
-                  child: MetricCard(
-                    title: 'CPU Usage',
-                    value: '${telemetry.cpuUsage}%',
-                    subtitle: telemetry.cpuName,
-                    icon: Icons.memory_rounded,
-                    accent: Colors.cyan,
-                    graphPoints: telemetry.cpuHistory,
-                  ),
+                MetricCard(
+                  title: 'CPU Usage',
+                  value: '${telemetry.cpuUsage}%',
+                  subtitle: telemetry.cpuName,
+                  icon: Icons.memory_rounded,
+                  accent: Colors.cyan,
+                  graphPoints: telemetry.cpuHistory,
                 ),
-
                 MetricCard(
                   title: 'CPU Temperature',
                   value: '${telemetry.cpuTemp}°C',
@@ -53,18 +49,73 @@ class PerformancePage extends StatelessWidget {
                   accent: Colors.red,
                   graphPoints: telemetry.cpuHistory,
                 ),
+                MetricCard(
+                  title: 'CPU Clock',
+                  value: '${telemetry.cpuClockGHz.toStringAsFixed(2)} GHz',
+                  subtitle: 'Current clock speed',
+                  icon: Icons.speed_rounded,
+                  accent: Colors.green,
+                  graphPoints: telemetry.cpuHistory,
+                ),
+                MetricCard(
+                  title: 'CPU Power',
+                  value: '${telemetry.cpuPower.toStringAsFixed(1)} W',
+                  subtitle: 'Package power draw',
+                  icon: Icons.bolt_rounded,
+                  accent: Colors.amber,
+                  graphPoints: telemetry.cpuHistory,
+                ),
               ],
             ),
           ]),
 
-          MetricCard(
-            title: 'Memory',
-            value: '${telemetry.ramUsage}%',
-            subtitle: 'System memory usage',
-            icon: Icons.storage_rounded,
-            accent: Colors.purple,
-            graphPoints: telemetry.ramHistory,
-          ),
+          _buildSection('Memory', [
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 1.6,
+              children: [
+                MetricCard(
+                  title: 'RAM Usage',
+                  value: '${telemetry.ramUsage}%',
+                  subtitle: 'System memory usage',
+                  icon: Icons.storage_rounded,
+                  accent: Colors.purple,
+                  graphPoints: telemetry.ramHistory,
+                ),
+
+                MetricCard(
+                  title: 'RAM Used',
+                  value: '${telemetry.ramUsed.toStringAsFixed(1)} GB',
+                  subtitle: 'Currently allocated',
+                  icon: Icons.memory_rounded,
+                  accent: Colors.teal,
+                  graphPoints: telemetry.ramHistory,
+                ),
+
+                MetricCard(
+                  title: 'RAM Available',
+                  value: '${telemetry.ramAvailable.toStringAsFixed(1)} GB',
+                  subtitle: 'Available memory',
+                  icon: Icons.check_circle_outline_rounded,
+                  accent: Colors.lightGreen,
+                  graphPoints: telemetry.ramHistory,
+                ),
+
+                MetricCard(
+                  title: 'Total RAM',
+                  value: '${telemetry.ramTotal.toStringAsFixed(1)} GB',
+                  subtitle: 'Installed memory',
+                  icon: Icons.dns_rounded,
+                  accent: Colors.indigo,
+                  graphPoints: telemetry.ramHistory,
+                ),
+              ],
+            ),
+          ]),
 
           _buildSection('GPU', [
             GridView.count(

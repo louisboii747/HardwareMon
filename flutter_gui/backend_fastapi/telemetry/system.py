@@ -60,11 +60,37 @@ async def get_stats():
         value = temps[0].get("Value", "0 °C")
         cpu_temp = int(float(value.replace("°C", "").strip()))
 
+    # CPU power
+    cpu_package_power = find_sensor(data, "CPU Package")
+    powers = [x for x in cpu_package_power if x.get("Type") == "Power"]
+    if powers:
+        value = powers[0].get("Value", "0 W")
+        cpu_power = float(value.replace("W", "").strip())
+
+    # CPU clock
+    cpu_core_clock = find_sensor(data, "P-Core #1")
+    clocks = [x for x in cpu_core_clock if x.get("Type") == "Clock"]
+    if clocks:
+        value = clocks[0].get("Value", "0 MHz")
+        cpu_clock = float(value.replace("MHz", "").strip())
+
     # RAM usage
     ram_load = find_sensor(data, "Memory")
     if ram_load:
         value = ram_load[-1].get("Value", "0 %")
         ram_usage = int(float(value.replace("%", "").strip()))
+
+    # RAM used
+    ram_used_node = find_sensor(data, "Memory Used")
+    if ram_used_node:
+        value = ram_used_node[0].get("Value", "0 GB")
+        ram_used = float(value.replace("GB", "").strip())
+
+    # RAM available
+    ram_available_node = find_sensor(data, "Memory Available")
+    if ram_available_node:
+        value = ram_available_node[0].get("Value", "0 GB")
+        ram_available = float(value.replace("GB", "").strip())
 
     # GPU temp
     gpu_core_temp = find_sensor(data, "GPU Core")
@@ -74,11 +100,16 @@ async def get_stats():
         value = temps[0].get("Value", "0 °C")
         gpu_temp = int(float(value.replace("°C", "").strip()))
 
-    return {
-        "cpu": cpu_usage,
-        "cpu_temp": cpu_temp,
-        "ram": ram_usage,
-        "gpu_temp": gpu_temp,
-        "cpu_name": cpu_name,
-        "gpu_name": gpu_name,
-    }
+        return {
+            "cpu": cpu_usage,
+            "cpu_temp": cpu_temp,
+            "cpu_power": cpu_power,
+            "cpu_clock": cpu_clock,
+            "ram": ram_usage,
+            "ram_used": ram_used,
+            "ram_available": ram_available,
+            "ram_total": round(ram_used + ram_available, 1),
+            "gpu_temp": gpu_temp,
+            "cpu_name": cpu_name,
+            "gpu_name": gpu_name,
+        }
