@@ -190,13 +190,7 @@ HardwareMon aims to be:
 - Open source
 - Developer friendly
 
-Contributions should generally align with these goals.
-
-## Code of Conduct
-
-Please be respectful and constructive when interacting with other contributors.
-
-Harassment, discrimination, trolling, or hostile behaviour will not be tolerated.
+Contributions should generally align with these.
 
 ## Thank You
 
