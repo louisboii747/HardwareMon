@@ -30,6 +30,13 @@ async def get_stats():
     ram_usage = 0
     gpu_temp = 0
 
+    cpu_temp = 0
+    cpu_power = 0
+    cpu_clock = 0
+
+    ram_used = 0
+    ram_available = 0
+
     # CPU name
     cpu_nodes = find_sensor(data, "12th Gen Intel Core i7-12700KF")
     if cpu_nodes:
@@ -46,6 +53,13 @@ async def get_stats():
         value = cpu_load[0].get("Value", "0 %")
         cpu_usage = int(float(value.replace("%", "").strip()))
 
+    # CPU temperature
+    cpu_package = find_sensor(data, "CPU Package")
+    temps = [x for x in cpu_package if x.get("Type") == "Temperature"]
+    if temps:
+        value = temps[0].get("Value", "0 °C")
+        cpu_temp = int(float(value.replace("°C", "").strip()))
+
     # RAM usage
     ram_load = find_sensor(data, "Memory")
     if ram_load:
@@ -54,10 +68,7 @@ async def get_stats():
 
     # GPU temp
     gpu_core_temp = find_sensor(data, "GPU Core")
-    temps = [
-        x for x in gpu_core_temp
-        if x.get("Type") == "Temperature"
-    ]
+    temps = [x for x in gpu_core_temp if x.get("Type") == "Temperature"]
 
     if temps:
         value = temps[0].get("Value", "0 °C")
@@ -65,6 +76,7 @@ async def get_stats():
 
     return {
         "cpu": cpu_usage,
+        "cpu_temp": cpu_temp,
         "ram": ram_usage,
         "gpu_temp": gpu_temp,
         "cpu_name": cpu_name,

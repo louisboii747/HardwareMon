@@ -8,6 +8,7 @@ import '../core/backend_config.dart';
 
 class TelemetryService extends ChangeNotifier {
   int cpuUsage = 0;
+  int cpuTemp = 0;
   int ramUsage = 0;
   int gpuTemp = 0;
 
@@ -28,6 +29,7 @@ class TelemetryService extends ChangeNotifier {
       final data = jsonDecode(response.body);
 
       cpuUsage = data['cpu'] ?? 0;
+      cpuTemp = data['cpu_temp'] ?? 0;
       ramUsage = data['ram'] ?? 0;
       gpuTemp = data['gpu_temp'] ?? 0;
 

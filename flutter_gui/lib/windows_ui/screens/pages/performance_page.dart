@@ -45,7 +45,14 @@ class PerformancePage extends StatelessWidget {
                   ),
                 ),
 
-                _metricCard('History Points', '${telemetry.cpuHistory.length}'),
+                MetricCard(
+                  title: 'CPU Temperature',
+                  value: '${telemetry.cpuTemp}°C',
+                  subtitle: 'CPU Package Temperature',
+                  icon: Icons.thermostat_rounded,
+                  accent: Colors.red,
+                  graphPoints: telemetry.cpuHistory,
+                ),
               ],
             ),
           ]),
@@ -78,9 +85,9 @@ class PerformancePage extends StatelessWidget {
                 ),
 
                 MetricCard(
-                  title: 'History Points',
+                  title: 'GPU History',
                   value: '${telemetry.gpuTempHistory.length}',
-                  subtitle: 'Number of recorded temperatures',
+                  subtitle: 'Historical GPU temperatures',
                   icon: Icons.history_rounded,
                   accent: Colors.blue,
                   graphPoints: telemetry.gpuTempHistory,
