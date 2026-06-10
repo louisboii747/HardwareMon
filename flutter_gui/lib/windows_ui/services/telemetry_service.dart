@@ -11,6 +11,10 @@ class TelemetryService extends ChangeNotifier {
   int cpuTemp = 0;
   int ramUsage = 0;
   int gpuTemp = 0;
+  int gpuUsage = 0;
+
+  double gpuPower = 0;
+  double gpuVramUsed = 0;
 
   double cpuPower = 0;
   double cpuClock = 0;
@@ -26,6 +30,7 @@ class TelemetryService extends ChangeNotifier {
   final List<double> cpuHistory = [];
   final List<double> ramHistory = [];
   final List<double> gpuTempHistory = [];
+  final List<double> gpuUsageHistory = [];
 
   Timer? _timer;
 
@@ -41,8 +46,11 @@ class TelemetryService extends ChangeNotifier {
       cpuTemp = data['cpu_temp'] ?? 0;
       ramUsage = data['ram'] ?? 0;
       gpuTemp = data['gpu_temp'] ?? 0;
+      gpuUsage = data['gpu_usage'] ?? 0;
       cpuPower = (data['cpu_power'] ?? 0).toDouble();
       cpuClock = (data['cpu_clock'] ?? 0).toDouble();
+      gpuPower = (data['gpu_power'] ?? 0).toDouble();
+      gpuVramUsed = (data['gpu_vram_used'] ?? 0).toDouble();
 
       ramUsed = (data['ram_used'] ?? 0).toDouble();
       ramAvailable = (data['ram_available'] ?? 0).toDouble();
@@ -52,7 +60,7 @@ class TelemetryService extends ChangeNotifier {
       cpuHistory.add(cpuUsage.toDouble());
       ramHistory.add(ramUsage.toDouble());
       gpuTempHistory.add(gpuTemp.toDouble());
-
+      gpuUsageHistory.add(gpuUsage.toDouble());
       if (cpuHistory.length > 30) {
         cpuHistory.removeAt(0);
       }

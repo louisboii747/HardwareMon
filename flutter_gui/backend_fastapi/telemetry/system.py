@@ -23,12 +23,20 @@ def find_sensor(node, text):
 async def get_stats():
     data = requests.get(LHM_URL).json()
 
+    import json
+
+    with open("lhm_data.json", "w") as f:
+        json.dump(data, f, indent=2)
+
     cpu_name = "Unknown CPU"
     gpu_name = "Unknown GPU"
 
     cpu_usage = 0
     ram_usage = 0
     gpu_temp = 0
+    gpu_usage = 0
+    gpu_power = 0
+    gpu_vram_used = 0
 
     cpu_temp = 0
     cpu_power = 0
@@ -92,6 +100,32 @@ async def get_stats():
         value = ram_available_node[0].get("Value", "0 GB")
         ram_available = float(value.replace("GB", "").strip())
 
+    # GPU usage
+    gpu_core_load = find_sensor(data, "GPU Core")
+    loads = [x for x in gpu_core_load if x.get("Type") == "Load"]
+
+    if loads:
+        value = loads[0].get("Value", "0 %")
+        gpu_usage = int(float(value.replace("%", "").strip()))
+
+    # GPU power
+    gpu_package_power = find_sensor(data, "GPU Package")
+    powers = [x for x in gpu_package_power if x.get("Type") == "Power"]
+
+    if powers:
+        value = powers[0].get("Value", "0 W")
+        gpu_power = float(value.replace("W", "").strip())
+
+        # GPU VRAM used
+        gpu_memory_used = find_sensor(data, "GPU Memory Used")
+
+        if gpu_memory_used:
+            value = gpu_memory_used[0].get("Value", "0 MB")
+            gpu_vram_used = round(
+                float(value.replace("MB", "").strip()) / 1024,
+                1,
+            )
+
     # GPU temp
     gpu_core_temp = find_sensor(data, "GPU Core")
     temps = [x for x in gpu_core_temp if x.get("Type") == "Temperature"]
@@ -112,4 +146,7 @@ async def get_stats():
             "gpu_temp": gpu_temp,
             "cpu_name": cpu_name,
             "gpu_name": gpu_name,
+            "gpu_usage": gpu_usage,
+            "gpu_power": gpu_power,
+            "gpu_vram_used": gpu_vram_used,
         }

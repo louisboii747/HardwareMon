@@ -136,11 +136,29 @@ class PerformancePage extends StatelessWidget {
                 ),
 
                 MetricCard(
-                  title: 'GPU History',
-                  value: '${telemetry.gpuTempHistory.length}',
-                  subtitle: 'Historical GPU temperatures',
-                  icon: Icons.history_rounded,
+                  title: 'GPU Usage',
+                  value: '${telemetry.gpuUsage}%',
+                  subtitle: 'Current GPU load',
+                  icon: Icons.show_chart_rounded,
                   accent: Colors.blue,
+                  graphPoints: telemetry.gpuTempHistory,
+                ),
+
+                MetricCard(
+                  title: 'GPU Power',
+                  value: '${telemetry.gpuPower.toStringAsFixed(1)} W',
+                  subtitle: 'Board power draw',
+                  icon: Icons.bolt_rounded,
+                  accent: const Color.fromARGB(255, 115, 255, 0),
+                  graphPoints: telemetry.gpuTempHistory,
+                ),
+
+                MetricCard(
+                  title: 'VRAM Used',
+                  value: '${telemetry.gpuVramUsed.toStringAsFixed(1)} GB',
+                  subtitle: 'Graphics memory usage',
+                  icon: Icons.memory_rounded,
+                  accent: Colors.purple,
                   graphPoints: telemetry.gpuTempHistory,
                 ),
               ],
