@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../models/app_settings.dart';
+import '../../services/settings_service.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -8,19 +10,22 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  String theme = 'Dark';
-  String refreshInterval = '1s';
+  final SettingsService settingsService = SettingsService();
+  AppSettings settings = const AppSettings();
 
-  bool launchOnStartup = true;
-  bool minimiseToTray = true;
-  bool closeToTray = true;
-  bool historicalMonitoring = true;
-  bool cpuAlerts = false;
-  bool ramAlerts = false;
-  bool temperatureAlerts = false;
-  bool alertSounds = true;
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
 
-  bool autoUpdateChecks = true;
+  Future<void> _loadSettings() async {
+    final loadedSettings = await settingsService.loadSettings();
+
+    setState(() {
+      settings = loadedSettings;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,15 +48,19 @@ class _SettingsPageState extends State<SettingsPage> {
             _settingRow(
               'Theme',
               DropdownButton<String>(
-                value: theme,
+                value: settings.theme,
                 items: const [
                   DropdownMenuItem(value: 'Dark', child: Text('Dark')),
                   DropdownMenuItem(value: 'Light', child: Text('Light')),
                 ],
-                onChanged: (value) {
+                onChanged: (value) async {
+                  final updatedSettings = settings.copyWith(theme: value!);
+
                   setState(() {
-                    theme = value!;
+                    settings = updatedSettings;
                   });
+
+                  await settingsService.saveSettings(updatedSettings);
                 },
               ),
             ),
@@ -59,10 +68,10 @@ class _SettingsPageState extends State<SettingsPage> {
             _settingRow(
               'Launch on Startup',
               Switch(
-                value: launchOnStartup,
+                value: settings.launchOnStartup,
                 onChanged: (value) {
                   setState(() {
-                    launchOnStartup = value;
+                    settings = settings.copyWith(launchOnStartup: value);
                   });
                 },
               ),
@@ -71,10 +80,10 @@ class _SettingsPageState extends State<SettingsPage> {
             _settingRow(
               'Minimise to Tray',
               Switch(
-                value: minimiseToTray,
+                value: settings.minimiseToTray,
                 onChanged: (value) {
                   setState(() {
-                    minimiseToTray = value;
+                    settings = settings.copyWith(minimiseToTray: value);
                   });
                 },
               ),
@@ -83,10 +92,10 @@ class _SettingsPageState extends State<SettingsPage> {
             _settingRow(
               'Close to Tray',
               Switch(
-                value: closeToTray,
+                value: settings.closeToTray,
                 onChanged: (value) {
                   setState(() {
-                    closeToTray = value;
+                    settings = settings.copyWith(closeToTray: value);
                   });
                 },
               ),
@@ -97,7 +106,7 @@ class _SettingsPageState extends State<SettingsPage> {
             _settingRow(
               'Refresh Interval',
               DropdownButton<String>(
-                value: refreshInterval,
+                value: settings.refreshInterval,
                 items: const [
                   DropdownMenuItem(value: '1s', child: Text('1 second')),
                   DropdownMenuItem(value: '2s', child: Text('2 seconds')),
@@ -105,7 +114,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ],
                 onChanged: (value) {
                   setState(() {
-                    refreshInterval = value!;
+                    settings = settings.copyWith(refreshInterval: value!);
                   });
                 },
               ),
@@ -115,10 +124,10 @@ class _SettingsPageState extends State<SettingsPage> {
               _settingRow(
                 'CPU Alerts',
                 Switch(
-                  value: cpuAlerts,
+                  value: settings.cpuAlerts,
                   onChanged: (value) {
                     setState(() {
-                      cpuAlerts = value;
+                      settings = settings.copyWith(cpuAlerts: value);
                     });
                   },
                 ),
@@ -127,10 +136,10 @@ class _SettingsPageState extends State<SettingsPage> {
               _settingRow(
                 'RAM Alerts',
                 Switch(
-                  value: ramAlerts,
+                  value: settings.ramAlerts,
                   onChanged: (value) {
                     setState(() {
-                      ramAlerts = value;
+                      settings = settings.copyWith(ramAlerts: value);
                     });
                   },
                 ),
@@ -139,10 +148,10 @@ class _SettingsPageState extends State<SettingsPage> {
               _settingRow(
                 'Temperature Alerts',
                 Switch(
-                  value: temperatureAlerts,
+                  value: settings.temperatureAlerts,
                   onChanged: (value) {
                     setState(() {
-                      temperatureAlerts = value;
+                      settings = settings.copyWith(temperatureAlerts: value);
                     });
                   },
                 ),
@@ -151,10 +160,10 @@ class _SettingsPageState extends State<SettingsPage> {
               _settingRow(
                 'Alert Sounds',
                 Switch(
-                  value: alertSounds,
+                  value: settings.alertSounds,
                   onChanged: (value) {
                     setState(() {
-                      alertSounds = value;
+                      settings = settings.copyWith(alertSounds: value);
                     });
                   },
                 ),
@@ -165,10 +174,10 @@ class _SettingsPageState extends State<SettingsPage> {
               _settingRow(
                 'Auto Update Checks',
                 Switch(
-                  value: autoUpdateChecks,
+                  value: settings.autoUpdateChecks,
                   onChanged: (value) {
                     setState(() {
-                      autoUpdateChecks = value;
+                      settings = settings.copyWith(autoUpdateChecks: value);
                     });
                   },
                 ),
@@ -212,10 +221,10 @@ class _SettingsPageState extends State<SettingsPage> {
             _settingRow(
               'Historical Monitoring',
               Switch(
-                value: historicalMonitoring,
+                value: settings.historicalMonitoring,
                 onChanged: (value) {
                   setState(() {
-                    historicalMonitoring = value;
+                    settings = settings.copyWith(historicalMonitoring: value);
                   });
                 },
               ),
