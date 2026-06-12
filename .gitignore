@@ -80,3 +80,4 @@ python-packages/
 *.egg-info/
 *.egg
 .idea/
+backend_fastapi/lhm_data.json
