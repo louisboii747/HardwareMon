@@ -1,0 +1,26 @@
+name: Flutter Analyze
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Get dependencies
+        run: flutter pub get
+        working-directory: flutter_gui
+
+      - name: Analyze Dart code
+        run: flutter analyze
+        working-directory: flutter_gui
