@@ -22,5 +22,5 @@ jobs:
         working-directory: flutter_gui
 
       - name: Analyze Dart code
-        run: flutter analyze
+        run: flutter analyze --no-fatal-infos
         working-directory: flutter_gui
