@@ -1,0 +1,16 @@
+version: 2
+
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - dependencies
+
+  - package-ecosystem: "pip"
+    directory: "/flutter_gui/backend_fastapi"
+    schedule:
+      interval: "weekly"
+    labels:
+      - dependencies
