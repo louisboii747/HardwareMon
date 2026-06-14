@@ -1,0 +1,61 @@
+name: Bug Report
+description: Report a bug or issue in HardwareMon
+title: "[Bug]: "
+labels:
+  - bug
+
+body:
+  - type: input
+    id: version
+    attributes:
+      label: HardwareMon Version
+      placeholder: v0.1.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - Windows 11
+        - Windows 10
+        - Ubuntu
+        - Fedora
+        - Debian
+        - Arch Linux
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected Area
+      options:
+        - Dashboard
+        - Performance
+        - Processes
+        - Settings
+        - Installer
+        - APT/DNF
+        - Telemetry
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the bug.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: How can the issue be reproduced?
+    validations:
+      required: true
