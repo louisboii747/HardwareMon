@@ -1,9 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-
+import 'settings_service.dart';
 import '../core/backend_config.dart';
 
 class TelemetryService extends ChangeNotifier {
@@ -79,12 +78,34 @@ class TelemetryService extends ChangeNotifier {
     }
   }
 
-  void start() {
-    fetchStats();
+  Future<void> start() async {
+    final settings = await SettingsService().loadSettings();
+
+    Duration refreshDuration;
+
+    switch (settings.refreshInterval) {
+      case '2s':
+        refreshDuration = const Duration(seconds: 2);
+        break;
+
+      case '5s':
+        refreshDuration = const Duration(seconds: 5);
+        break;
+
+      default:
+        refreshDuration = const Duration(seconds: 1);
+    }
+
+    await fetchStats();
 
     _timer?.cancel();
 
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) => fetchStats());
+    _timer = Timer.periodic(refreshDuration, (_) => fetchStats());
+  }
+
+  Future<void> restart() async {
+    stop();
+    await start();
   }
 
   void stop() {

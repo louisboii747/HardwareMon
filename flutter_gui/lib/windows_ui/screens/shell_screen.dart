@@ -130,7 +130,7 @@ class _ShellScreenState extends State<ShellScreen> {
         return PerformancePage(telemetry: telemetry);
 
       case 3:
-        return const SettingsPage();
+        return SettingsPage(telemetry: telemetry);
 
       default:
         return buildDashboard();
