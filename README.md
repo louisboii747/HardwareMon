@@ -42,6 +42,12 @@
 
 ---
 
+## Screenshots
+
+| Dashboard | Processes |
+|-----------|-----------|
+| <img src="https://github.com/user-attachments/assets/5c7dc4f7-54e0-4a63-acd9-4ec0d2bbacde" width="100%"> | <img src="https://github.com/user-attachments/assets/c90896b7-7de2-49a9-a0bf-5ab61d121875" width="100%"> |
+
 # Website
 
 🌐 [https://hardwaremon-site.pages.dev/](https://hardwaremon-site.pages.dev/)
