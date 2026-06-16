@@ -36,7 +36,10 @@
 <img src="https://img.shields.io/badge/WinGet-supported-0078D4?logo=windows" alt="WinGet">
 
 <img src="https://img.shields.io/badge/GitHub_Actions-CI%2FCD-2088FF?logo=github-actions" alt="GitHub Actions">
-<img src="https://img.shields.io/badge/Cloudflare_Pages-hosted-orange?logo=cloudflare" alt="Cloudflare Pages">
+
+<a href="https://hardwaremon-site.pages.dev/">
+  <img src="https://img.shields.io/badge/Website-hardwaremon.pages.dev-orange?logo=cloudflare" alt="Website">
+</a>
 
 </p>
 
