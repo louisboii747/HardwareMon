@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  Real-time hardware analytics, cinematic Flutter UI, native Linux packaging,
+  Real-time hardware analytics, histoical analytics via SQLite, cinematic Flutter UI, native Linux packaging,
   Windows installers, automated repositories, and bundled backend architecture.
 </p>
 
