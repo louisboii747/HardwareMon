@@ -164,6 +164,44 @@ class PerformancePage extends StatelessWidget {
               ],
             ),
           ]),
+
+          _buildSection('Historical Analytics', [
+            GridView.count(
+              crossAxisCount: 3,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 1.4,
+              children: [
+                MetricCard(
+                  title: 'CPU History',
+                  value: '${telemetry.historicalCpuHistory.length}',
+                  subtitle: 'Samples collected',
+                  icon: Icons.timeline_rounded,
+                  accent: Colors.cyan,
+                  graphPoints: telemetry.historicalCpuHistory,
+                ),
+                MetricCard(
+                  title: 'Memory History',
+                  value: '${telemetry.historicalRamHistory.length}',
+                  subtitle: 'Samples collected',
+                  icon: Icons.storage_rounded,
+                  accent: Colors.purple,
+                  graphPoints: telemetry.historicalRamHistory,
+                ),
+
+                MetricCard(
+                  title: 'GPU History',
+                  value: '${telemetry.historicalGpuHistory.length}',
+                  subtitle: 'Samples collected',
+                  icon: Icons.graphic_eq_rounded,
+                  accent: Colors.orange,
+                  graphPoints: telemetry.historicalGpuHistory,
+                ),
+              ],
+            ),
+          ]),
         ],
       ),
     );

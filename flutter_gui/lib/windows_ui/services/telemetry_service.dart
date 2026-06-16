@@ -26,10 +26,16 @@ class TelemetryService extends ChangeNotifier {
 
   String cpuName = 'Loading...';
 
+  // Live telemetry history
   final List<double> cpuHistory = [];
   final List<double> ramHistory = [];
   final List<double> gpuTempHistory = [];
   final List<double> gpuUsageHistory = [];
+
+  // Historical database telemetry
+  final List<double> historicalCpuHistory = [];
+  final List<double> historicalRamHistory = [];
+  final List<double> historicalGpuHistory = [];
 
   Timer? _timer;
 
@@ -46,20 +52,24 @@ class TelemetryService extends ChangeNotifier {
       ramUsage = data['ram'] ?? 0;
       gpuTemp = data['gpu_temp'] ?? 0;
       gpuUsage = data['gpu_usage'] ?? 0;
+
       cpuPower = (data['cpu_power'] ?? 0).toDouble();
       cpuClock = (data['cpu_clock'] ?? 0).toDouble();
+
       gpuPower = (data['gpu_power'] ?? 0).toDouble();
       gpuVramUsed = (data['gpu_vram_used'] ?? 0).toDouble();
 
       ramUsed = (data['ram_used'] ?? 0).toDouble();
       ramAvailable = (data['ram_available'] ?? 0).toDouble();
       ramTotal = (data['ram_total'] ?? 0).toDouble();
+
       cpuName = data['cpu_name'] ?? 'Unknown CPU';
 
       cpuHistory.add(cpuUsage.toDouble());
       ramHistory.add(ramUsage.toDouble());
       gpuTempHistory.add(gpuTemp.toDouble());
       gpuUsageHistory.add(gpuUsage.toDouble());
+
       if (cpuHistory.length > 30) {
         cpuHistory.removeAt(0);
       }
@@ -72,9 +82,39 @@ class TelemetryService extends ChangeNotifier {
         gpuTempHistory.removeAt(0);
       }
 
+      if (gpuUsageHistory.length > 30) {
+        gpuUsageHistory.removeAt(0);
+      }
+
       notifyListeners();
     } catch (e) {
       debugPrint('Telemetry fetch failed: $e');
+    }
+  }
+
+  Future<void> loadHistory() async {
+    try {
+      final response = await http.get(
+        Uri.parse('${BackendConfig.baseUrl}/history?limit=100'),
+      );
+
+      final List<dynamic> data = jsonDecode(response.body);
+
+      historicalCpuHistory.clear();
+      historicalRamHistory.clear();
+      historicalGpuHistory.clear();
+
+      for (final item in data.reversed) {
+        historicalCpuHistory.add((item['cpu_usage'] ?? 0).toDouble());
+
+        historicalRamHistory.add((item['ram_usage'] ?? 0).toDouble());
+
+        historicalGpuHistory.add((item['gpu_usage'] ?? 0).toDouble());
+      }
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint('History fetch failed: $e');
     }
   }
 
@@ -97,6 +137,7 @@ class TelemetryService extends ChangeNotifier {
     }
 
     await fetchStats();
+    await loadHistory();
 
     _timer?.cancel();
 
