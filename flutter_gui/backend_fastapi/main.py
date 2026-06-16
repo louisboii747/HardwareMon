@@ -5,6 +5,8 @@ from multiprocessing import freeze_support
 from database.database import init_database
 from lhm_launcher import start_lhm
 from database.logging_service import start_logging
+from routes.history import router as history_router
+
 
 freeze_support()  # Ensure compatibility with Windows
 
@@ -16,6 +18,7 @@ app = FastAPI(title="HardwareMon Backend", version="1.0.0")
 
 app.include_router(system_router)
 app.include_router(processes_router)
+app.include_router(history_router)
 
 
 @app.get("/")
