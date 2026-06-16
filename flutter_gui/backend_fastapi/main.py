@@ -2,10 +2,15 @@ from fastapi import FastAPI
 from telemetry.system import router as system_router
 from routes.processes import router as processes_router
 from multiprocessing import freeze_support
-
-freeze_support()
-
+from database.database import init_database
 from lhm_launcher import start_lhm
+from database.logging_service import start_logging
+
+freeze_support()  # Ensure compatibility with Windows
+
+start_lhm()  # Start the LHM process
+init_database()  # Initialize the database
+start_logging()  # Start the logging process
 
 app = FastAPI(title="HardwareMon Backend", version="1.0.0")
 
@@ -21,7 +26,4 @@ async def root():
 import uvicorn
 
 if __name__ == "__main__":
-    # Start LibreHardwareMonitor on Windows
-    start_lhm()
-
     uvicorn.run(app, host="127.0.0.1", port=8000)

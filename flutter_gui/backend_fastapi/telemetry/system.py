@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 import requests
+import json
 
 router = APIRouter()
 
@@ -19,11 +20,8 @@ def find_sensor(node, text):
     return results
 
 
-@router.get("/stats")
-async def get_stats():
+def collect_stats():
     data = requests.get(LHM_URL).json()
-
-    import json
 
     with open("lhm_data.json", "w") as f:
         json.dump(data, f, indent=2)
@@ -116,17 +114,16 @@ async def get_stats():
         value = powers[0].get("Value", "0 W")
         gpu_power = float(value.replace("W", "").strip())
 
-        # GPU VRAM used
-        gpu_memory_used = find_sensor(data, "GPU Memory Used")
+    # GPU VRAM used
+    gpu_memory_used = find_sensor(data, "GPU Memory Used")
+    if gpu_memory_used:
+        value = gpu_memory_used[0].get("Value", "0 MB")
+        gpu_vram_used = round(
+            float(value.replace("MB", "").strip()) / 1024,
+            1,
+        )
 
-        if gpu_memory_used:
-            value = gpu_memory_used[0].get("Value", "0 MB")
-            gpu_vram_used = round(
-                float(value.replace("MB", "").strip()) / 1024,
-                1,
-            )
-
-    # GPU temp
+    # GPU temperature
     gpu_core_temp = find_sensor(data, "GPU Core")
     temps = [x for x in gpu_core_temp if x.get("Type") == "Temperature"]
 
@@ -134,19 +131,24 @@ async def get_stats():
         value = temps[0].get("Value", "0 °C")
         gpu_temp = int(float(value.replace("°C", "").strip()))
 
-        return {
-            "cpu": cpu_usage,
-            "cpu_temp": cpu_temp,
-            "cpu_power": cpu_power,
-            "cpu_clock": cpu_clock,
-            "ram": ram_usage,
-            "ram_used": ram_used,
-            "ram_available": ram_available,
-            "ram_total": round(ram_used + ram_available, 1),
-            "gpu_temp": gpu_temp,
-            "cpu_name": cpu_name,
-            "gpu_name": gpu_name,
-            "gpu_usage": gpu_usage,
-            "gpu_power": gpu_power,
-            "gpu_vram_used": gpu_vram_used,
-        }
+    return {
+        "cpu": cpu_usage,
+        "cpu_temp": cpu_temp,
+        "cpu_power": cpu_power,
+        "cpu_clock": cpu_clock,
+        "ram": ram_usage,
+        "ram_used": ram_used,
+        "ram_available": ram_available,
+        "ram_total": round(ram_used + ram_available, 1),
+        "gpu_temp": gpu_temp,
+        "cpu_name": cpu_name,
+        "gpu_name": gpu_name,
+        "gpu_usage": gpu_usage,
+        "gpu_power": gpu_power,
+        "gpu_vram_used": gpu_vram_used,
+    }
+
+
+@router.get("/stats")
+async def get_stats():
+    return collect_stats()
