@@ -149,8 +149,9 @@ HardwareMon now uses a unified Flutter frontend architecture across Linux and Wi
 | Windows         | ✅ Supported | Installer / WinGet |
 | Ubuntu / Debian | ✅ Supported | APT                |
 | Fedora          | ✅ Supported | DNF                |
-| Arch Linux      | ⌛ Coming Soon | AUR                |
-| macOS           | 🚧 Planned  | Future             |
+| Flatpak         | ✅ Supported | Installer          |
+| Arch Linux      | ⌛ Coming Soon | AUR              |
+| macOS           | 🚧 Planned  | Future              |
 
 ---
 
@@ -214,21 +215,23 @@ sudo dnf install hardwaremon
 
 ---
 
-# Arch Linux (Coming Soon!)
+# Flatpak
 
-## yay
+Download the latest `hardwaremon.flatpak` file from GitHub Releases.
 
-```bash
-yay -S hardwaremon-bin
-```
-
-## paru
+Install the package:
 
 ```bash
-paru -S hardwaremon-bin
+flatpak install hardwaremon.flatpak
 ```
 
----
+Launch HardwareMon:
+
+```bash
+flatpak run com.hardwaremon.HardwareMon
+```
+
+
 
 # Updating
 
