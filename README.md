@@ -13,6 +13,10 @@
   Windows installers, automated repositories, and bundled backend architecture.
 </p>
 
+<p align="center">
+  <a href="https://sourceforge.net/p/hardwaremon/"><img alt="Download HardwareMon" src="https://sourceforge.net/sflogo.php?type=18&amp;group_id=4105016" width=200></a>
+</p>
+
 ---
 
 <p align="center">
@@ -32,11 +36,20 @@
 <img src="https://img.shields.io/badge/WinGet-supported-0078D4?logo=windows" alt="WinGet">
 
 <img src="https://img.shields.io/badge/GitHub_Actions-CI%2FCD-2088FF?logo=github-actions" alt="GitHub Actions">
-<img src="https://img.shields.io/badge/Cloudflare_Pages-hosted-orange?logo=cloudflare" alt="Cloudflare Pages">
+
+<a href="https://hardwaremon-site.pages.dev/">
+  <img src="https://img.shields.io/badge/Website-hardwaremon.pages.dev-orange?logo=cloudflare" alt="Website">
+</a>
 
 </p>
 
 ---
+
+## Screenshots
+
+| Dashboard | Processes |
+|-----------|-----------|
+| <img src="https://github.com/user-attachments/assets/5c7dc4f7-54e0-4a63-acd9-4ec0d2bbacde" width="100%"> | <img src="https://github.com/user-attachments/assets/c90896b7-7de2-49a9-a0bf-5ab61d121875" width="100%"> |
 
 # Website
 
