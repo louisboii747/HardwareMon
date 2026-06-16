@@ -46,6 +46,7 @@ flutter_gui/windows/flutter/generated_plugins.cmake
 # PyInstaller
 # ─────────────────────────────────────────────
 
+
 build/
 dist/
 
@@ -81,3 +82,6 @@ python-packages/
 *.egg
 .idea/
 flutter_gui/backend_fastapi/lhm_data.json
+hardwaremon.db
+*.db
+LibreHardwareMonitor.config
