@@ -13,6 +13,10 @@
   Windows installers, automated repositories, and bundled backend architecture.
 </p>
 
+<p align="center">
+  <a href="https://sourceforge.net/p/hardwaremon/"><img alt="Download HardwareMon" src="https://sourceforge.net/sflogo.php?type=18&amp;group_id=4105016" width=200></a>
+</p>
+
 ---
 
 <p align="center">
