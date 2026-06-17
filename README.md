@@ -175,45 +175,38 @@ Download the latest Windows installer from:
 
 ---
 
-# Ubuntu / Debian
+# Linux Installation
+
+### Debian / Ubuntu
 
 Add the HardwareMon repository:
 
 ```bash
-echo "deb [trusted=yes] https://hardwaremon.pages.dev/apt stable main" \
-| sudo tee /etc/apt/sources.list.d/hardwaremon.list
-```
+echo "deb [trusted=yes] https://pub-f6d988b71b7f48198af4ccbfb6026ba9.r2.dev/apt stable main" | \
+sudo tee /etc/apt/sources.list.d/hardwaremon.list
 
-Update repositories:
-
-```bash
 sudo apt update
-```
-
-Install HardwareMon:
-
-```bash
 sudo apt install hardwaremon
 ```
 
----
+### Fedora
 
-# Fedora
-
-Add the repository:
+Add the HardwareMon repository:
 
 ```bash
-sudo dnf config-manager addrepo \
---from-repofile=https://hardwaremon.pages.dev/yum/hardwaremon.repo
-```
+sudo tee /etc/yum.repos.d/hardwaremon.repo > /dev/null <<'EOF'
+[hardwaremon]
+name=HardwareMon
+baseurl=https://pub-f6d988b71b7f48198af4ccbfb6026ba9.r2.dev/yum/
+enabled=1
+gpgcheck=0
+EOF
 
-Install HardwareMon:
-
-```bash
 sudo dnf install hardwaremon
 ```
 
----
+> Note: Repository signing is currently being implemented. Until then, the repository is configured without GPG verification.
+
 
 # Flatpak
 
@@ -247,7 +240,7 @@ winget upgrade LouisHinchliffe.HardwareMon
 
 ```bash
 sudo apt update
-sudo apt upgrade
+sudo apt upgrade hardwaremon
 ```
 
 ---
@@ -256,7 +249,7 @@ sudo apt upgrade
 
 ```bash
 sudo dnf makecache --refresh # refreshes repository data, needed for updating on DNF
-sudo dnf update
+sudo dnf upgrade hardwaremon
 ```
 
 ---
