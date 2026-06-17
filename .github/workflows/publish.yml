@@ -15,7 +15,6 @@ jobs:
       contents: write
 
     steps:
-
       # ─────────────────────────────────────────────
       # Checkout
       # ─────────────────────────────────────────────
@@ -68,14 +67,12 @@ jobs:
       - name: Install Python dependencies
         run: |
           python3 -m pip install --break-system-packages \
-            flask \
-            flask-cors \
-            fastapi \
-            uvicorn \
-            psutil \
-            requests \
-            urllib3 \
-            pyinstaller
+          fastapi \
+          uvicorn \
+          psutil \
+          requests \
+          urllib3 \
+          pyinstaller
 
       # ─────────────────────────────────────────────
       # Install nfpm
@@ -119,15 +116,13 @@ jobs:
 
       - name: Build backend binary
         run: |
-          cd hardwaremon
-
-          pyinstaller api.spec
+          pyinstaller \
+            --onefile \
+            --name backend \
+            flutter_gui/backend_fastapi/main.py
 
           strip dist/backend || true
           upx --best dist/backend
-
-
-
 
       # ─────────────────────────────────────────────
       # Prepare package structure
@@ -146,12 +141,11 @@ jobs:
           mv pkg/usr/lib/hardwaremon/hardwaremon \
             pkg/usr/lib/hardwaremon/hardwaremon-bin
 
-          cp hardwaremon/dist/backend \
-            pkg/usr/lib/hardwaremon/backend/
+          cp dist/backend \
+          pkg/usr/lib/hardwaremon/backend/
 
           chmod +x \
-            pkg/usr/lib/hardwaremon/backend/backend
-
+          pkg/usr/lib/hardwaremon/backend/backend
 
       # ─────────────────────────────────────────────
       # Create launcher
@@ -180,7 +174,6 @@ jobs:
 
           chmod +x pkg/usr/bin/hardwaremon
 
-
       # ─────────────────────────────────────────────
       # Create desktop entry
       # ─────────────────────────────────────────────
@@ -202,8 +195,8 @@ jobs:
       # ─────────────────────────────────────────────
       - name: Copy icon
         run: |
-          cp hardwaremon/Logo.png \
-            pkg/usr/share/icons/hicolor/256x256/apps/hardwaremon.png
+          cp "Untitled design.png" \
+          pkg/usr/share/icons/hicolor/256x256/apps/hardwaremon.png
 
       # ─────────────────────────────────────────────
       # Create nfpm config
