@@ -39,6 +39,11 @@ String getBackendExecutable() {
     return '$exeDir/backend.exe';
   }
 
+  final bundledLinuxBackend = '$exeDir/backend/backend';
+  if (Platform.isLinux && File(bundledLinuxBackend).existsSync()) {
+    return bundledLinuxBackend;
+  }
+
   return '$exeDir/backend';
 }
 
@@ -133,7 +138,9 @@ Future<void> main() async {
 
   await AppThemeController.instance.load();
 
-  await startBackend();
+  if (Platform.environment['HARDWAREMON_BACKEND_MANAGED'] != '1') {
+    await startBackend();
+  }
 
   await waitForBackend();
 

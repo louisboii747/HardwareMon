@@ -22,9 +22,10 @@ def start_lhm():
 
     # Already running?
     try:
-        requests.get("http://127.0.0.1:8085/data.json", timeout=1)
-        print("LibreHardwareMonitor already running")
-        return
+        response = requests.get("http://127.0.0.1:8085/data.json", timeout=1)
+        if response.status_code == 200:
+            print("LibreHardwareMonitor already running")
+            return
 
     except Exception:
         pass
@@ -48,15 +49,33 @@ def start_lhm():
         print("LibreHardwareMonitor not found")
         return
 
+    lhm_dir = os.path.dirname(lhm_path)
+
     try:
-        subprocess.Popen([lhm_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.Popen(
+            [lhm_path],
+            cwd=lhm_dir,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
 
     except OSError as e:
         if getattr(e, "winerror", None) == 740:
-            ctypes.windll.shell32.ShellExecuteW(None, "runas", lhm_path, None, None, 0)
+            ctypes.windll.shell32.ShellExecuteW(None, "runas", lhm_path, None, lhm_dir, 0)
         else:
             raise
 
     print("Started LibreHardwareMonitor")
 
-    time.sleep(2)
+    for _ in range(10):
+        try:
+            response = requests.get("http://127.0.0.1:8085/data.json", timeout=1)
+            if response.status_code == 200:
+                print("LibreHardwareMonitor web server ready")
+                return
+        except Exception:
+            pass
+
+        time.sleep(0.5)
+
+    print("LibreHardwareMonitor web server did not become ready")

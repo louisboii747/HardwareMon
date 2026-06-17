@@ -164,6 +164,7 @@ jobs:
           # Start backend
           "$APP_DIR/backend/backend" &
           BACKEND_PID=$!
+          export HARDWAREMON_BACKEND_MANAGED=1
 
           # Launch Flutter app
           "$APP_DIR/hardwaremon-bin"

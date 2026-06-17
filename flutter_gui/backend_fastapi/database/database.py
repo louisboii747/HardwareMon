@@ -1,8 +1,25 @@
+import os
+import platform
 import sqlite3
+from pathlib import Path
+
+
+def get_data_dir():
+    if platform.system() == "Windows":
+        base = os.environ.get("LOCALAPPDATA") or os.environ.get("APPDATA")
+        if base:
+            data_dir = Path(base) / "HardwareMon"
+        else:
+            data_dir = Path.home() / "AppData" / "Local" / "HardwareMon"
+    else:
+        data_dir = Path.home() / ".local" / "share" / "hardwaremon"
+
+    data_dir.mkdir(parents=True, exist_ok=True)
+    return data_dir
 
 
 def get_connection():
-    conn = sqlite3.connect("hardwaremon.db")
+    conn = sqlite3.connect(get_data_dir() / "hardwaremon.db")
     conn.row_factory = sqlite3.Row
     return conn
 

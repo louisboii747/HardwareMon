@@ -1,10 +1,19 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+from pathlib import Path
+
+lhm_dir = Path('third_party/LibreHardwareMonitor')
+lhm_datas = [
+    (str(path), str(lhm_dir / path.relative_to(lhm_dir).parent))
+    for path in lhm_dir.rglob('*')
+    if path.is_file()
+]
+
 a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=lhm_datas,
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
