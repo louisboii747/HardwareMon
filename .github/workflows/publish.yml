@@ -322,6 +322,29 @@ jobs:
           createrepo_c .
 
       # ─────────────────────────────────────────────
+      # Upload APT/DNF repositories to Cloudflare R2
+      # ─────────────────────────────────────────────
+      - name: Upload APT repository to R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: |
+          aws s3 sync repo/apt \
+            s3://hardwaremon-packages/apt \
+            --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com \
+            --delete
+
+      - name: Upload DNF repository to R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: |
+          aws s3 sync repo/yum \
+            s3://hardwaremon-packages/yum \
+            --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com \
+            --delete
+
+      # ─────────────────────────────────────────────
       # Prepare Cloudflare Pages output
       # ─────────────────────────────────────────────
       - name: Prepare Pages output
