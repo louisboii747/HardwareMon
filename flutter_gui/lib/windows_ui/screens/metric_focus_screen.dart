@@ -291,7 +291,54 @@ class _MetricFocusScreenState extends State<MetricFocusScreen> {
                             },
                           ),
 
-                          titlesData: const FlTitlesData(show: false),
+                          titlesData: FlTitlesData(
+                            leftTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
+
+                            topTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
+
+                            rightTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
+
+                            bottomTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 24,
+
+                                getTitlesWidget: (value, meta) {
+                                  final max = points.length - 1;
+
+                                  if (max <= 0) {
+                                    return const SizedBox();
+                                  }
+
+                                  final interval = (max / 4).round();
+
+                                  if (interval == 0) {
+                                    return const SizedBox();
+                                  }
+
+                                  if (value.toInt() % interval != 0) {
+                                    return const SizedBox();
+                                  }
+
+                                  final minutes = (value.toInt() * 5) ~/ 60;
+
+                                  return Text(
+                                    "${minutes}m",
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.4),
+                                      fontSize: 11,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
 
                           borderData: FlBorderData(show: false),
 

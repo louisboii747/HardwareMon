@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/app_settings.dart';
 import '../../services/settings_service.dart';
 import '../../services/telemetry_service.dart';
+import '../../../services/update_service.dart';
 
 class SettingsPage extends StatefulWidget {
   final TelemetryService telemetry;
@@ -231,7 +232,80 @@ class _SettingsPageState extends State<SettingsPage> {
 
             _settingRow(
               'Check for Updates',
-              ElevatedButton(onPressed: () {}, child: const Text('Check')),
+              ElevatedButton(
+                onPressed: () async {
+                  try {
+                    final result = await UpdateService.checkForUpdates();
+
+                    if (!context.mounted) return;
+
+                    await showDialog(
+                      context: context,
+                      builder: (_) => AlertDialog(
+                        title: const Text('Update Check'),
+                        content: Text(
+                          result['developmentBuild']
+                              ? 'You are running a development build.\n\nCurrent: ${result['current']}\nLatest Stable: ${result['latest']}'
+                              : result['updateAvailable']
+                              ? 'Update available!\n\nCurrent: ${result['current']}\nLatest: ${result['latest']}'
+                              : 'You already have the latest version installed.',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('OK'),
+                          ),
+                        ],
+                      ),
+                    );
+                  } catch (e) {
+                    if (!context.mounted) return;
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to check for updates: $e'),
+                      ),
+                    );
+                  }
+                },
+                child: const Text('Check'),
+              ),
+            ),
+
+            _settingRow(
+              'Download Latest Release',
+              ElevatedButton(
+                onPressed: () async {
+                  try {
+                    final path = await UpdateService.downloadLatestRelease();
+
+                    if (!context.mounted) return;
+
+                    await showDialog(
+                      context: context,
+                      builder: (_) => AlertDialog(
+                        title: const Text('Download Complete'),
+                        content: Text(
+                          'Update downloaded successfully.\n\nSaved to:\n$path',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('OK'),
+                          ),
+                        ],
+                      ),
+                    );
+                  } catch (e) {
+                    if (!context.mounted) return;
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Download failed: $e')),
+                    );
+                  }
+                },
+                child: const Text('Download'),
+              ),
             ),
           ]),
 
@@ -256,7 +330,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ]),
 
           _buildSection('About', [
-            _settingRow('Version', const Text('0.1.0')),
+            _settingRow('Version', const Text('18.0.0.dev')),
 
             _settingRow('Platform', const Text('Windows / Linux')),
 

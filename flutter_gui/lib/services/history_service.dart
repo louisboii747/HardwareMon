@@ -13,7 +13,6 @@ class HistoryService {
     }
 
     final List<dynamic> data = jsonDecode(response.body);
-
     return data.map((json) => HistoryPoint.fromJson(json)).toList();
   }
 }
