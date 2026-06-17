@@ -1,7 +1,0 @@
-flask
-flask_cors
-requests
-psutil
-GPUtil
-py-cpuinfo
-flask-cors
