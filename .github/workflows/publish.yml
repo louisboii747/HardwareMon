@@ -304,27 +304,14 @@ jobs:
       - name: Prepare Pages output
         run: |
           mkdir -p public/apt
-          mkdir -p public/yum
 
           cp -r repo/apt/* public/apt/
-          cp -r repo/yum/* public/yum/
-
-          # Fedora repo file
-          cat <<'EOF' > public/yum/hardwaremon.repo
-          [hardwaremon]
-          name=HardwareMon Repository
-          baseurl=https://hardwaremon.pages.dev/yum/
-          enabled=1
-          gpgcheck=0
-          EOF
 
           # Homepage
           cat <<'EOF' > public/index.html
           <h1>HardwareMon Repository</h1>
 
           <a href="/apt/">APT Repository</a>
-          <br>
-          <a href="/yum/">YUM Repository</a>
           EOF
 
           echo "404" > public/404.html
