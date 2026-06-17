@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gui/windows_ui/services/telemetry_service.dart';
+import '../../core/theme/app_colors.dart';
 import '../../widgets/metric_card.dart';
 
 class PerformancePage extends StatelessWidget {
@@ -24,7 +25,7 @@ class PerformancePage extends StatelessWidget {
 
           const SizedBox(height: 24),
 
-          _buildSection('CPU', [
+          _buildSection(context, 'CPU', [
             GridView.count(
               crossAxisCount: 2,
               shrinkWrap: true,
@@ -69,7 +70,7 @@ class PerformancePage extends StatelessWidget {
             ),
           ]),
 
-          _buildSection('Memory', [
+          _buildSection(context, 'Memory', [
             GridView.count(
               crossAxisCount: 2,
               shrinkWrap: true,
@@ -117,7 +118,7 @@ class PerformancePage extends StatelessWidget {
             ),
           ]),
 
-          _buildSection('GPU', [
+          _buildSection(context, 'GPU', [
             GridView.count(
               crossAxisCount: 2,
               shrinkWrap: true,
@@ -165,7 +166,7 @@ class PerformancePage extends StatelessWidget {
             ),
           ]),
 
-          _buildSection('Historical Analytics', [
+          _buildSection(context, 'Historical Analytics', [
             GridView.count(
               crossAxisCount: 3,
               shrinkWrap: true,
@@ -207,14 +208,18 @@ class PerformancePage extends StatelessWidget {
     );
   }
 
-  Widget _buildSection(String title, List<Widget> children) {
+  Widget _buildSection(
+    BuildContext context,
+    String title,
+    List<Widget> children,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.04),
+        color: AppColors.surface(context),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        border: Border.all(color: AppColors.border(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

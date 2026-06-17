@@ -7,6 +7,8 @@ import 'dart:ui';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gui/windows_ui/core/backend_config.dart';
+import 'package:flutter_gui/windows_ui/core/theme/app_theme.dart';
+import 'package:flutter_gui/windows_ui/core/theme/app_theme_controller.dart';
 import 'package:flutter_gui/windows_ui/screens/shell_screen.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -129,6 +131,8 @@ Future<bool> waitForBackend() async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await AppThemeController.instance.load();
+
   await startBackend();
 
   await waitForBackend();
@@ -167,14 +171,20 @@ class _HardwareMonAppState extends State<HardwareMonApp>
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'HardwareMon',
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: AppColors.bg,
-        textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'Inter'),
-      ),
-      home: const ShellScreen(),
+    return AnimatedBuilder(
+      animation: AppThemeController.instance,
+      builder: (context, _) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'HardwareMon',
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: AppThemeController.instance.isLight
+              ? ThemeMode.light
+              : ThemeMode.dark,
+          home: const ShellScreen(),
+        );
+      },
     );
   }
 }

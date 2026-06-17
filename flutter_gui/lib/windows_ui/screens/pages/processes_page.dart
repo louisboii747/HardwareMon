@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/process_info.dart';
 import '../../services/process_service.dart';
+import '../../core/theme/app_colors.dart';
 
 class ProcessesPage extends StatefulWidget {
   const ProcessesPage({super.key});
@@ -62,6 +63,9 @@ class _ProcessesPageState extends State<ProcessesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final textColor = AppColors.textPrimary(context);
+    final mutedColor = AppColors.textSecondary(context);
+
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -77,17 +81,14 @@ class _ProcessesPageState extends State<ProcessesPage> {
           Container(
             height: 56,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.04),
+              color: AppColors.surface(context),
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: Colors.white.withOpacity(0.05)),
+              border: Border.all(color: AppColors.border(context)),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 18),
             child: Row(
               children: [
-                Icon(
-                  Icons.search_rounded,
-                  color: Colors.white.withOpacity(0.5),
-                ),
+                Icon(Icons.search_rounded, color: mutedColor),
 
                 const SizedBox(width: 12),
 
@@ -98,12 +99,10 @@ class _ProcessesPageState extends State<ProcessesPage> {
                         searchQuery = value;
                       });
                     },
-                    style: const TextStyle(color: Colors.white),
+                    style: TextStyle(color: textColor),
                     decoration: InputDecoration(
                       hintText: 'Search processes...',
-                      hintStyle: TextStyle(
-                        color: Colors.white.withOpacity(0.4),
-                      ),
+                      hintStyle: TextStyle(color: AppColors.textMuted(context)),
                       border: InputBorder.none,
                     ),
                   ),
@@ -111,10 +110,7 @@ class _ProcessesPageState extends State<ProcessesPage> {
 
                 Text(
                   '${filteredProcesses.length} processes',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.5),
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(color: mutedColor, fontSize: 13),
                 ),
               ],
             ),
@@ -127,9 +123,9 @@ class _ProcessesPageState extends State<ProcessesPage> {
                 ? const Center(child: CircularProgressIndicator())
                 : Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.04),
+                      color: AppColors.surface(context),
                       borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Colors.white.withOpacity(0.05)),
+                      border: Border.all(color: AppColors.border(context)),
                     ),
                     child: ListView.builder(
                       itemCount: filteredProcesses.length,
@@ -166,7 +162,7 @@ class _ProcessTile extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.03),
+        color: AppColors.overlay(context, 0.03),
         borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
@@ -182,7 +178,7 @@ class _ProcessTile extends StatelessWidget {
           Expanded(
             child: Text(
               'PID ${process.pid}',
-              style: TextStyle(color: Colors.white.withOpacity(0.6)),
+              style: TextStyle(color: AppColors.textSecondary(context)),
             ),
           ),
 
@@ -194,7 +190,7 @@ class _ProcessTile extends StatelessWidget {
             onPressed: onKill,
             icon: Icon(
               Icons.close_rounded,
-              color: Colors.redAccent.withOpacity(0.8),
+              color: Colors.redAccent.withValues(alpha: 0.8),
             ),
           ),
         ],

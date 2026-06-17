@@ -3,6 +3,8 @@ import '../../models/app_settings.dart';
 import '../../services/settings_service.dart';
 import '../../services/telemetry_service.dart';
 import '../../../services/update_service.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_theme_controller.dart';
 
 class SettingsPage extends StatefulWidget {
   final TelemetryService telemetry;
@@ -37,6 +39,7 @@ class _SettingsPageState extends State<SettingsPage> {
     });
 
     await settingsService.saveSettings(updatedSettings);
+    AppThemeController.instance.setTheme(updatedSettings.theme);
   }
 
   Future<void> _resetSettings() async {
@@ -47,6 +50,8 @@ class _SettingsPageState extends State<SettingsPage> {
     setState(() {
       settings = defaults;
     });
+
+    AppThemeController.instance.setTheme(defaults.theme);
   }
 
   Future<void> _showResetDialog() async {
@@ -348,9 +353,9 @@ class _SettingsPageState extends State<SettingsPage> {
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.04),
+        color: AppColors.surface(context),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        border: Border.all(color: AppColors.border(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -373,7 +378,15 @@ class _SettingsPageState extends State<SettingsPage> {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Expanded(child: Text(title, style: const TextStyle(fontSize: 15))),
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 15,
+                color: AppColors.textPrimary(context),
+              ),
+            ),
+          ),
           trailing,
         ],
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
+import '../core/theme/app_colors.dart';
 import '../screens/metric_focus_screen.dart';
 import 'glass_panel.dart';
 
@@ -31,6 +32,9 @@ class _MetricCardState extends State<MetricCard> {
 
   @override
   Widget build(BuildContext context) {
+    final titleColor = AppColors.textSecondary(context);
+    final subtitleColor = AppColors.textMuted(context);
+
     return MouseRegion(
       onEnter: (_) => setState(() => hovering = true),
       onExit: (_) => setState(() => hovering = false),
@@ -46,7 +50,7 @@ class _MetricCardState extends State<MetricCard> {
 
               opaque: false,
 
-              pageBuilder: (_, __, ___) {
+              pageBuilder: (_, _, _) {
                 return MetricFocusScreen(
                   title: widget.title,
                   value: widget.value,
@@ -99,7 +103,7 @@ class _MetricCardState extends State<MetricCard> {
 
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(14),
-                          color: widget.accent.withOpacity(0.12),
+                          color: widget.accent.withValues(alpha: 0.12),
                         ),
 
                         child: Icon(
@@ -121,7 +125,7 @@ class _MetricCardState extends State<MetricCard> {
 
                           boxShadow: [
                             BoxShadow(
-                              color: widget.accent.withOpacity(0.45),
+                              color: widget.accent.withValues(alpha: 0.45),
                               blurRadius: 10,
                             ),
                           ],
@@ -174,8 +178,8 @@ class _MetricCardState extends State<MetricCard> {
                                 end: Alignment.bottomCenter,
 
                                 colors: [
-                                  widget.accent.withOpacity(0.18),
-                                  widget.accent.withOpacity(0),
+                                  widget.accent.withValues(alpha: 0.18),
+                                  widget.accent.withValues(alpha: 0),
                                 ],
                               ),
                             ),
@@ -191,7 +195,7 @@ class _MetricCardState extends State<MetricCard> {
                     widget.title,
 
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.65),
+                      color: titleColor,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
@@ -206,6 +210,7 @@ class _MetricCardState extends State<MetricCard> {
                       fontSize: hovering ? 38 : 32,
                       fontWeight: FontWeight.w700,
                       letterSpacing: -2,
+                      color: AppColors.textPrimary(context),
                     ),
                   ),
 
@@ -218,7 +223,7 @@ class _MetricCardState extends State<MetricCard> {
                     overflow: TextOverflow.ellipsis,
 
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.45),
+                      color: subtitleColor,
                       fontSize: 12,
                       height: 1.1,
                     ),

@@ -6,6 +6,7 @@ import 'pages/performance_page.dart';
 import 'pages/processes_page.dart';
 import 'pages/settings_page.dart';
 import '../services/telemetry_service.dart';
+import '../core/theme/app_colors.dart';
 
 class ShellScreen extends StatefulWidget {
   const ShellScreen({super.key});
@@ -141,12 +142,12 @@ class _ShellScreenState extends State<ShellScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
 
-            colors: [Color(0xFF050505), Color(0xFF090909), Color(0xFF04070D)],
+            colors: AppColors.pageGradient(context),
           ),
         ),
 
@@ -164,7 +165,12 @@ class _ShellScreenState extends State<ShellScreen> {
                   shape: BoxShape.circle,
 
                   gradient: RadialGradient(
-                    colors: [Colors.cyan.withOpacity(0.08), Colors.transparent],
+                    colors: [
+                      Colors.cyan.withValues(
+                        alpha: AppColors.isLight(context) ? 0.12 : 0.08,
+                      ),
+                      Colors.transparent,
+                    ],
                   ),
                 ),
               ),
@@ -186,7 +192,7 @@ class _ShellScreenState extends State<ShellScreen> {
                           children: [
                             const Icon(
                               Icons.memory_rounded,
-                              color: Colors.white,
+                              color: AppColors.accent,
                               size: 28,
                             ),
 
@@ -329,6 +335,9 @@ class _DockItemState extends State<_DockItem> {
 
   @override
   Widget build(BuildContext context) {
+    final activeColor = AppColors.textPrimary(context);
+    final inactiveColor = AppColors.textSecondary(context);
+
     return MouseRegion(
       onEnter: (_) => setState(() => hovering = true),
       onExit: (_) => setState(() => hovering = false),
@@ -346,13 +355,13 @@ class _DockItemState extends State<_DockItem> {
             borderRadius: BorderRadius.circular(18),
 
             color: widget.active || hovering
-                ? Colors.white.withOpacity(0.08)
+                ? AppColors.overlay(context, 0.08)
                 : Colors.transparent,
 
             boxShadow: widget.active
                 ? [
                     BoxShadow(
-                      color: Colors.cyan.withOpacity(0.18),
+                      color: Colors.cyan.withValues(alpha: 0.18),
                       blurRadius: 20,
                       spreadRadius: 1,
                     ),
@@ -362,7 +371,7 @@ class _DockItemState extends State<_DockItem> {
 
           child: Icon(
             widget.icon,
-            color: widget.active ? Colors.white : Colors.white.withOpacity(0.7),
+            color: widget.active ? activeColor : inactiveColor,
           ),
         ),
       ),

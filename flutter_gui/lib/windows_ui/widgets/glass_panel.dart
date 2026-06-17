@@ -31,46 +31,51 @@ class _GlassPanelState extends State<GlassPanel> {
     return MouseRegion(
       onEnter: (_) => setState(() => _hovering = true),
       onExit: (_) => setState(() => _hovering = false),
-      child: AnimatedContainer(
-        transform: Matrix4.identity()..translate(0.0, _hovering ? -4.0 : 0.0),
+      child: AnimatedSlide(
+        offset: Offset(0, _hovering ? -0.02 : 0),
         duration: const Duration(milliseconds: 220),
         curve: Curves.easeOutCubic,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
 
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
 
-          boxShadow: [
-            BoxShadow(
-              color: _hovering
-                  ? AppColors.glow
-                  : Colors.black.withOpacity(0.18),
-              blurRadius: _hovering ? 32 : 18,
-              spreadRadius: _hovering ? 1 : 0,
-            ),
-          ],
-        ),
+            boxShadow: [
+              BoxShadow(
+                color: _hovering ? AppColors.glow : AppColors.shadow(context),
+                blurRadius: _hovering ? 32 : 18,
+                spreadRadius: _hovering ? 1 : 0,
+              ),
+            ],
+          ),
 
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
 
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: widget.blur, sigmaY: widget.blur),
-
-            child: Container(
-              padding: widget.padding,
-
-              decoration: BoxDecoration(
-                color: const Color(0xCC101010),
-
-                borderRadius: BorderRadius.circular(AppRadius.lg),
-
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.06),
-                  width: 1,
-                ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(
+                sigmaX: widget.blur,
+                sigmaY: widget.blur,
               ),
 
-              child: widget.child,
+              child: Container(
+                padding: widget.padding,
+
+                decoration: BoxDecoration(
+                  color: AppColors.surface(context),
+
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+
+                  border: Border.all(
+                    color: AppColors.border(context),
+                    width: 1,
+                  ),
+                ),
+
+                child: widget.child,
+              ),
             ),
           ),
         ),

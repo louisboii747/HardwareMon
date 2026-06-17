@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme/app_colors.dart';
+
 class AnimatedMetricValue extends StatelessWidget {
   final double value;
   final bool isTemperature;
@@ -58,10 +60,10 @@ class AnimatedMetricValue extends StatelessWidget {
           child: Text(
             isTemperature ? '°C' : '%',
 
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w600,
-              color: Colors.white70,
+              color: AppColors.textSecondary(context),
             ),
           ),
         ),

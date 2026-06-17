@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
+import '../core/theme/app_colors.dart';
+
 class MetricFocusScreen extends StatefulWidget {
   final String title;
   final String value;
@@ -65,7 +67,7 @@ class _MetricFocusScreenState extends State<MetricFocusScreen> {
           label,
 
           style: TextStyle(
-            color: Colors.white.withOpacity(0.45),
+            color: AppColors.textMuted(context),
             fontSize: 12,
             fontWeight: FontWeight.w500,
           ),
@@ -89,7 +91,7 @@ class _MetricFocusScreenState extends State<MetricFocusScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF050505),
+      backgroundColor: AppColors.background(context),
 
       body: Stack(
         children: [
@@ -97,7 +99,7 @@ class _MetricFocusScreenState extends State<MetricFocusScreen> {
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
 
-              child: Container(color: Colors.black.withOpacity(0.2)),
+              child: Container(color: AppColors.overlay(context, 0.08)),
             ),
           ),
 
@@ -123,7 +125,7 @@ class _MetricFocusScreenState extends State<MetricFocusScreen> {
 
                   gradient: RadialGradient(
                     colors: [
-                      widget.accent.withOpacity(0.12),
+                      widget.accent.withValues(alpha: 0.12),
                       Colors.transparent,
                     ],
                   ),
@@ -143,7 +145,10 @@ class _MetricFocusScreenState extends State<MetricFocusScreen> {
                   IconButton(
                     onPressed: () => Navigator.pop(context),
 
-                    icon: const Icon(Icons.close_rounded, color: Colors.white),
+                    icon: Icon(
+                      Icons.close_rounded,
+                      color: AppColors.textPrimary(context),
+                    ),
                   ),
 
                   const Spacer(),
@@ -158,7 +163,7 @@ class _MetricFocusScreenState extends State<MetricFocusScreen> {
                         widget.title,
 
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
+                          color: AppColors.textSecondary(context),
                           fontSize: 22,
                           fontWeight: FontWeight.w600,
                         ),
@@ -195,7 +200,7 @@ class _MetricFocusScreenState extends State<MetricFocusScreen> {
                     widget.subtitle,
 
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.45),
+                      color: AppColors.textMuted(context),
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -241,16 +246,16 @@ class _MetricFocusScreenState extends State<MetricFocusScreen> {
                         end: Alignment.bottomRight,
 
                         colors: [
-                          Colors.white.withOpacity(0.05),
-                          Colors.white.withOpacity(0.02),
+                          AppColors.overlay(context, 0.05),
+                          AppColors.overlay(context, 0.02),
                         ],
                       ),
 
-                      border: Border.all(color: Colors.white.withOpacity(0.06)),
+                      border: Border.all(color: AppColors.border(context)),
 
                       boxShadow: [
                         BoxShadow(
-                          color: widget.accent.withOpacity(0.08),
+                          color: widget.accent.withValues(alpha: 0.08),
                           blurRadius: 40,
                           spreadRadius: 1,
                         ),
@@ -285,7 +290,7 @@ class _MetricFocusScreenState extends State<MetricFocusScreen> {
 
                             getDrawingHorizontalLine: (_) {
                               return FlLine(
-                                color: Colors.white.withOpacity(0.04),
+                                color: AppColors.overlay(context, 0.04),
                                 strokeWidth: 1,
                               );
                             },
@@ -331,7 +336,7 @@ class _MetricFocusScreenState extends State<MetricFocusScreen> {
                                   return Text(
                                     "${minutes}m",
                                     style: TextStyle(
-                                      color: Colors.white.withOpacity(0.4),
+                                      color: AppColors.textMuted(context),
                                       fontSize: 11,
                                     ),
                                   );
@@ -367,8 +372,8 @@ class _MetricFocusScreenState extends State<MetricFocusScreen> {
                                   end: Alignment.bottomCenter,
 
                                   colors: [
-                                    widget.accent.withOpacity(0.28),
-                                    widget.accent.withOpacity(0.02),
+                                    widget.accent.withValues(alpha: 0.28),
+                                    widget.accent.withValues(alpha: 0.02),
                                   ],
                                 ),
                               ),

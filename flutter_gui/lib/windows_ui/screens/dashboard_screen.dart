@@ -4,6 +4,7 @@ import '../../services/api_service.dart';
 import 'dart:async';
 import 'package:fl_chart/fl_chart.dart';
 import '../widgets/animated_metric_value.dart';
+import '../core/theme/app_colors.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -38,7 +39,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final data = await ApiService.fetchSystemStats();
 
-      print(data);
+      debugPrint(data.toString());
 
       setState(() {
         cpuUsage = (data['cpu'] ?? 0).toDouble();
@@ -62,7 +63,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
       });
     } catch (e) {
-      print('Failed to fetch stats: $e');
+      debugPrint('Failed to fetch stats: $e');
     }
   }
 
@@ -78,14 +79,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       padding: const EdgeInsets.all(28),
 
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: AppColors.surface(context),
         borderRadius: BorderRadius.circular(24),
 
-        border: Border.all(color: Colors.white.withOpacity(0.04)),
+        border: Border.all(color: AppColors.border(context)),
 
         boxShadow: [
           BoxShadow(
-            color: accent.withOpacity(0.08),
+            color: accent.withValues(alpha: 0.08),
             blurRadius: 30,
             spreadRadius: 1,
           ),
@@ -151,8 +152,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           end: Alignment.bottomCenter,
 
                           colors: [
-                            accent.withOpacity(0.25),
-                            accent.withOpacity(0.01),
+                            accent.withValues(alpha: 0.25),
+                            accent.withValues(alpha: 0.01),
                           ],
                         ),
                       ),
@@ -168,10 +169,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Text(
             title,
 
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Colors.white70,
+              color: AppColors.textSecondary(context),
             ),
           ),
 
@@ -191,12 +192,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
 
-            colors: [Color(0xFF050505), Color(0xFF090909), Color(0xFF04070D)],
+            colors: AppColors.pageGradient(context),
           ),
         ),
 
@@ -214,7 +215,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   shape: BoxShape.circle,
 
                   gradient: RadialGradient(
-                    colors: [Colors.cyan.withOpacity(0.08), Colors.transparent],
+                    colors: [
+                      Colors.cyan.withValues(alpha: 0.08),
+                      Colors.transparent,
+                    ],
                   ),
                 ),
               ),

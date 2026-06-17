@@ -43,7 +43,7 @@ class ExpandableMetricCard extends StatelessWidget {
 
               opaque: false,
 
-              pageBuilder: (_, __, ___) {
+              pageBuilder: (_, _, _) {
                 return MetricFocusScreen(
                   title: title,
                   value: value,
