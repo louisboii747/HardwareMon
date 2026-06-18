@@ -177,38 +177,57 @@ Download the latest Windows installer from:
 
 # Linux Installation
 
-### Debian / Ubuntu
+### Debian / Ubuntu distributions (APT)
 
-Add the HardwareMon repository:
+Import the HardwareMon repository signing key:
 
 ```bash
-echo "deb [trusted=yes] https://pub-f6d988b71b7f48198af4ccbfb6026ba9.r2.dev/apt stable main" | \
-sudo tee /etc/apt/sources.list.d/hardwaremon.list
+curl -fsSL https://pub-f6d988b71b7f48198af4ccbfb6026ba9.r2.dev/hardwaremon-public.asc \
+  | gpg --dearmor \
+  | sudo tee /usr/share/keyrings/hardwaremon.gpg > /dev/null
+```
 
+Add the repository:
+
+```bash
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/hardwaremon.gpg] https://pub-f6d988b71b7f48198af4ccbfb6026ba9.r2.dev/apt stable main" | \
+sudo tee /etc/apt/sources.list.d/hardwaremon.list
+```
+
+Install HardwareMon:
+
+```bash
 sudo apt update
 sudo apt install hardwaremon
 ```
 
-### Fedora
 
-Add the HardwareMon repository:
+### Fedora/RHEL distributions (DNF)
+
+Create the repository configuration:
 
 ```bash
-sudo tee /etc/yum.repos.d/hardwaremon.repo > /dev/null <<'EOF'
+sudo tee /etc/yum.repos.d/hardwaremon.repo > /dev/null <<EOF
 [hardwaremon]
 name=HardwareMon
-baseurl=https://pub-f6d988b71b7f48198af4ccbfb6026ba9.r2.dev/yum/
+baseurl=https://pub-f6d988b71b7f48198af4ccbfb6026ba9.r2.dev/yum
 enabled=1
-gpgcheck=0
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://pub-f6d988b71b7f48198af4ccbfb6026ba9.r2.dev/hardwaremon-public.asc
 EOF
+```
 
+Install HardwareMon:
+
+```bash
+sudo dnf makecache
 sudo dnf install hardwaremon
 ```
 
-> Note: Repository signing is currently being implemented. Until then, the repository is configured without GPG verification.
 
 
-# Flatpak
+# Flatpak (Arch, APT and DNF)
 
 Download the latest `hardwaremon.flatpak` file from GitHub Releases.
 
@@ -250,14 +269,6 @@ sudo apt upgrade hardwaremon
 ```bash
 sudo dnf makecache --refresh # refreshes repository data, needed for updating on DNF
 sudo dnf upgrade hardwaremon
-```
-
----
-
-## Arch Linux (Coming Soon)
-
-```bash
-yay -Syu
 ```
 
 ---
