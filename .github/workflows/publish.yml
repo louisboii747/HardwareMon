@@ -397,6 +397,15 @@ jobs:
             --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com \
             --delete
 
+      - name: Upload public signing key
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: |
+          aws s3 cp hardwaremon-public.asc \
+            s3://hardwaremon-packages/hardwaremon-public.asc \
+            --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+
       # ─────────────────────────────────────────────
       # Prepare Cloudflare Pages output
       # ─────────────────────────────────────────────
