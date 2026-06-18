@@ -59,7 +59,8 @@ jobs:
             zip \
             python3 \
             python3-pip \
-            upx
+            upx \
+            rpm
 
       # ─────────────────────────────────────────────
       # Install Python dependencies
@@ -92,6 +93,19 @@ jobs:
           VERSION="${VERSION#v}"
 
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      # ─────────────────────────────────────────────
+      # GPG
+      # ─────────────────────────────────────────────
+
+      - name: Import GPG key
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        run: |
+          echo "$GPG_PRIVATE_KEY" | base64 -d > private.asc
+          gpg --batch --import private.asc
+
+          gpg --list-secret-keys
 
       # ─────────────────────────────────────────────
       # Flutter dependencies
@@ -253,6 +267,13 @@ jobs:
             --packager rpm \
             --target dist/hardwaremon.rpm
 
+      - name: Configure RPM signing
+        run: |
+          cat > ~/.rpmmacros <<EOF
+          %_signature gpg
+          %_gpg_name ${{ secrets.GPG_KEY_ID }}
+          EOF
+
       - name: Install AWS CLI
         run: |
           curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
@@ -279,6 +300,7 @@ jobs:
       # ─────────────────────────────────────────────
       # Build APT repository
       # ─────────────────────────────────────────────
+
       - name: Build APT repository
         run: |
           mkdir -p repo/apt/pool/main/h/hardwaremon
@@ -309,6 +331,26 @@ jobs:
           apt-ftparchive -c apt.conf release dists/stable \
             > dists/stable/Release
 
+          gpg \
+            --batch \
+            --yes \
+            --pinentry-mode loopback \
+            --passphrase "${{ secrets.GPG_PASSPHRASE }}" \
+            --default-key "${{ secrets.GPG_KEY_ID }}" \
+            -abs \
+            -o dists/stable/Release.gpg \
+            dists/stable/Release
+
+          gpg \
+            --batch \
+            --yes \
+            --pinentry-mode loopback \
+            --passphrase "${{ secrets.GPG_PASSPHRASE }}" \
+            --default-key "${{ secrets.GPG_KEY_ID }}" \
+            --clearsign \
+            -o dists/stable/InRelease \
+            dists/stable/Release
+
       # ─────────────────────────────────────────────
       # Build DNF repository
       # ─────────────────────────────────────────────
@@ -321,6 +363,16 @@ jobs:
           cd repo/yum
 
           createrepo_c .
+
+          gpg \
+            --batch \
+            --yes \
+            --pinentry-mode loopback \
+            --passphrase "${{ secrets.GPG_PASSPHRASE }}" \
+            --default-key "${{ secrets.GPG_KEY_ID }}" \
+            --detach-sign \
+            --armor \
+            repodata/repomd.xml
 
       # ─────────────────────────────────────────────
       # Upload APT/DNF repositories to Cloudflare R2
@@ -351,8 +403,9 @@ jobs:
       - name: Prepare Pages output
         run: |
           mkdir -p public/apt
-
+          cp hardwaremon-public.asc public/
           cp -r repo/apt/* public/apt/
+
 
           # Homepage
           cat <<'EOF' > public/index.html
