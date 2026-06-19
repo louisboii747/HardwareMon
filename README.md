@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  Real-time hardware analytics, histoical analytics via SQLite, cinematic Flutter UI, native Linux packaging,
+  Real-time hardware analytics, historical analytics via SQLite, cinematic Flutter UI, native Linux packaging,
   Windows installers, automated repositories, and bundled backend architecture.
 </p>
 
@@ -47,9 +47,41 @@
 
 ## Screenshots
 
-| Dashboard | Processes |
-|-----------|-----------|
-| <img src="https://github.com/user-attachments/assets/5c7dc4f7-54e0-4a63-acd9-4ec0d2bbacde" width="100%"> | <img src="https://github.com/user-attachments/assets/c90896b7-7de2-49a9-a0bf-5ab61d121875" width="100%"> |
+<table>
+  <tr>
+    <th>Dashboard</th>
+    <th>Processes</th>
+  </tr>
+  <tr>
+    <td>
+      <img src="https://github.com/user-attachments/assets/5c7dc4f7-54e0-4a63-acd9-4ec0d2bbacde" width="100%">
+    </td>
+    <td>
+      <img src="https://github.com/user-attachments/assets/c90896b7-7de2-49a9-a0bf-5ab61d121875" width="100%">
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center">
+      <img src="https://github.com/user-attachments/assets/294202b3-43b9-4432-b6dd-9b7cacceb6af" alt="HardwareMon Demo" width="75%">
+    </td>
+  </tr>
+</table>
+
+
+## Quick Start
+
+### Windows
+```
+winget install LouisHinchliffe.HardwareMon
+```
+### Ubuntu / Debian
+```
+sudo apt install hardwaremon
+```
+### Fedora / RHEL
+```
+sudo dnf install hardwaremon
+```
 
 # Website
 
@@ -84,42 +116,34 @@ The HardwareMon website contains:
 
 ---
 
-## User Interface
-
-* Modern Flutter desktop interface
-* Cinematic dark workstation aesthetic
-* Smooth animations and transitions
-* Floating glass-style UI panels
-* Animated dashboards
-* Responsive multi-page layout
-* Sidebar navigation system
-* Interactive telemetry cards
-* Cross-platform desktop architecture
-
----
-
-## Security & Diagnostics (Slowly being introduced)
-
-* VirusTotal process scanning integration
-* SHA256 process hashing
-* Suspicious executable detection
-* Secure API-based process analysis
-
----
-
 ## Distribution & Packaging
 
 * Native Linux DEB packages
 * Native Linux RPM packages
 * APT repository support
 * DNF repository support
-* AUR support
 * Windows installer support
 * WinGet support
 * GitHub Releases automation
-* Cloudflare-hosted repositories
 
 ---
+
+## Why HardwareMon?
+
+Most system monitoring tools either focus on raw data or dated interfaces.
+
+HardwareMon aims to combine real-time telemetry, historical analytics, modern desktop design, and native Linux/Windows distribution into a single application.
+
+
+| Feature                    | HardwareMon | Task Manager | Htop |
+| -------------------------- | ----------- | ------------ | ---- |
+| CPU Monitoring             | ✅           | ✅            | ✅    |
+| Historical Analytics       | ✅           | ❌            | ❌    |
+| Process Management         | ✅           | ✅            | ✅    |
+| Modern UI                  | ✅           | ⚠️           | ❌    |
+| Linux Package Repositories | ✅           | ❌            | ❌    |
+| Windows Installer          | ✅           | Built-in     | ❌    |
+
 
 
 # HardwareMon Evolution
@@ -149,8 +173,8 @@ HardwareMon now uses a unified Flutter frontend architecture across Linux and Wi
 | Windows         | ✅ Supported | Installer / WinGet |
 | Ubuntu / Debian | ✅ Supported | APT                |
 | Fedora          | ✅ Supported | DNF                |
-| Flatpak         | ✅ Supported | Installer          |
-| Arch Linux      | ⌛ Coming Soon | AUR              |
+| Flatpak         | ⚠️ Experimental | Installer       |
+| Arch Linux      | 🚧 Planned | AUR                  |
 | macOS           | 🚧 Planned  | Future              |
 
 ---
@@ -165,6 +189,9 @@ HardwareMon now uses a unified Flutter frontend architecture across Linux and Wi
 winget install LouisHinchliffe.HardwareMon
 ```
 
+When launching HardwareMon, be sure to click 'Yes' to any UAC prompts for LibreHardwareMonitor.exe, to ensure full functionality like process management and temperature monitoring.
+The app will still function if you choose 'No', as the app will then fall back to Psutil for analytics, but choosing 'No' is not recommended due to LHM being required for some features.
+
 ---
 
 ## Manual Installer
@@ -172,6 +199,9 @@ winget install LouisHinchliffe.HardwareMon
 Download the latest Windows installer from:
 
 [https://github.com/louisboii747/HardwareMon/releases](https://github.com/louisboii747/HardwareMon/releases)
+
+When launching HardwareMon, be sure to click 'Yes' to any UAC prompts for LibreHardwareMonitor.exe, to ensure full functionality like process management and temperature monitoring.
+The app will still function if you choose 'No', as the app will then fall back to Psutil for analytics, but choosing 'No' is not recommended due to LHM being required for some features.
 
 ---
 
@@ -308,26 +338,6 @@ The backend is bundled directly with release builds and automatically launched b
 
 ---
 
-# Windows Version
-
-The Windows version is actively evolving into a cinematic workstation-style monitoring experience.
-
-Current Windows development includes:
-
-* Animated dashboard system
-* Interactive telemetry cards
-* Focus-mode analytics views
-* Multi-page navigation architecture
-* Live graph rendering
-* Real hardware telemetry
-* LibreHardwareMonitor integration
-* Acrylic/glass-inspired UI styling
-* Smooth animated transitions
-
-The Windows UI is built using Flutter Desktop with a modular architecture designed for future scalability.
-
----
-
 # Linux Distribution
 
 HardwareMon includes fully automated Linux packaging infrastructure.
@@ -336,7 +346,6 @@ Supported distribution methods:
 
 * APT repositories
 * DNF repositories
-* AUR packages
 * Direct GitHub Releases
 
 Linux packages include:
@@ -369,7 +378,6 @@ HardwareMon uses automated GitHub Actions pipelines for:
 
 * Linux DEB packaging
 * Linux RPM packaging
-* AUR publishing
 * Windows installer generation
 * WinGet publishing
 * GitHub Releases
@@ -433,16 +441,12 @@ python main.py
 
 Planned future improvements include:
 
-* Historical monitoring database
-* Long-term analytics
-* Per-core CPU visualisations
-* Expanded GPU telemetry
+
 * Remote monitoring support
 * System tray integration
 * Custom dashboard layouts
 * Plugin architecture
 * Detachable analytics windows
-* Alerts and notifications
 * Native macOS exploration
 
 ---
