@@ -7,6 +7,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme_controller.dart';
 import '../../../services/log_service.dart';
 import '../../../services/diagnostics_service.dart';
+import '../../../services/alert_service.dart';
+import '../../../widgets/alert_settings_widgets.dart';
 
 class SettingsPage extends StatefulWidget {
   final TelemetryService telemetry;
@@ -30,9 +32,12 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _loadSettings() async {
     final loadedSettings = await settingsService.loadSettings();
 
+    if (!mounted) return;
+
     setState(() {
       settings = loadedSettings;
     });
+    AlertService.instance.updateSettings(loadedSettings);
   }
 
   Future<void> _updateSettings(AppSettings updatedSettings) async {
@@ -41,6 +46,7 @@ class _SettingsPageState extends State<SettingsPage> {
     });
 
     await settingsService.saveSettings(updatedSettings);
+    AlertService.instance.updateSettings(updatedSettings);
     AppThemeController.instance.setTheme(updatedSettings.theme);
   }
 
@@ -54,6 +60,7 @@ class _SettingsPageState extends State<SettingsPage> {
     });
 
     AppThemeController.instance.setTheme(defaults.theme);
+    AlertService.instance.updateSettings(defaults);
   }
 
   Future<void> _showResetDialog() async {
@@ -214,6 +221,16 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
 
             _settingRow(
+              'Disk Alerts',
+              Switch(
+                value: settings.diskAlerts,
+                onChanged: (value) async {
+                  await _updateSettings(settings.copyWith(diskAlerts: value));
+                },
+              ),
+            ),
+
+            _settingRow(
               'Alert Sounds',
               Switch(
                 value: settings.alertSounds,
@@ -222,6 +239,72 @@ class _SettingsPageState extends State<SettingsPage> {
                 },
               ),
             ),
+          ]),
+
+          _buildSection('Alert Thresholds', [
+            AlertThresholdSlider(
+              label: 'CPU Usage',
+              value: settings.cpuUsageThreshold,
+              min: 0,
+              max: 100,
+              unit: '%',
+              enabled: settings.cpuAlerts,
+              enableMessage: 'Enable CPU Alerts to change this threshold.',
+              onChanged: (value) =>
+                  _updateSettings(settings.copyWith(cpuUsageThreshold: value)),
+            ),
+            AlertThresholdSlider(
+              label: 'RAM Usage',
+              value: settings.ramUsageThreshold,
+              min: 0,
+              max: 100,
+              unit: '%',
+              enabled: settings.ramAlerts,
+              enableMessage: 'Enable RAM Alerts to change this threshold.',
+              onChanged: (value) =>
+                  _updateSettings(settings.copyWith(ramUsageThreshold: value)),
+            ),
+            AlertThresholdSlider(
+              label: 'Disk Usage',
+              value: settings.diskUsageThreshold,
+              min: 0,
+              max: 100,
+              unit: '%',
+              enabled: settings.diskAlerts,
+              enableMessage: 'Enable Disk Alerts to change this threshold.',
+              onChanged: (value) =>
+                  _updateSettings(settings.copyWith(diskUsageThreshold: value)),
+            ),
+            AlertThresholdSlider(
+              label: 'CPU Temperature',
+              value: settings.cpuTemperatureThreshold,
+              min: 0,
+              max: 100,
+              unit: '°C',
+              enabled: settings.temperatureAlerts,
+              enableMessage:
+                  'Enable Temperature Alerts to change this threshold.',
+              onChanged: (value) => _updateSettings(
+                settings.copyWith(cpuTemperatureThreshold: value),
+              ),
+            ),
+            AlertThresholdSlider(
+              label: 'GPU Temperature',
+              value: settings.gpuTemperatureThreshold,
+              min: 0,
+              max: 100,
+              unit: '°C',
+              enabled: settings.temperatureAlerts,
+              enableMessage:
+                  'Enable Temperature Alerts to change this threshold.',
+              onChanged: (value) => _updateSettings(
+                settings.copyWith(gpuTemperatureThreshold: value),
+              ),
+            ),
+          ]),
+
+          _buildSection('Alert History', [
+            const AlertHistoryPanel(showHeader: false),
           ]),
 
           _buildSection('Updates', [

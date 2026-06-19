@@ -16,5 +16,11 @@ void main() {
 
     // Sidebar icon is always rendered.
     expect(find.byIcon(Icons.memory_rounded), findsWidgets);
+
+    // Allow entrance animations to finish, then dispose the shell cleanly so
+    // animation and telemetry timers are cancelled before test teardown.
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
   });
 }

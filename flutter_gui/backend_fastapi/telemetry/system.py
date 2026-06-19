@@ -16,6 +16,14 @@ LHM_URL = "http://127.0.0.1:8085/data.json"
 IS_WINDOWS = platform.system() == "Windows"
 
 
+def read_disk_usage():
+    try:
+        path = f"{os.environ.get('SystemDrive', 'C:')}\\" if IS_WINDOWS else "/"
+        return int(psutil.disk_usage(path).percent)
+    except (OSError, PermissionError):
+        return 0
+
+
 def default_stats():
     return {
         "cpu": 0,
@@ -26,6 +34,7 @@ def default_stats():
         "ram_used": 0,
         "ram_available": 0,
         "ram_total": 0,
+        "disk": read_disk_usage(),
         "gpu_temp": 0,
         "cpu_name": "Unknown CPU",
         "gpu_name": "Unknown GPU",
@@ -332,7 +341,6 @@ def collect_stats():
         stats["gpu_temp"] = int(parse_sensor_number(value))
 
     stats["ram_total"] = round(stats["ram_used"] + stats["ram_available"], 1)
-
     return stats
 
 

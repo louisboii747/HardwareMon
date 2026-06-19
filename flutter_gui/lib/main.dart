@@ -9,7 +9,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gui/windows_ui/core/backend_config.dart';
 import 'package:flutter_gui/windows_ui/core/theme/app_theme.dart';
 import 'package:flutter_gui/windows_ui/core/theme/app_theme_controller.dart';
+import 'package:flutter_gui/windows_ui/models/app_settings.dart';
 import 'package:flutter_gui/windows_ui/screens/shell_screen.dart';
+import 'package:flutter_gui/windows_ui/services/settings_service.dart';
+import 'package:flutter_gui/services/alert_service.dart';
+import 'package:flutter_gui/widgets/alert_settings_widgets.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
@@ -137,6 +141,9 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await AppThemeController.instance.load();
+
+  final alertSettings = await SettingsService().loadSettings();
+  await AlertService.instance.initialize(alertSettings);
 
   if (Platform.environment['HARDWAREMON_BACKEND_MANAGED'] != '1') {
     await startBackend();
@@ -583,6 +590,14 @@ class _DashboardPageState extends State<DashboardPage> {
           _pushHistory(_coreHistories[i], cores[i].toDouble());
         }
       });
+
+      await AlertService.instance.evaluate(
+        cpuTemperature: (data['cpu_temp'] as num?)?.toDouble() ?? 0,
+        gpuTemperature: (data['gpu_temp'] as num?)?.toDouble() ?? 0,
+        cpuUsage: (data['cpu'] as num?)?.toDouble() ?? 0,
+        ramUsage: (data['ram'] as num?)?.toDouble() ?? 0,
+        diskUsage: (data['disk'] as num?)?.toDouble() ?? 0,
+      );
     } catch (e) {
       debugPrint("fetchStats error: $e");
       _handleFailure();
@@ -1281,6 +1296,7 @@ class _ProcessesPageState extends State<ProcessesPage> {
   List<Map<String, dynamic>> _processes = [];
   String _searchQuery = "";
   String _sortBy = "cpu"; // "cpu" | "ram" | "name"
+  bool _hideSystemProcesses = true;
   late Timer _timer;
 
   Future<void> _checkVirusTotal(int pid) async {
@@ -1374,8 +1390,9 @@ class _ProcessesPageState extends State<ProcessesPage> {
     var list = _processes
         .where(
           (p) =>
-              (p['name'] as String).toLowerCase().contains(q) ||
-              p['pid'].toString().contains(q),
+              (!_hideSystemProcesses || p['is_system'] != true) &&
+              ((p['name'] as String).toLowerCase().contains(q) ||
+                  p['pid'].toString().contains(q)),
         )
         .toList();
 
@@ -1441,6 +1458,29 @@ class _ProcessesPageState extends State<ProcessesPage> {
                     color: Colors.white54,
                     fontWeight: FontWeight.w600,
                   ),
+                ),
+              ),
+              const Spacer(),
+              Icon(
+                Icons.shield_outlined,
+                size: 18,
+                color: _hideSystemProcesses ? AppColors.cyan : Colors.white38,
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                "Hide system processes",
+                style: TextStyle(fontSize: 13, color: Colors.white54),
+              ),
+              const SizedBox(width: 6),
+              Tooltip(
+                message:
+                    "Show user applications such as browsers, editors, and file managers",
+                child: Switch(
+                  value: _hideSystemProcesses,
+                  activeColor: AppColors.cyan,
+                  onChanged: (value) {
+                    setState(() => _hideSystemProcesses = value);
+                  },
                 ),
               ),
             ],
@@ -1729,8 +1769,10 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   final TextEditingController _vtController = TextEditingController();
+  final SettingsService _settingsService = SettingsService();
 
   String _refreshInterval = "2";
+  AppSettings _alertSettings = const AppSettings();
 
   final List<String> _refreshOptions = ["1", "2", "3", "5", "10"];
 
@@ -1807,141 +1849,325 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  Future<void> _loadAlertSettings() async {
+    final settings = await _settingsService.loadSettings();
+    if (!mounted) return;
+
+    setState(() {
+      _alertSettings = settings;
+    });
+    AlertService.instance.updateSettings(settings);
+  }
+
+  Future<void> _updateAlertSettings(AppSettings settings) async {
+    setState(() {
+      _alertSettings = settings;
+    });
+    await _settingsService.saveSettings(settings);
+    AlertService.instance.updateSettings(settings);
+  }
+
   @override
   void initState() {
     super.initState();
 
     _loadRefreshInterval();
+    _loadAlertSettings();
   }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Settings",
+              style: TextStyle(
+                fontSize: 30,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.5,
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: AppColors.border.withOpacity(0.6)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "VirusTotal API Key",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  const Text(
+                    "Used for process reputation scanning.",
+                    style: TextStyle(color: Colors.white38, fontSize: 13),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  TextField(
+                    controller: _vtController,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      hintText: "Enter VirusTotal API key",
+                      filled: true,
+                      fillColor: AppColors.surface2,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  ElevatedButton(
+                    onPressed: _saveVirusTotalKey,
+                    child: const Text("Save API Key"),
+                  ),
+                  const SizedBox(height: 20),
+
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: AppColors.border.withOpacity(0.6),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Dashboard Refresh Interval",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        const Text(
+                          "Controls how often stats update.",
+                          style: TextStyle(color: Colors.white38, fontSize: 13),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        DropdownButtonFormField<String>(
+                          value: _refreshInterval,
+                          dropdownColor: AppColors.surface,
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: AppColors.surface2,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          items: _refreshOptions.map((value) {
+                            return DropdownMenuItem(
+                              value: value,
+                              child: Text("$value seconds"),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            if (value != null) {
+                              _saveRefreshInterval(value);
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            _buildAlertSettings(),
+
+            const SizedBox(height: 20),
+
+            Text(
+              "HardwareMon $_kAppVersion",
+              style: const TextStyle(color: Colors.white38, fontSize: 12),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAlertSettings() {
+    return Column(
+      children: [
+        _settingsCard(
+          title: 'Notifications',
+          children: [
+            _alertToggleRow(
+              'CPU Alerts',
+              _alertSettings.cpuAlerts,
+              (value) => _updateAlertSettings(
+                _alertSettings.copyWith(cpuAlerts: value),
+              ),
+            ),
+            _alertToggleRow(
+              'RAM Alerts',
+              _alertSettings.ramAlerts,
+              (value) => _updateAlertSettings(
+                _alertSettings.copyWith(ramAlerts: value),
+              ),
+            ),
+            _alertToggleRow(
+              'Temperature Alerts',
+              _alertSettings.temperatureAlerts,
+              (value) => _updateAlertSettings(
+                _alertSettings.copyWith(temperatureAlerts: value),
+              ),
+            ),
+            _alertToggleRow(
+              'Disk Alerts',
+              _alertSettings.diskAlerts,
+              (value) => _updateAlertSettings(
+                _alertSettings.copyWith(diskAlerts: value),
+              ),
+            ),
+            _alertToggleRow(
+              'Alert Sounds',
+              _alertSettings.alertSounds,
+              (value) => _updateAlertSettings(
+                _alertSettings.copyWith(alertSounds: value),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        _settingsCard(
+          title: 'Alert Thresholds',
+          children: [
+            AlertThresholdSlider(
+              label: 'CPU Usage',
+              value: _alertSettings.cpuUsageThreshold,
+              min: 0,
+              max: 100,
+              unit: '%',
+              enabled: _alertSettings.cpuAlerts,
+              enableMessage: 'Enable CPU Alerts to change this threshold.',
+              onChanged: (value) => _updateAlertSettings(
+                _alertSettings.copyWith(cpuUsageThreshold: value),
+              ),
+            ),
+            AlertThresholdSlider(
+              label: 'RAM Usage',
+              value: _alertSettings.ramUsageThreshold,
+              min: 0,
+              max: 100,
+              unit: '%',
+              enabled: _alertSettings.ramAlerts,
+              enableMessage: 'Enable RAM Alerts to change this threshold.',
+              onChanged: (value) => _updateAlertSettings(
+                _alertSettings.copyWith(ramUsageThreshold: value),
+              ),
+            ),
+            AlertThresholdSlider(
+              label: 'Disk Usage',
+              value: _alertSettings.diskUsageThreshold,
+              min: 0,
+              max: 100,
+              unit: '%',
+              enabled: _alertSettings.diskAlerts,
+              enableMessage: 'Enable Disk Alerts to change this threshold.',
+              onChanged: (value) => _updateAlertSettings(
+                _alertSettings.copyWith(diskUsageThreshold: value),
+              ),
+            ),
+            AlertThresholdSlider(
+              label: 'CPU Temperature',
+              value: _alertSettings.cpuTemperatureThreshold,
+              min: 0,
+              max: 100,
+              unit: '°C',
+              enabled: _alertSettings.temperatureAlerts,
+              enableMessage:
+                  'Enable Temperature Alerts to change this threshold.',
+              onChanged: (value) => _updateAlertSettings(
+                _alertSettings.copyWith(cpuTemperatureThreshold: value),
+              ),
+            ),
+            AlertThresholdSlider(
+              label: 'GPU Temperature',
+              value: _alertSettings.gpuTemperatureThreshold,
+              min: 0,
+              max: 100,
+              unit: '°C',
+              enabled: _alertSettings.temperatureAlerts,
+              enableMessage:
+                  'Enable Temperature Alerts to change this threshold.',
+              onChanged: (value) => _updateAlertSettings(
+                _alertSettings.copyWith(gpuTemperatureThreshold: value),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        _settingsCard(
+          title: 'Alert History',
+          children: const [AlertHistoryPanel(showHeader: false)],
+        ),
+      ],
+    );
+  }
+
+  Widget _settingsCard({
+    required String title,
+    required List<Widget> children,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.border.withOpacity(0.6)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "Settings",
-            style: TextStyle(
-              fontSize: 30,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.5,
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: AppColors.border.withOpacity(0.6)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "VirusTotal API Key",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-
-                const SizedBox(height: 8),
-
-                const Text(
-                  "Used for process reputation scanning.",
-                  style: TextStyle(color: Colors.white38, fontSize: 13),
-                ),
-
-                const SizedBox(height: 16),
-
-                TextField(
-                  controller: _vtController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    hintText: "Enter VirusTotal API key",
-                    filled: true,
-                    fillColor: AppColors.surface2,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 14),
-
-                ElevatedButton(
-                  onPressed: _saveVirusTotalKey,
-                  child: const Text("Save API Key"),
-                ),
-                const SizedBox(height: 20),
-
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(
-                      color: AppColors.border.withOpacity(0.6),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        "Dashboard Refresh Interval",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      const Text(
-                        "Controls how often stats update.",
-                        style: TextStyle(color: Colors.white38, fontSize: 13),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      DropdownButtonFormField<String>(
-                        value: _refreshInterval,
-                        dropdownColor: AppColors.surface,
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: AppColors.surface2,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        items: _refreshOptions.map((value) {
-                          return DropdownMenuItem(
-                            value: value,
-                            child: Text("$value seconds"),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          if (value != null) {
-                            _saveRefreshInterval(value);
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-
           Text(
-            "HardwareMon $_kAppVersion",
-            style: const TextStyle(color: Colors.white38, fontSize: 12),
+            title,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
+          const SizedBox(height: 12),
+          ...children,
         ],
       ),
+    );
+  }
+
+  Widget _alertToggleRow(
+    String label,
+    bool value,
+    ValueChanged<bool> onChanged,
+  ) {
+    return Row(
+      children: [
+        Expanded(child: Text(label)),
+        Switch(value: value, onChanged: onChanged),
+      ],
     );
   }
 }

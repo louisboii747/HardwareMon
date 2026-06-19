@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import '../../services/alert_service.dart';
 import 'settings_service.dart';
 import '../core/backend_config.dart';
 
@@ -9,6 +10,7 @@ class TelemetryService extends ChangeNotifier {
   int cpuUsage = 0;
   int cpuTemp = 0;
   int ramUsage = 0;
+  int diskUsage = 0;
   int gpuTemp = 0;
   int gpuUsage = 0;
 
@@ -50,6 +52,7 @@ class TelemetryService extends ChangeNotifier {
       cpuUsage = data['cpu'] ?? 0;
       cpuTemp = data['cpu_temp'] ?? 0;
       ramUsage = data['ram'] ?? 0;
+      diskUsage = data['disk'] ?? 0;
       gpuTemp = data['gpu_temp'] ?? 0;
       gpuUsage = data['gpu_usage'] ?? 0;
 
@@ -86,6 +89,14 @@ class TelemetryService extends ChangeNotifier {
         gpuUsageHistory.removeAt(0);
       }
 
+      await AlertService.instance.evaluate(
+        cpuTemperature: cpuTemp.toDouble(),
+        gpuTemperature: gpuTemp.toDouble(),
+        cpuUsage: cpuUsage.toDouble(),
+        ramUsage: ramUsage.toDouble(),
+        diskUsage: diskUsage.toDouble(),
+      );
+
       notifyListeners();
     } catch (e) {
       debugPrint('Telemetry fetch failed: $e');
@@ -120,6 +131,7 @@ class TelemetryService extends ChangeNotifier {
 
   Future<void> start() async {
     final settings = await SettingsService().loadSettings();
+    AlertService.instance.updateSettings(settings);
 
     Duration refreshDuration;
 

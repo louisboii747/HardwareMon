@@ -10,7 +10,14 @@ class AppSettings {
   final bool cpuAlerts;
   final bool ramAlerts;
   final bool temperatureAlerts;
+  final bool diskAlerts;
   final bool alertSounds;
+
+  final double cpuTemperatureThreshold;
+  final double gpuTemperatureThreshold;
+  final double cpuUsageThreshold;
+  final double ramUsageThreshold;
+  final double diskUsageThreshold;
 
   final bool autoUpdateChecks;
 
@@ -24,7 +31,13 @@ class AppSettings {
     this.cpuAlerts = false,
     this.ramAlerts = false,
     this.temperatureAlerts = false,
+    this.diskAlerts = false,
     this.alertSounds = true,
+    this.cpuTemperatureThreshold = 85,
+    this.gpuTemperatureThreshold = 85,
+    this.cpuUsageThreshold = 90,
+    this.ramUsageThreshold = 90,
+    this.diskUsageThreshold = 90,
     this.autoUpdateChecks = true,
   });
 
@@ -38,7 +51,13 @@ class AppSettings {
     bool? cpuAlerts,
     bool? ramAlerts,
     bool? temperatureAlerts,
+    bool? diskAlerts,
     bool? alertSounds,
+    double? cpuTemperatureThreshold,
+    double? gpuTemperatureThreshold,
+    double? cpuUsageThreshold,
+    double? ramUsageThreshold,
+    double? diskUsageThreshold,
     bool? autoUpdateChecks,
   }) {
     return AppSettings(
@@ -51,7 +70,15 @@ class AppSettings {
       cpuAlerts: cpuAlerts ?? this.cpuAlerts,
       ramAlerts: ramAlerts ?? this.ramAlerts,
       temperatureAlerts: temperatureAlerts ?? this.temperatureAlerts,
+      diskAlerts: diskAlerts ?? this.diskAlerts,
       alertSounds: alertSounds ?? this.alertSounds,
+      cpuTemperatureThreshold:
+          cpuTemperatureThreshold ?? this.cpuTemperatureThreshold,
+      gpuTemperatureThreshold:
+          gpuTemperatureThreshold ?? this.gpuTemperatureThreshold,
+      cpuUsageThreshold: cpuUsageThreshold ?? this.cpuUsageThreshold,
+      ramUsageThreshold: ramUsageThreshold ?? this.ramUsageThreshold,
+      diskUsageThreshold: diskUsageThreshold ?? this.diskUsageThreshold,
       autoUpdateChecks: autoUpdateChecks ?? this.autoUpdateChecks,
     );
   }

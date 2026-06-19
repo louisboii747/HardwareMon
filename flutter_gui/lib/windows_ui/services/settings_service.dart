@@ -36,7 +36,20 @@ class SettingsService {
     await prefs.setBool('cpuAlerts', settings.cpuAlerts);
     await prefs.setBool('ramAlerts', settings.ramAlerts);
     await prefs.setBool('temperatureAlerts', settings.temperatureAlerts);
+    await prefs.setBool('diskAlerts', settings.diskAlerts);
     await prefs.setBool('alertSounds', settings.alertSounds);
+
+    await prefs.setDouble(
+      'cpuTemperatureThreshold',
+      settings.cpuTemperatureThreshold,
+    );
+    await prefs.setDouble(
+      'gpuTemperatureThreshold',
+      settings.gpuTemperatureThreshold,
+    );
+    await prefs.setDouble('cpuUsageThreshold', settings.cpuUsageThreshold);
+    await prefs.setDouble('ramUsageThreshold', settings.ramUsageThreshold);
+    await prefs.setDouble('diskUsageThreshold', settings.diskUsageThreshold);
 
     await prefs.setBool('autoUpdateChecks', settings.autoUpdateChecks);
   }
@@ -62,7 +75,19 @@ class SettingsService {
 
       temperatureAlerts: prefs.getBool('temperatureAlerts') ?? false,
 
+      diskAlerts: prefs.getBool('diskAlerts') ?? false,
+
       alertSounds: prefs.getBool('alertSounds') ?? true,
+
+      cpuTemperatureThreshold: prefs.getDouble('cpuTemperatureThreshold') ?? 85,
+
+      gpuTemperatureThreshold: prefs.getDouble('gpuTemperatureThreshold') ?? 85,
+
+      cpuUsageThreshold: prefs.getDouble('cpuUsageThreshold') ?? 90,
+
+      ramUsageThreshold: prefs.getDouble('ramUsageThreshold') ?? 90,
+
+      diskUsageThreshold: prefs.getDouble('diskUsageThreshold') ?? 90,
 
       autoUpdateChecks: prefs.getBool('autoUpdateChecks') ?? true,
     );

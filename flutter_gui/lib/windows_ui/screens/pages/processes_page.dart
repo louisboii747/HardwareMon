@@ -16,6 +16,7 @@ class ProcessesPage extends StatefulWidget {
 class _ProcessesPageState extends State<ProcessesPage> {
   List<ProcessInfo> processes = [];
   bool loading = true;
+  bool hideSystemProcesses = true;
   String searchQuery = '';
 
   Timer? refreshTimer;
@@ -52,12 +53,16 @@ class _ProcessesPageState extends State<ProcessesPage> {
   }
 
   List<ProcessInfo> get filteredProcesses {
-    if (searchQuery.isEmpty) {
-      return processes;
-    }
+    final normalizedQuery = searchQuery.trim().toLowerCase();
 
     return processes.where((process) {
-      return process.name.toLowerCase().contains(searchQuery.toLowerCase());
+      final matchesProcessType = !hideSystemProcesses || !process.isSystem;
+      final matchesSearch =
+          normalizedQuery.isEmpty ||
+          process.name.toLowerCase().contains(normalizedQuery) ||
+          process.pid.toString().contains(normalizedQuery);
+
+      return matchesProcessType && matchesSearch;
     }).toList();
   }
 
@@ -71,9 +76,39 @@ class _ProcessesPageState extends State<ProcessesPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Processes',
-            style: TextStyle(fontSize: 32, fontWeight: FontWeight.w600),
+          Row(
+            children: [
+              const Text(
+                'Processes',
+                style: TextStyle(fontSize: 32, fontWeight: FontWeight.w600),
+              ),
+              const Spacer(),
+              Icon(
+                Icons.shield_outlined,
+                size: 18,
+                color: hideSystemProcesses
+                    ? Theme.of(context).colorScheme.primary
+                    : mutedColor,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Hide system processes',
+                style: TextStyle(color: mutedColor, fontSize: 13),
+              ),
+              const SizedBox(width: 8),
+              Tooltip(
+                message:
+                    'Show user applications such as browsers, editors, and file managers',
+                child: Switch(
+                  value: hideSystemProcesses,
+                  onChanged: (value) {
+                    setState(() {
+                      hideSystemProcesses = value;
+                    });
+                  },
+                ),
+              ),
+            ],
           ),
 
           const SizedBox(height: 24),
@@ -101,7 +136,7 @@ class _ProcessesPageState extends State<ProcessesPage> {
                     },
                     style: TextStyle(color: textColor),
                     decoration: InputDecoration(
-                      hintText: 'Search processes...',
+                      hintText: 'Search by name or PID...',
                       hintStyle: TextStyle(color: AppColors.textMuted(context)),
                       border: InputBorder.none,
                     ),

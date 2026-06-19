@@ -55,7 +55,25 @@ class DiagnosticsService {
     buffer.writeln('CPU Alerts: ${settings.cpuAlerts}');
     buffer.writeln('RAM Alerts: ${settings.ramAlerts}');
     buffer.writeln('Temperature Alerts: ${settings.temperatureAlerts}');
+    buffer.writeln('Disk Alerts: ${settings.diskAlerts}');
     buffer.writeln('Alert Sounds: ${settings.alertSounds}');
+    buffer.writeln(
+      'CPU Usage Threshold: ${settings.cpuUsageThreshold.toStringAsFixed(0)}%',
+    );
+    buffer.writeln(
+      'RAM Usage Threshold: ${settings.ramUsageThreshold.toStringAsFixed(0)}%',
+    );
+    buffer.writeln(
+      'Disk Usage Threshold: ${settings.diskUsageThreshold.toStringAsFixed(0)}%',
+    );
+    buffer.writeln(
+      'CPU Temperature Threshold: '
+      '${settings.cpuTemperatureThreshold.toStringAsFixed(0)}°C',
+    );
+    buffer.writeln(
+      'GPU Temperature Threshold: '
+      '${settings.gpuTemperatureThreshold.toStringAsFixed(0)}°C',
+    );
     buffer.writeln('Auto Update Checks: ${settings.autoUpdateChecks}');
     buffer.writeln('');
     buffer.writeln('Paths');
