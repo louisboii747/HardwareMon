@@ -22,7 +22,7 @@ New-Item -ItemType Directory -Path "staging" | Out-Null
 
 Write-Host "Building backend..."
 
-Set-Location "../flutter_gui/backend_fastapi"
+Set-Location "../hardwaremon_app/backend_fastapi"
 
 pyinstaller backend.spec --clean -y
 Write-Host "Backend dist contents:"
@@ -48,7 +48,7 @@ Set-Location "../installer"
 Write-Host "Copying Flutter release files..."
 
 Copy-Item `
-    "../flutter_gui/build/windows/x64/runner/Release/*" `
+    "../hardwaremon_app/build/windows/x64/runner/Release/*" `
     "staging/" `
     -Recurse `
     -Force
@@ -60,7 +60,7 @@ Copy-Item `
 Write-Host "Copying backend executable..."
 
 Copy-Item `
-    "../flutter_gui/backend_fastapi/dist/backend/*" `
+    "../hardwaremon_app/backend_fastapi/dist/backend/*" `
     "staging/" `
     -Recurse `
     -Force

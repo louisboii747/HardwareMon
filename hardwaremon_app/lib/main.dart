@@ -73,7 +73,7 @@ Future<void> startBackend() async {
     // Python backend script
     else {
       final venvPython =
-          '${Platform.script.toFilePath().split('/flutter_gui/').first}/.venv/bin/python3';
+          '${Platform.script.toFilePath().split('/hardwaremon_app/').first}/.venv/bin/python3';
 
       backendProcess = await Process.start(
         File(venvPython).existsSync() ? venvPython : 'python3',

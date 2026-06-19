@@ -111,14 +111,14 @@ jobs:
       # Flutter dependencies
       # ─────────────────────────────────────────────
       - name: Flutter pub get
-        working-directory: flutter_gui
+        working-directory: hardwaremon_app
         run: flutter pub get
 
       # ─────────────────────────────────────────────
       # Build Flutter Linux app
       # ─────────────────────────────────────────────
       - name: Build Flutter Linux app
-        working-directory: flutter_gui
+        working-directory: hardwaremon_app
         run: |
           flutter build linux --release \
             --split-debug-info=symbols \
@@ -133,7 +133,7 @@ jobs:
           pyinstaller \
             --onefile \
             --name backend \
-            flutter_gui/backend_fastapi/main.py
+            hardwaremon_app/backend_fastapi/main.py
 
           strip dist/backend || true
           upx --best dist/backend
@@ -149,7 +149,7 @@ jobs:
           mkdir -p pkg/usr/share/applications
           mkdir -p pkg/usr/share/icons/hicolor/256x256/apps
 
-          cp -r flutter_gui/build/linux/x64/release/bundle/* \
+          cp -r hardwaremon_app/build/linux/x64/release/bundle/* \
             pkg/usr/lib/hardwaremon/
 
           mv pkg/usr/lib/hardwaremon/hardwaremon \

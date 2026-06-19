@@ -36,11 +36,11 @@ __pycache__/
 .flutter-plugins
 .flutter-plugins-dependencies
 
-flutter_gui/build/
+hardwaremon_app/build/
 
 # Generated Windows Flutter files
-flutter_gui/windows/flutter/generated_plugin_registrant.cc
-flutter_gui/windows/flutter/generated_plugins.cmake
+hardwaremon_app/windows/flutter/generated_plugin_registrant.cc
+hardwaremon_app/windows/flutter/generated_plugins.cmake
 
 # ─────────────────────────────────────────────
 # PyInstaller
@@ -50,14 +50,14 @@ flutter_gui/windows/flutter/generated_plugins.cmake
 build/
 dist/
 
-flutter_gui/backend_fastapi/build/
-flutter_gui/backend_fastapi/dist/
+hardwaremon_app/backend_fastapi/build/
+hardwaremon_app/backend_fastapi/dist/
 
 # Ignore all spec backups
 *.spec.bak
 
 # Keep required backend spec
-!flutter_gui/backend_fastapi/backend.spec
+!hardwaremon_app/backend_fastapi/backend.spec
 
 # ─────────────────────────────────────────────
 # Installer
@@ -81,7 +81,7 @@ python-packages/
 *.egg-info/
 *.egg
 .idea/
-flutter_gui/backend_fastapi/lhm_data.json
+hardwaremon_app/backend_fastapi/lhm_data.json
 hardwaremon.db
 *.db
 LibreHardwareMonitor.config

@@ -9,7 +9,7 @@ updates:
       - dependencies
 
   - package-ecosystem: "pip"
-    directory: "/flutter_gui/backend_fastapi"
+    directory: "/hardwaremon_app/backend_fastapi"
     schedule:
       interval: "weekly"
     labels:

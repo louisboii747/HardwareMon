@@ -32,7 +32,7 @@ jobs:
 
       - name: Flutter pub get
         run: |
-          cd flutter_gui
+          cd hardwaremon_app
           flutter pub get
 
       # ─────────────────────────────────────
@@ -46,13 +46,13 @@ jobs:
 
       - name: Install backend dependencies
         run: |
-          cd flutter_gui/backend_fastapi
+          cd hardwaremon_app/backend_fastapi
           pip install -r requirements.txt
           pip install pyinstaller requests
 
       - name: Build backend executable
         run: |
-          cd flutter_gui/backend_fastapi
+          cd hardwaremon_app/backend_fastapi
           pyinstaller backend.spec
 
       # ─────────────────────────────────────

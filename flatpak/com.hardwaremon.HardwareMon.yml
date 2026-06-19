@@ -33,7 +33,7 @@ modules:
 
     sources:
       - type: dir
-        path: ../flutter_gui/build/linux/x64/release/bundle
+        path: ../hardwaremon_app/build/linux/x64/release/bundle
 
       - type: dir
         path: assets

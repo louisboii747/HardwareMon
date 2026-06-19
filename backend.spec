@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['flutter_gui\\backend_fastapi\\main.py'],
+    ['hardwaremon_app\\backend_fastapi\\main.py'],
     pathex=[],
     binaries=[],
     datas=[],

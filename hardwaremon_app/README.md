@@ -1,4 +1,4 @@
-# flutter_gui
+# hardwaremon_app
 
 A new Flutter project.
 

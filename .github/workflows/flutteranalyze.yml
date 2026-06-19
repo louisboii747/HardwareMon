@@ -19,8 +19,8 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
-        working-directory: flutter_gui
+        working-directory: hardwaremon_app
 
       - name: Analyze Dart code
         run: flutter analyze --no-fatal-infos
-        working-directory: flutter_gui
+        working-directory: hardwaremon_app

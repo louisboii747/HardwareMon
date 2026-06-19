@@ -56,34 +56,34 @@ jobs:
             flathub org.freedesktop.Sdk//24.08
 
       - name: Flutter pub get
-        working-directory: flutter_gui
+        working-directory: hardwaremon_app
         run: flutter pub get
 
       - name: Build Flutter Linux app
-        working-directory: flutter_gui
+        working-directory: hardwaremon_app
         run: flutter build linux --release
 
       - name: Install backend dependencies
-        working-directory: flutter_gui/backend_fastapi
+        working-directory: hardwaremon_app/backend_fastapi
         run: |
           pip install -r requirements.txt
           pip install pyinstaller
 
       - name: Build backend executable
-        working-directory: flutter_gui/backend_fastapi
+        working-directory: hardwaremon_app/backend_fastapi
         run: |
           pyinstaller backend.spec
 
       - name: Copy backend into bundle
         run: |
-          mkdir -p flutter_gui/build/linux/x64/release/bundle/backend
+          mkdir -p hardwaremon_app/build/linux/x64/release/bundle/backend
 
           cp -a \
-            flutter_gui/backend_fastapi/dist/backend/. \
-            flutter_gui/build/linux/x64/release/bundle/backend/
+            hardwaremon_app/backend_fastapi/dist/backend/. \
+            hardwaremon_app/build/linux/x64/release/bundle/backend/
 
           chmod +x \
-            flutter_gui/build/linux/x64/release/bundle/backend/backend
+            hardwaremon_app/build/linux/x64/release/bundle/backend/backend
 
       - name: Build Flatpak
         run: |

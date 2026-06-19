@@ -402,7 +402,7 @@ cd HardwareMon
 # Flutter Development
 
 ```bash
-cd flutter_gui
+cd hardwaremon_app
 
 flutter pub get
 
