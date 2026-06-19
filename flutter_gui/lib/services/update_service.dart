@@ -3,12 +3,16 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class UpdateService {
-  static const bool isDevelopmentBuild = true;
-  static const String currentVersion = '18.0.0-dev';
-
   static Future<Map<String, dynamic>> checkForUpdates() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+
+    final currentVersion = packageInfo.version;
+
+    final isDevelopmentBuild =
+        currentVersion.contains('-dev') || currentVersion.contains('.dev');
     final response = await http.get(
       Uri.parse(
         'https://api.github.com/repos/louisboii747/HardwareMon/releases/latest',
@@ -23,11 +27,22 @@ class UpdateService {
 
     final latestVersion = (data['tag_name'] as String).replaceFirst('v', '');
 
+    final devVersionClean = currentVersion
+        .replaceAll('-dev', '')
+        .replaceAll('.dev', '');
+
+    final devBehindStable =
+        isDevelopmentBuild && devVersionClean != latestVersion;
+
     return {
       'current': currentVersion,
       'latest': latestVersion,
       'updateAvailable': !isDevelopmentBuild && latestVersion != currentVersion,
+
       'developmentBuild': isDevelopmentBuild,
+
+      'devBehindStable': devBehindStable,
+
       'htmlUrl': data['html_url'],
     };
   }
