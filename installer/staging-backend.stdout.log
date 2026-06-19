@@ -1,0 +1,6 @@
+Base path: F:\HardwareMon\installer\staging
+LHM path: F:\HardwareMon\installer\staging\third_party\LibreHardwareMonitor\LibreHardwareMonitor.exe
+Started LibreHardwareMonitor
+LibreHardwareMonitor web server ready
+Logged telemetry sample
+INFO:     127.0.0.1:59024 - "GET /stats HTTP/1.1" 200 OK

@@ -7,6 +7,7 @@ import platform
 import re
 import shutil
 import subprocess
+import time
 import psutil
 from database.database import get_data_dir
 
@@ -14,6 +15,7 @@ router = APIRouter()
 
 LHM_URL = "http://127.0.0.1:8085/data.json"
 IS_WINDOWS = platform.system() == "Windows"
+_last_lhm_error_log = 0
 
 
 def read_disk_usage():
@@ -24,24 +26,47 @@ def read_disk_usage():
         return 0
 
 
-def default_stats():
+def read_cpu_name():
+    if IS_WINDOWS:
+        try:
+            import winreg
+
+            key_path = r"HARDWARE\DESCRIPTION\System\CentralProcessor\0"
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path) as key:
+                value, _ = winreg.QueryValueEx(key, "ProcessorNameString")
+                if value:
+                    return str(value).strip()
+        except (ImportError, OSError):
+            pass
+
+    return platform.processor() or "Unknown CPU"
+
+
+def collect_basic_stats():
+    memory = psutil.virtual_memory()
+    cpu_freq = psutil.cpu_freq()
+
     return {
-        "cpu": 0,
+        "cpu": int(psutil.cpu_percent(interval=0.1)),
         "cpu_temp": 0,
         "cpu_power": 0,
-        "cpu_clock": 0,
-        "ram": 0,
-        "ram_used": 0,
-        "ram_available": 0,
-        "ram_total": 0,
+        "cpu_clock": round(cpu_freq.current, 1) if cpu_freq else 0,
+        "ram": int(memory.percent),
+        "ram_used": round(memory.used / 1024 / 1024 / 1024, 1),
+        "ram_available": round(memory.available / 1024 / 1024 / 1024, 1),
+        "ram_total": round(memory.total / 1024 / 1024 / 1024, 1),
         "disk": read_disk_usage(),
         "gpu_temp": 0,
-        "cpu_name": "Unknown CPU",
+        "cpu_name": read_cpu_name(),
         "gpu_name": "Unknown GPU",
         "gpu_usage": 0,
         "gpu_power": 0,
         "gpu_vram_used": 0,
     }
+
+
+def default_stats():
+    return collect_basic_stats()
 
 
 def find_sensor(node, text):
@@ -55,6 +80,47 @@ def find_sensor(node, text):
             results.extend(find_sensor(child, text))
 
     return results
+
+
+def iter_nodes(node):
+    if not isinstance(node, dict):
+        return
+
+    yield node
+    for child in node.get("Children", []):
+        yield from iter_nodes(child)
+
+
+def find_hardware(data, prefixes):
+    for node in iter_nodes(data):
+        hardware_id = str(node.get("HardwareId", "")).lower()
+        if any(hardware_id.startswith(prefix) for prefix in prefixes):
+            return node
+
+    return None
+
+
+def find_typed_sensor(node, sensor_type, names=()):
+    if node is None:
+        return None
+
+    normalized_names = {name.lower() for name in names}
+
+    for candidate in iter_nodes(node):
+        if candidate.get("Type") != sensor_type:
+            continue
+
+        if not normalized_names or str(candidate.get("Text", "")).lower() in normalized_names:
+            return candidate
+
+    return None
+
+
+def sensor_value(node, default=0):
+    if node is None:
+        return default
+
+    return parse_sensor_number(node.get("Value"), default)
 
 
 def parse_sensor_number(value, default=0):
@@ -217,18 +283,8 @@ def collect_linux_gpu_stats():
 
 
 def collect_linux_stats():
-    stats = default_stats()
-
-    memory = psutil.virtual_memory()
-    cpu_freq = psutil.cpu_freq()
-
-    stats["cpu"] = int(psutil.cpu_percent(interval=0.1))
+    stats = collect_basic_stats()
     stats["cpu_temp"] = read_linux_cpu_temp()
-    stats["cpu_clock"] = round(cpu_freq.current, 1) if cpu_freq else 0
-    stats["ram"] = int(memory.percent)
-    stats["ram_used"] = round(memory.used / 1024 / 1024 / 1024, 1)
-    stats["ram_available"] = round(memory.available / 1024 / 1024 / 1024, 1)
-    stats["ram_total"] = round(memory.total / 1024 / 1024 / 1024, 1)
     stats["cpu_name"] = read_linux_cpu_name()
     stats.update(collect_linux_gpu_stats())
 
@@ -239,108 +295,82 @@ def collect_stats():
     if not IS_WINDOWS:
         return collect_linux_stats()
 
-    stats = default_stats()
+    stats = collect_basic_stats()
+    stats.update(collect_nvidia_smi_stats())
 
     try:
         response = requests.get(LHM_URL, timeout=2)
         response.raise_for_status()
         data = response.json()
-    except Exception as e:
-        print(f"LibreHardwareMonitor data unavailable: {e}")
+    except (requests.RequestException, ValueError) as error:
+        global _last_lhm_error_log
+        now = time.monotonic()
+        if now - _last_lhm_error_log >= 60:
+            print(
+                "LibreHardwareMonitor data unavailable; using fallback telemetry: "
+                f"{error}"
+            )
+            _last_lhm_error_log = now
         return stats
 
-    with open(get_data_dir() / "lhm_data.json", "w") as f:
-        json.dump(data, f, indent=2)
+    try:
+        with open(get_data_dir() / "lhm_data.json", "w", encoding="utf-8") as file:
+            json.dump(data, file, indent=2)
+    except OSError:
+        pass
 
-    # CPU name
-    cpu_nodes = find_sensor(data, "12th Gen Intel Core i7-12700KF")
-    if cpu_nodes:
-        stats["cpu_name"] = cpu_nodes[0]["Text"]
+    cpu = find_hardware(data, ("/cpu/", "/intelcpu/", "/amdcpu/"))
+    gpu = find_hardware(data, ("/gpu-nvidia/", "/gpu-amd/", "/gpu-intel/"))
 
-    # GPU name
-    gpu_nodes = find_sensor(data, "NVIDIA GeForce RTX 2070")
-    if gpu_nodes:
-        stats["gpu_name"] = gpu_nodes[0]["Text"]
-
-    # CPU usage
-    cpu_load = find_sensor(data, "CPU Total")
-    if cpu_load:
-        value = cpu_load[0].get("Value", "0 %")
-        stats["cpu"] = int(parse_sensor_number(value))
-
-    # CPU temperature
-    cpu_package = find_sensor(data, "CPU Package")
-    temps = [x for x in cpu_package if x.get("Type") == "Temperature"]
-    if temps:
-        value = temps[0].get("Value", "0 °C")
-        stats["cpu_temp"] = int(parse_sensor_number(value))
-
-    # CPU power
-    cpu_package_power = find_sensor(data, "CPU Package")
-    powers = [x for x in cpu_package_power if x.get("Type") == "Power"]
-    if powers:
-        value = powers[0].get("Value", "0 W")
-        stats["cpu_power"] = parse_sensor_number(value)
-
-    # CPU clock
-    cpu_core_clock = find_sensor(data, "P-Core #1")
-    clocks = [x for x in cpu_core_clock if x.get("Type") == "Clock"]
-    if clocks:
-        value = clocks[0].get("Value", "0 MHz")
-        stats["cpu_clock"] = parse_sensor_number(value)
-
-    # RAM usage
-    ram_load = find_sensor(data, "Memory")
-    if ram_load:
-        value = ram_load[-1].get("Value", "0 %")
-        stats["ram"] = int(parse_sensor_number(value))
-
-    # RAM used
-    ram_used_node = find_sensor(data, "Memory Used")
-    if ram_used_node:
-        value = ram_used_node[0].get("Value", "0 GB")
-        stats["ram_used"] = parse_sensor_number(value)
-
-    # RAM available
-    ram_available_node = find_sensor(data, "Memory Available")
-    if ram_available_node:
-        value = ram_available_node[0].get("Value", "0 GB")
-        stats["ram_available"] = parse_sensor_number(value)
-
-    # GPU usage
-    gpu_core_load = find_sensor(data, "GPU Core")
-    loads = [x for x in gpu_core_load if x.get("Type") == "Load"]
-
-    if loads:
-        value = loads[0].get("Value", "0 %")
-        stats["gpu_usage"] = int(parse_sensor_number(value))
-
-    # GPU power
-    gpu_package_power = find_sensor(data, "GPU Package")
-    powers = [x for x in gpu_package_power if x.get("Type") == "Power"]
-
-    if powers:
-        value = powers[0].get("Value", "0 W")
-        stats["gpu_power"] = parse_sensor_number(value)
-
-    # GPU VRAM used
-    gpu_memory_used = find_sensor(data, "GPU Memory Used")
-    if gpu_memory_used:
-        value = gpu_memory_used[0].get("Value", "0 MB")
-        stats["gpu_vram_used"] = round(
-            parse_sensor_number(value) / 1024,
-            1,
+    if cpu is not None:
+        stats["cpu_name"] = cpu.get("Text") or stats["cpu_name"]
+        stats["cpu"] = int(
+            sensor_value(find_typed_sensor(cpu, "Load", ("CPU Total",)), stats["cpu"])
+        )
+        stats["cpu_temp"] = int(
+            sensor_value(
+                find_typed_sensor(cpu, "Temperature", ("CPU Package", "Core Max")),
+                stats["cpu_temp"],
+            )
+        )
+        stats["cpu_power"] = sensor_value(
+            find_typed_sensor(cpu, "Power", ("CPU Package",)),
+            stats["cpu_power"],
+        )
+        stats["cpu_clock"] = sensor_value(
+            find_typed_sensor(
+                cpu,
+                "Clock",
+                ("P-Core #1", "Core #1", "CPU Core #1"),
+            ),
+            stats["cpu_clock"],
         )
 
-    # GPU temperature
-    gpu_core_temp = find_sensor(data, "GPU Core")
-    temps = [x for x in gpu_core_temp if x.get("Type") == "Temperature"]
+    if gpu is not None:
+        stats["gpu_name"] = gpu.get("Text") or stats["gpu_name"]
+        stats["gpu_usage"] = int(
+            sensor_value(
+                find_typed_sensor(gpu, "Load", ("GPU Core", "GPU D3D 3D")),
+                stats["gpu_usage"],
+            )
+        )
+        stats["gpu_temp"] = int(
+            sensor_value(
+                find_typed_sensor(gpu, "Temperature", ("GPU Core", "GPU Hot Spot")),
+                stats["gpu_temp"],
+            )
+        )
+        stats["gpu_power"] = sensor_value(
+            find_typed_sensor(gpu, "Power", ("GPU Package", "GPU Power")),
+            stats["gpu_power"],
+        )
 
-    if temps:
-        value = temps[0].get("Value", "0 °C")
-        stats["gpu_temp"] = int(parse_sensor_number(value))
+        vram_used = find_typed_sensor(gpu, "SmallData", ("GPU Memory Used",))
+        if vram_used is None:
+            vram_used = find_typed_sensor(gpu, "Data", ("GPU Memory Used",))
+        if vram_used is not None:
+            stats["gpu_vram_used"] = round(sensor_value(vram_used) / 1024, 1)
 
-    stats["ram_total"] = round(stats["ram_used"] + stats["ram_available"], 1)
     return stats
 
 
