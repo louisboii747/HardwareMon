@@ -202,7 +202,7 @@ winget install LouisHinchliffe.HardwareMon
 ```
 
 When launching HardwareMon, be sure to click 'Yes' to any UAC prompts for LibreHardwareMonitor.exe, to ensure full functionality like process management and temperature monitoring.
-The app will still function if you choose 'No', as the app will then fall back to Psutil for analytics, but choosing 'No' is not recommended due to LHM being required for some features.
+The app will still function if you choose 'No', as the app will then fall back to ```psutil``` for analytics, but choosing 'No' is not recommended due to LHM being required for some features.
 
 ---
 
@@ -212,8 +212,8 @@ Download the latest Windows installer from:
 
 [https://github.com/louisboii747/HardwareMon/releases](https://github.com/louisboii747/HardwareMon/releases)
 
-When launching HardwareMon, be sure to click 'Yes' to any UAC prompts for LibreHardwareMonitor.exe, to ensure full functionality like process management and temperature monitoring.
-The app will still function if you choose 'No', as the app will then fall back to Psutil for analytics, but choosing 'No' is not recommended due to LHM being required for some features.
+As mentioned above in the Winget install method, when launching HardwareMon be sure to click 'Yes' to any UAC prompts for LibreHardwareMonitor.exe, to ensure full functionality like process management and temperature monitoring.
+The app will still function if you choose 'No', as the app will then fall back to ```psutil``` for analytics, but choosing 'No' is not recommended due to LHM being required for some features.
 
 ---
 
@@ -350,27 +350,6 @@ The backend is bundled directly with release builds and automatically launched b
 
 ---
 
-# Linux Distribution
-
-HardwareMon includes fully automated Linux packaging infrastructure.
-
-Supported distribution methods:
-
-* APT repositories
-* DNF repositories
-* Direct GitHub Releases
-
-Linux packages include:
-
-* Native desktop entries
-* Application icons
-* Bundled backend binaries
-* Automatic backend launching
-* Repository metadata
-* Automated updates through system package managers
-
----
-
 # Legacy Components
 
 The following legacy components have been removed:
@@ -426,6 +405,8 @@ cd hardwaremon_app
 
 flutter pub get
 
+uvicorn main:app --reload
+
 flutter run -d windows
 ```
 
@@ -444,7 +425,7 @@ cd backend_fastapi
 
 pip install fastapi uvicorn psutil
 
-python main.py
+uvicorn main:app --reload
 ```
 
 ---
