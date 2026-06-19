@@ -1,11 +1,13 @@
+import ctypes
 import os
+import platform
+import shutil
+import subprocess
 import sys
 import time
-import platform
-import subprocess
-import requests
-import ctypes
 import xml.etree.ElementTree as ET
+
+import requests
 
 IS_WINDOWS = platform.system() == "Windows"
 LHM_URL = "http://127.0.0.1:8085/data.json"
@@ -18,16 +20,50 @@ def get_base_path():
     return os.path.dirname(os.path.abspath(__file__))
 
 
-def configure_lhm(lhm_dir):
-    config_path = os.path.join(lhm_dir, "LibreHardwareMonitor.config")
-    if not os.path.exists(config_path):
-        return
+def get_lhm_runtime_dir():
+    local_app_data = os.environ.get("LOCALAPPDATA") or os.environ.get("APPDATA")
+    if local_app_data:
+        return os.path.join(local_app_data, "HardwareMon", "LibreHardwareMonitor")
+
+    return os.path.join(
+        os.path.expanduser("~"),
+        "AppData",
+        "Local",
+        "HardwareMon",
+        "LibreHardwareMonitor",
+    )
+
+
+def prepare_lhm_runtime(source_dir):
+    runtime_dir = get_lhm_runtime_dir()
 
     try:
-        tree = ET.parse(config_path)
-        settings = tree.getroot().find("./appSettings")
+        os.makedirs(os.path.dirname(runtime_dir), exist_ok=True)
+        shutil.copytree(source_dir, runtime_dir, dirs_exist_ok=True)
+        return runtime_dir
+    except OSError as error:
+        print(
+            "Could not prepare the per-user LibreHardwareMonitor directory; "
+            f"using the bundled directory instead: {error}",
+            flush=True,
+        )
+        return source_dir
+
+
+def configure_lhm(lhm_dir):
+    config_path = os.path.join(lhm_dir, "LibreHardwareMonitor.config")
+
+    try:
+        if os.path.exists(config_path):
+            tree = ET.parse(config_path)
+            root = tree.getroot()
+        else:
+            root = ET.Element("configuration")
+            tree = ET.ElementTree(root)
+
+        settings = root.find("./appSettings")
         if settings is None:
-            return
+            settings = ET.SubElement(root, "appSettings")
 
         desired_values = {
             "runWebServerMenuItem": "true",
@@ -50,9 +86,15 @@ def configure_lhm(lhm_dir):
 
         if changed:
             tree.write(config_path, encoding="utf-8", xml_declaration=True)
-            print("Updated LibreHardwareMonitor web server configuration")
+            print(
+                f"Updated LibreHardwareMonitor web server configuration: {config_path}",
+                flush=True,
+            )
     except (OSError, ET.ParseError) as error:
-        print(f"Could not update LibreHardwareMonitor configuration: {error}")
+        print(
+            f"Could not update LibreHardwareMonitor configuration: {error}",
+            flush=True,
+        )
 
 
 def lhm_is_ready(timeout=1):
@@ -64,12 +106,12 @@ def lhm_is_ready(timeout=1):
 
 
 def start_lhm():
-    if not IS_WINDOWS:
+    if not IS_WINDOWS or os.environ.get("HARDWAREMON_DISABLE_LHM") == "1":
         return
 
     # Already running?
     if lhm_is_ready():
-        print("LibreHardwareMonitor already running")
+        print("LibreHardwareMonitor already running", flush=True)
         return
 
     base = get_base_path()
@@ -84,14 +126,15 @@ def start_lhm():
 
     lhm_path = next((p for p in possible_paths if os.path.exists(p)), None)
 
-    print(f"Base path: {base}")
-    print(f"LHM path: {lhm_path}")
+    print(f"Base path: {base}", flush=True)
+    print(f"Bundled LHM path: {lhm_path}", flush=True)
 
     if not lhm_path:
-        print("LibreHardwareMonitor not found")
+        print("LibreHardwareMonitor not found", flush=True)
         return
 
-    lhm_dir = os.path.dirname(lhm_path)
+    lhm_dir = prepare_lhm_runtime(os.path.dirname(lhm_path))
+    lhm_path = os.path.join(lhm_dir, "LibreHardwareMonitor.exe")
     configure_lhm(lhm_dir)
     process = None
 
@@ -105,21 +148,28 @@ def start_lhm():
 
     except OSError as e:
         if getattr(e, "winerror", None) == 740:
-            ctypes.windll.shell32.ShellExecuteW(None, "runas", lhm_path, None, lhm_dir, 0)
+            result = ctypes.windll.shell32.ShellExecuteW(None, "runas", lhm_path, None, lhm_dir, 0)
+            if result <= 32:
+                print(
+                    f"Could not elevate LibreHardwareMonitor (ShellExecuteW result {result})",
+                    flush=True,
+                )
+                return
         else:
             raise
 
-    print("Started LibreHardwareMonitor")
+    print(f"Started LibreHardwareMonitor from: {lhm_path}", flush=True)
 
     for _ in range(20):
         if lhm_is_ready():
-            print("LibreHardwareMonitor web server ready")
+            print("LibreHardwareMonitor web server ready", flush=True)
             return
 
         if process is not None and process.poll() is not None:
             print(
                 "LibreHardwareMonitor exited before its web server became ready "
-                f"(exit code {process.returncode})"
+                f"(exit code {process.returncode})",
+                flush=True,
             )
             return
 
@@ -127,5 +177,6 @@ def start_lhm():
 
     print(
         "LibreHardwareMonitor web server did not become ready; "
-        "HardwareMon will use fallback telemetry"
+        "HardwareMon will use fallback telemetry",
+        flush=True,
     )

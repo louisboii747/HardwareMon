@@ -47,8 +47,6 @@ def log_telemetry():
             conn.commit()
             conn.close()
 
-            print("Logged telemetry sample")
-
         except Exception as e:
             print(f"Logging error: {e}")
 

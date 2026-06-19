@@ -35,6 +35,59 @@ const String _kAppVersion = String.fromEnvironment(
 // ─── Backend ───────────────────────────────────────────────────────────────
 
 Process? backendProcess;
+File? _backendLogFile;
+const int _backendLogMaxBytes = 2 * 1024 * 1024;
+
+String getBackendLogPath() {
+  final separator = Platform.pathSeparator;
+
+  if (Platform.isWindows) {
+    final localAppData =
+        Platform.environment['LOCALAPPDATA'] ??
+        Platform.environment['APPDATA'] ??
+        File(Platform.resolvedExecutable).parent.path;
+    return [localAppData, 'HardwareMon', 'logs', 'backend.log'].join(separator);
+  }
+
+  final home = Platform.environment['HOME'] ?? Directory.current.path;
+  return [
+    home,
+    '.local',
+    'state',
+    'hardwaremon',
+    'backend.log',
+  ].join(separator);
+}
+
+void logBackend(String message) {
+  final line = message.trimRight();
+  if (line.isEmpty) return;
+
+  debugPrint(line);
+
+  try {
+    _backendLogFile ??= File(getBackendLogPath());
+    _backendLogFile!.parent.createSync(recursive: true);
+
+    if (_backendLogFile!.existsSync() &&
+        _backendLogFile!.lengthSync() >= _backendLogMaxBytes) {
+      final rotatedLog = File('${_backendLogFile!.path}.1');
+      if (rotatedLog.existsSync()) {
+        rotatedLog.deleteSync();
+      }
+      _backendLogFile!.renameSync(rotatedLog.path);
+      _backendLogFile = File(getBackendLogPath());
+    }
+
+    _backendLogFile!.writeAsStringSync(
+      '${DateTime.now().toIso8601String()} $line${Platform.lineTerminator}',
+      mode: FileMode.append,
+      flush: true,
+    );
+  } catch (_) {
+    // Logging must never prevent the application from starting.
+  }
+}
 
 String getBackendExecutable() {
   final exeDir = File(Platform.resolvedExecutable).parent.path;
@@ -54,11 +107,35 @@ String getBackendExecutable() {
 final backendApiUrl = '${BackendConfig.baseUrl}/stats';
 final backendHistoryUrl = '${BackendConfig.baseUrl}/history';
 
+Future<bool> isBackendReady() async {
+  try {
+    final response = await http
+        .get(Uri.parse(BackendConfig.baseUrl))
+        .timeout(const Duration(milliseconds: 750));
+    return response.statusCode == 200;
+  } catch (_) {
+    return false;
+  }
+}
+
 Future<void> startBackend() async {
   try {
+    if (await isBackendReady()) {
+      logBackend('HardwareMon backend is already running');
+      return;
+    }
+
     final backendExecutable = getBackendExecutable();
 
-    debugPrint('Launching backend: $backendExecutable');
+    if (!File(backendExecutable).existsSync()) {
+      throw FileSystemException(
+        'Bundled backend executable was not found',
+        backendExecutable,
+      );
+    }
+
+    logBackend('Launching backend: $backendExecutable');
+    final childEnvironment = {...Platform.environment, 'PYTHONUNBUFFERED': '1'};
 
     // Compiled backend binary
     if (!backendExecutable.endsWith('.py')) {
@@ -67,7 +144,7 @@ Future<void> startBackend() async {
         [],
         mode: ProcessStartMode.normal,
         workingDirectory: Directory(backendExecutable).parent.path,
-        environment: {...Platform.environment},
+        environment: childEnvironment,
       );
     }
     // Python backend script
@@ -79,21 +156,34 @@ Future<void> startBackend() async {
         File(venvPython).existsSync() ? venvPython : 'python3',
         [backendExecutable],
         mode: ProcessStartMode.normal,
-        environment: {...Platform.environment},
+        workingDirectory: Directory(backendExecutable).parent.path,
+        environment: childEnvironment,
       );
     }
 
-    backendProcess!.stdout.transform(utf8.decoder).listen(debugPrint);
+    final startedProcess = backendProcess!;
+    startedProcess.stdout
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen((line) => logBackend('[stdout] $line'));
 
-    backendProcess!.stderr.transform(utf8.decoder).listen(debugPrint);
+    startedProcess.stderr
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen((line) => logBackend('[stderr] $line'));
 
-    backendProcess!.exitCode.then((code) {
-      debugPrint('Backend exited with code: $code');
+    startedProcess.exitCode.then((code) {
+      logBackend('Backend exited with code: $code');
+      if (identical(backendProcess, startedProcess)) {
+        backendProcess = null;
+      }
     });
 
-    debugPrint('HardwareMon backend started');
+    logBackend(
+      'HardwareMon backend process started (PID ${startedProcess.pid})',
+    );
   } catch (e) {
-    debugPrint('Backend start failed: $e');
+    logBackend('Backend start failed: $e');
   }
 }
 
@@ -112,28 +202,37 @@ Future<void> stopBackend() async {
       backendProcess!.kill(ProcessSignal.sigkill);
     }
 
-    debugPrint('Backend stopped');
+    logBackend('Backend stopped');
   } catch (e) {
-    debugPrint('Failed to stop backend: $e');
+    logBackend('Failed to stop backend: $e');
+  } finally {
+    backendProcess = null;
   }
 }
 
 Future<bool> waitForBackend() async {
-  for (int i = 0; i < 20; i++) {
-    try {
-      final response = await http.get(Uri.parse(backendApiUrl));
+  final stopwatch = Stopwatch()..start();
 
-      if (response.statusCode == 200) {
-        debugPrint('Backend connected');
-        return true;
-      }
-    } catch (e) {
-      debugPrint("Backend wait error: $e");
+  while (stopwatch.elapsed < const Duration(seconds: 30)) {
+    if (await isBackendReady()) {
+      logBackend('Backend connected');
+      return true;
     }
 
-    await Future.delayed(const Duration(milliseconds: 500));
+    final process = backendProcess;
+    if (process == null &&
+        Platform.environment['HARDWAREMON_BACKEND_MANAGED'] != '1') {
+      logBackend('Backend stopped before it became ready');
+      return false;
+    }
+
+    await Future.delayed(const Duration(milliseconds: 250));
   }
 
+  logBackend(
+    'Backend did not become ready within 30 seconds. '
+    'See ${getBackendLogPath()}',
+  );
   return false;
 }
 
@@ -149,7 +248,10 @@ Future<void> main() async {
     await startBackend();
   }
 
-  await waitForBackend();
+  final backendReady = await waitForBackend();
+  if (!backendReady) {
+    logBackend('Starting the UI without a backend connection');
+  }
 
   runApp(const HardwareMonApp());
 }
