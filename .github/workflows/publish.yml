@@ -60,7 +60,8 @@ jobs:
             python3 \
             python3-pip \
             upx \
-            rpm
+            rpm \
+            libnotify-dev
 
       # ─────────────────────────────────────────────
       # Install Python dependencies
