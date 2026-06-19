@@ -60,12 +60,41 @@
       <img src="https://github.com/user-attachments/assets/c90896b7-7de2-49a9-a0bf-5ab61d121875" width="100%">
     </td>
   </tr>
-  <tr>
-    <td colspan="2" align="center">
-      <img src="https://github.com/user-attachments/assets/294202b3-43b9-4432-b6dd-9b7cacceb6af" alt="HardwareMon Demo" width="75%">
-    </td>
-  </tr>
 </table>
+
+
+
+## What is HardwareMon?
+
+HardwareMon is a modern cross-platform system monitor for Linux and Windows built with Flutter and FastAPI.
+
+It provides:
+
+- Real-time hardware telemetry
+- Historical analytics
+- Process monitoring and management
+- Native APT, DNF and WinGet distribution
+- Automated updates and packaging
+- Modern desktop UI
+
+<p align="center">
+⭐ If you find HardwareMon useful, consider starring the repository. Every star helps!
+</p>
+
+## Contents
+
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Why HardwareMon?](#why-hardwaremon)
+- [Installation](#installation)
+- [Windows](#windows)
+- [Linux APT and DNF](#linux-installation)
+- [Architecture](#modern-architecture)
+- [Updating HardwareMon](#updating)
+- [Development](#development)
+- [Contributing](#contributing)
+- [Roadmap](#roadmap)
+- [Links](#links)
 
 
 ## Quick Start
@@ -74,28 +103,9 @@
 ```
 winget install LouisHinchliffe.HardwareMon
 ```
-### Ubuntu / Debian
-```
-sudo apt install hardwaremon
-```
-### Fedora / RHEL
-```
-sudo dnf install hardwaremon
-```
+### Linux
 
-# Website
-
-🌐 [https://hardwaremon-site.pages.dev/](https://hardwaremon-site.pages.dev/)
-
-The HardwareMon website contains:
-
-* Downloads
-* Screenshots
-* Installation guides
-* Development updates
-* Release information
-* Linux repository setup
-* Future documentation
+➡️ [Jump to Linux Installation](#linux-installation)
 
 ---
 
@@ -133,6 +143,8 @@ The HardwareMon website contains:
 Most system monitoring tools either focus on raw data or dated interfaces.
 
 HardwareMon aims to combine real-time telemetry, historical analytics, modern desktop design, and native Linux/Windows distribution into a single application.
+
+
 
 
 | Feature                    | HardwareMon | Task Manager | Htop |
@@ -173,7 +185,7 @@ HardwareMon now uses a unified Flutter frontend architecture across Linux and Wi
 | Windows         | ✅ Supported | Installer / WinGet |
 | Ubuntu / Debian | ✅ Supported | APT                |
 | Fedora          | ✅ Supported | DNF                |
-| Flatpak         | ⚠️ Experimental | Installer       |
+| Flatpak         | ⚠️ Experimental | Flatpak         |
 | Arch Linux      | 🚧 Planned | AUR                  |
 | macOS           | 🚧 Planned  | Future              |
 
@@ -466,6 +478,12 @@ The project is evolving into a modern cross-platform monitoring platform focused
 
 ---
 
+# Contributing
+
+Contributions will always be welcome to HardwareMon. Feel free to create a feature request in Issues, or submit a PR! I'd love to see your changes, fixes or ideas!
+
+---
+
 # Links
 
 ## GitHub Repository
@@ -483,3 +501,13 @@ The project is evolving into a modern cross-platform monitoring platform focused
 ## Website
 
 [https://hardwaremon-site.pages.dev/](https://hardwaremon-site.pages.dev/)
+
+The HardwareMon website contains:
+
+* Downloads
+* Screenshots
+* Installation guides
+* Development updates
+* Release information
+* Linux repository setup
+* Future documentation
