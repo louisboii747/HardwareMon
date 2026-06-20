@@ -14,6 +14,8 @@ void main() {
     await preferences.setPreference(ChartPreference.areaFill, false);
     await preferences.setPreference(ChartPreference.gridLines, false);
     await preferences.setPreference(ChartPreference.animations, false);
+    await preferences.setPreference(ChartPreference.ambientEffects, false);
+    await preferences.setPreference(ChartPreference.telemetryTicker, false);
 
     final restored = ChartPreferences();
     await restored.load();
@@ -22,6 +24,27 @@ void main() {
     expect(restored.areaFill, isFalse);
     expect(restored.gridLines, isFalse);
     expect(restored.animations, isFalse);
+    expect(restored.ambientEffects, isFalse);
+    expect(restored.telemetryTicker, isFalse);
     expect(restored.animationDuration, Duration.zero);
+  });
+
+  test('experience preferences reset to premium defaults', () async {
+    SharedPreferences.setMockInitialValues({
+      'ambientSystemEffects': false,
+      'telemetryTicker': false,
+      'chartAnimations': false,
+    });
+
+    final preferences = ChartPreferences();
+    await preferences.load();
+    await preferences.resetDefaults();
+
+    final restored = ChartPreferences();
+    await restored.load();
+
+    expect(restored.ambientEffects, isTrue);
+    expect(restored.telemetryTicker, isTrue);
+    expect(restored.animations, isTrue);
   });
 }

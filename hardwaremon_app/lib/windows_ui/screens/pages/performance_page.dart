@@ -6,6 +6,7 @@ import '../../core/theme/app_colors.dart';
 import '../../models/chart_preferences.dart';
 import '../../utils/telemetry_chart.dart';
 import '../../widgets/metric_card.dart';
+import '../../widgets/metric_alert_action.dart';
 import '../../widgets/telemetry_studio.dart';
 
 class PerformancePage extends StatelessWidget {
@@ -61,6 +62,8 @@ class PerformancePage extends StatelessWidget {
                 graphPoints: telemetry.cpuHistory,
                 chartPreferences: chartPreferences,
                 statisticsSince: telemetry.sessionStatisticsStartedAt,
+                alertKind: MetricAlertKind.cpuUsage,
+                alertValue: telemetry.cpuUsage.toDouble(),
               ),
               MetricCard(
                 title: 'CPU Temperature',
@@ -72,6 +75,8 @@ class PerformancePage extends StatelessWidget {
                 chartPreferences: chartPreferences,
                 metricKind: TelemetryMetricKind.temperature,
                 statisticsSince: telemetry.sessionStatisticsStartedAt,
+                alertKind: MetricAlertKind.cpuTemperature,
+                alertValue: telemetry.cpuTemp.toDouble(),
               ),
               MetricCard(
                 title: 'CPU Clock',
@@ -111,6 +116,8 @@ class PerformancePage extends StatelessWidget {
                 graphPoints: telemetry.ramHistory,
                 chartPreferences: chartPreferences,
                 statisticsSince: telemetry.sessionStatisticsStartedAt,
+                alertKind: MetricAlertKind.ramUsage,
+                alertValue: telemetry.ramUsage.toDouble(),
               ),
               MetricCard(
                 title: 'RAM Used',
@@ -162,6 +169,8 @@ class PerformancePage extends StatelessWidget {
                 chartPreferences: chartPreferences,
                 metricKind: TelemetryMetricKind.temperature,
                 statisticsSince: telemetry.sessionStatisticsStartedAt,
+                alertKind: MetricAlertKind.gpuTemperature,
+                alertValue: telemetry.gpuTemp.toDouble(),
               ),
               MetricCard(
                 title: 'GPU Usage',

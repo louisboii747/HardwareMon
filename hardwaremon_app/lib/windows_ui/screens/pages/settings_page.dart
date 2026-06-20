@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/app_settings.dart';
+import '../../models/chart_preferences.dart';
+import '../../models/dashboard_preferences.dart';
 import '../../services/settings_service.dart';
 import '../../services/telemetry_service.dart';
 import '../../services/desktop_integration_service.dart';
@@ -13,8 +15,15 @@ import '../../../widgets/alert_settings_widgets.dart';
 
 class SettingsPage extends StatefulWidget {
   final TelemetryService telemetry;
+  final ChartPreferences chartPreferences;
+  final DashboardPreferences dashboardPreferences;
 
-  const SettingsPage({super.key, required this.telemetry});
+  const SettingsPage({
+    super.key,
+    required this.telemetry,
+    required this.chartPreferences,
+    required this.dashboardPreferences,
+  });
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -114,6 +123,8 @@ class _SettingsPageState extends State<SettingsPage> {
     );
 
     await settingsService.saveSettings(effectiveDefaults);
+    await widget.chartPreferences.resetDefaults();
+    await widget.dashboardPreferences.resetDefaults();
 
     setState(() {
       settings = effectiveDefaults;
@@ -213,6 +224,51 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
             _desktopIntegrationStatus(),
+          ]),
+
+          _buildSection('Experience', [
+            _settingRow(
+              'Ambient system pulse',
+              Tooltip(
+                message:
+                    'Subtle background light that responds to CPU, memory, and temperature',
+                child: Switch(
+                  value: widget.chartPreferences.ambientEffects,
+                  onChanged: (value) => widget.chartPreferences.setPreference(
+                    ChartPreference.ambientEffects,
+                    value,
+                  ),
+                ),
+              ),
+            ),
+            _settingRow(
+              'Live telemetry strip',
+              Tooltip(
+                message:
+                    'Keep a compact health summary visible above every page',
+                child: Switch(
+                  value: widget.chartPreferences.telemetryTicker,
+                  onChanged: (value) => widget.chartPreferences.setPreference(
+                    ChartPreference.telemetryTicker,
+                    value,
+                  ),
+                ),
+              ),
+            ),
+            _settingRow(
+              'Smooth chart updates',
+              Switch(
+                value: widget.chartPreferences.animations,
+                onChanged: (value) => widget.chartPreferences.setPreference(
+                  ChartPreference.animations,
+                  value,
+                ),
+              ),
+            ),
+            _settingRow(
+              'Command palette',
+              _KeyboardShortcut(keys: const ['Ctrl', 'K']),
+            ),
           ]),
 
           _buildSection('Monitoring', [
@@ -683,6 +739,47 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _KeyboardShortcut extends StatelessWidget {
+  final List<String> keys;
+
+  const _KeyboardShortcut({required this.keys});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var index = 0; index < keys.length; index++) ...[
+          if (index > 0)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Text(
+                '+',
+                style: TextStyle(color: AppColors.textMuted(context)),
+              ),
+            ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+            decoration: BoxDecoration(
+              color: AppColors.overlay(context, 0.05),
+              borderRadius: BorderRadius.circular(7),
+              border: Border.all(color: AppColors.border(context)),
+            ),
+            child: Text(
+              keys[index],
+              style: TextStyle(
+                color: AppColors.textSecondary(context),
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

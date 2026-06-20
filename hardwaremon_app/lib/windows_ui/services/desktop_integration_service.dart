@@ -183,7 +183,7 @@ class DesktopIntegrationService extends ChangeNotifier
     try {
       final iconPath = Platform.isWindows
           ? 'windows/runner/resources/app_icon.ico'
-          : 'web/icons/Icon-192.png';
+          : 'assets/hardwaremon.png';
       await trayManager.setIcon(iconPath);
       _trayAvailable = true;
       _trayError = null;

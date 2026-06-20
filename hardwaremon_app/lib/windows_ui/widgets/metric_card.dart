@@ -10,6 +10,7 @@ import '../screens/metric_focus_screen.dart';
 import '../utils/telemetry_chart.dart';
 import '../utils/time_axis.dart';
 import 'glass_panel.dart';
+import 'metric_alert_action.dart';
 import 'smooth_telemetry_series.dart';
 
 class MetricCard extends StatefulWidget {
@@ -22,6 +23,8 @@ class MetricCard extends StatefulWidget {
   final ChartPreferences chartPreferences;
   final TelemetryMetricKind metricKind;
   final DateTime? statisticsSince;
+  final MetricAlertKind? alertKind;
+  final double? alertValue;
 
   const MetricCard({
     super.key,
@@ -34,6 +37,8 @@ class MetricCard extends StatefulWidget {
     required this.chartPreferences,
     this.metricKind = TelemetryMetricKind.percentage,
     this.statisticsSince,
+    this.alertKind,
+    this.alertValue,
   });
 
   @override
@@ -93,6 +98,26 @@ class _MetricCardState extends State<MetricCard> {
     );
   }
 
+  Future<void> _configureAlert() async {
+    final alertKind = widget.alertKind;
+    final alertValue = widget.alertValue;
+    if (alertKind == null || alertValue == null) return;
+
+    final applied = await showMetricAlertDialog(
+      context: context,
+      kind: alertKind,
+      currentValue: alertValue,
+    );
+    if (!mounted || !applied) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${widget.title} watch applied'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   Future<void> _showContextMenu(TapDownDetails details) async {
     final selection = await showMenu<String>(
       context: context,
@@ -102,14 +127,20 @@ class _MetricCardState extends State<MetricCard> {
         details.globalPosition.dx,
         details.globalPosition.dy,
       ),
-      items: const [
-        PopupMenuItem(value: 'open', child: Text('Open details')),
-        PopupMenuItem(value: 'copy', child: Text('Copy current value')),
+      items: [
+        const PopupMenuItem(value: 'open', child: Text('Open details')),
+        const PopupMenuItem(value: 'copy', child: Text('Copy current value')),
+        if (widget.alertKind != null)
+          const PopupMenuItem(
+            value: 'alert',
+            child: Text('Create or edit watch'),
+          ),
       ],
     );
 
     if (selection == 'open') _openMetric();
     if (selection == 'copy') await _copyValue();
+    if (selection == 'alert') await _configureAlert();
   }
 
   @override
@@ -123,275 +154,324 @@ class _MetricCardState extends State<MetricCard> {
 
     return AnimatedBuilder(
       animation: widget.chartPreferences,
-      builder: (context, _) => Semantics(
-        button: true,
-        label: '${widget.title}, ${widget.value}. Open detailed chart.',
-        child: Tooltip(
-          message: 'Open ${widget.title} details  •  Enter',
-          waitDuration: const Duration(milliseconds: 550),
-          child: FocusableActionDetector(
-            mouseCursor: SystemMouseCursors.click,
-            onShowFocusHighlight: (value) => setState(() => focused = value),
-            shortcuts: const {
-              SingleActivator(LogicalKeyboardKey.enter): ActivateIntent(),
-              SingleActivator(LogicalKeyboardKey.space): ActivateIntent(),
-            },
-            actions: {
-              ActivateIntent: CallbackAction<ActivateIntent>(
-                onInvoke: (_) {
-                  _openMetric();
-                  return null;
+      builder: (context, _) => LayoutBuilder(
+        builder: (context, constraints) {
+          final compact =
+              constraints.hasBoundedHeight && constraints.maxHeight < 270;
+          final panelPadding = compact ? 16.0 : 24.0;
+          final headerSize = compact ? 36.0 : 42.0;
+          final chartHeight = compact ? 28.0 : 36.0;
+          final sectionGap = compact ? 6.0 : 10.0;
+          final valueSize = compact
+              ? (hovering || focused ? 32.0 : 28.0)
+              : (hovering || focused ? 38.0 : 32.0);
+
+          return Semantics(
+            button: true,
+            label: '${widget.title}, ${widget.value}. Open detailed chart.',
+            child: Tooltip(
+              message: 'Open ${widget.title} details  •  Enter',
+              waitDuration: const Duration(milliseconds: 550),
+              child: FocusableActionDetector(
+                mouseCursor: SystemMouseCursors.click,
+                onShowFocusHighlight: (value) =>
+                    setState(() => focused = value),
+                shortcuts: const {
+                  SingleActivator(LogicalKeyboardKey.enter): ActivateIntent(),
+                  SingleActivator(LogicalKeyboardKey.space): ActivateIntent(),
                 },
-              ),
-            },
-            child: MouseRegion(
-              onEnter: (_) => setState(() => hovering = true),
-              onExit: (_) => setState(() => hovering = false),
-              child: GestureDetector(
-                onTap: _openMetric,
-                onSecondaryTapDown: _showContextMenu,
-                child: AnimatedScale(
-                  duration: const Duration(milliseconds: 220),
-                  curve: Curves.easeOutCubic,
-                  scale: hovering || focused ? 1.01 : 1,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(26),
-                      border: Border.all(
-                        color: focused
-                            ? widget.accent.withValues(alpha: 0.75)
-                            : Colors.transparent,
-                        width: 2,
-                      ),
-                    ),
-                    child: Hero(
-                      tag: widget.title,
-                      child: GlassPanel(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
+                actions: {
+                  ActivateIntent: CallbackAction<ActivateIntent>(
+                    onInvoke: (_) {
+                      _openMetric();
+                      return null;
+                    },
+                  ),
+                },
+                child: MouseRegion(
+                  onEnter: (_) => setState(() => hovering = true),
+                  onExit: (_) => setState(() => hovering = false),
+                  child: GestureDetector(
+                    onTap: _openMetric,
+                    onSecondaryTapDown: _showContextMenu,
+                    child: AnimatedScale(
+                      duration: const Duration(milliseconds: 220),
+                      curve: Curves.easeOutCubic,
+                      scale: hovering || focused ? 1.01 : 1,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(26),
+                          border: Border.all(
+                            color: focused
+                                ? widget.accent.withValues(alpha: 0.75)
+                                : Colors.transparent,
+                            width: 2,
+                          ),
+                        ),
+                        child: Hero(
+                          tag: widget.title,
+                          child: GlassPanel(
+                            padding: EdgeInsets.all(panelPadding),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Container(
-                                  width: 42,
-                                  height: 42,
+                                Row(
+                                  children: [
+                                    Container(
+                                      width: headerSize,
+                                      height: headerSize,
 
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(14),
-                                    color: widget.accent.withValues(
-                                      alpha: 0.12,
-                                    ),
-                                  ),
-
-                                  child: Icon(
-                                    widget.icon,
-                                    color: widget.accent,
-                                    size: 20,
-                                  ),
-                                ),
-
-                                const Spacer(),
-
-                                if (statistics.sampleCount > 1) ...[
-                                  _TrendBadge(
-                                    statistics: statistics,
-                                    metricKind: widget.metricKind,
-                                  ),
-                                  const SizedBox(width: 6),
-                                ],
-
-                                AnimatedSwitcher(
-                                  duration: const Duration(milliseconds: 160),
-                                  child: hovering || focused
-                                      ? Tooltip(
-                                          message: 'Copy current value',
-                                          child: IconButton(
-                                            key: const ValueKey('copy'),
-                                            onPressed: _copyValue,
-                                            visualDensity:
-                                                VisualDensity.compact,
-                                            iconSize: 15,
-                                            icon: const Icon(
-                                              Icons.copy_rounded,
-                                            ),
-                                          ),
-                                        )
-                                      : const SizedBox.shrink(
-                                          key: ValueKey('hidden'),
-                                        ),
-                                ),
-
-                                const SizedBox(width: 4),
-
-                                Container(
-                                  width: 8,
-                                  height: 8,
-
-                                  decoration: BoxDecoration(
-                                    color: widget.accent,
-                                    shape: BoxShape.circle,
-
-                                    boxShadow: [
-                                      BoxShadow(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(14),
                                         color: widget.accent.withValues(
-                                          alpha: 0.45,
+                                          alpha: 0.12,
                                         ),
-                                        blurRadius: 10,
                                       ),
+
+                                      child: Icon(
+                                        widget.icon,
+                                        color: widget.accent,
+                                        size: 20,
+                                      ),
+                                    ),
+
+                                    const Spacer(),
+
+                                    if (statistics.sampleCount > 1) ...[
+                                      _TrendBadge(
+                                        statistics: statistics,
+                                        metricKind: widget.metricKind,
+                                      ),
+                                      const SizedBox(width: 6),
                                     ],
+
+                                    AnimatedSwitcher(
+                                      duration: const Duration(
+                                        milliseconds: 160,
+                                      ),
+                                      child: hovering || focused
+                                          ? Row(
+                                              key: const ValueKey('actions'),
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                if (widget.alertKind != null)
+                                                  Tooltip(
+                                                    message:
+                                                        'Create or edit a metric watch',
+                                                    child: IconButton(
+                                                      onPressed:
+                                                          _configureAlert,
+                                                      visualDensity:
+                                                          VisualDensity.compact,
+                                                      iconSize: 15,
+                                                      icon: const Icon(
+                                                        Icons
+                                                            .notifications_none_rounded,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                Tooltip(
+                                                  message: 'Copy current value',
+                                                  child: IconButton(
+                                                    onPressed: _copyValue,
+                                                    visualDensity:
+                                                        VisualDensity.compact,
+                                                    iconSize: 15,
+                                                    icon: const Icon(
+                                                      Icons.copy_rounded,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            )
+                                          : const SizedBox.shrink(
+                                              key: ValueKey('hidden'),
+                                            ),
+                                    ),
+
+                                    const SizedBox(width: 4),
+
+                                    Container(
+                                      width: 8,
+                                      height: 8,
+
+                                      decoration: BoxDecoration(
+                                        color: widget.accent,
+                                        shape: BoxShape.circle,
+
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: widget.accent.withValues(
+                                              alpha: 0.45,
+                                            ),
+                                            blurRadius: 10,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                SizedBox(height: sectionGap),
+
+                                SizedBox(
+                                  height: chartHeight,
+                                  child: SmoothTelemetrySeries(
+                                    samples: widget.graphPoints,
+                                    duration: widget
+                                        .chartPreferences
+                                        .animationDuration,
+                                    builder: (context, animatedSamples) {
+                                      return LayoutBuilder(
+                                        builder: (context, constraints) {
+                                          final scale = generateTimeAxisTicks(
+                                            samples: animatedSamples,
+                                            width: constraints.maxWidth,
+                                          );
+                                          final chartMaxY = telemetryChartMaxY(
+                                            animatedSamples,
+                                            widget.metricKind,
+                                          );
+
+                                          return LineChart(
+                                            LineChartData(
+                                              minX: 0,
+                                              maxX: scale.maxX,
+                                              minY: 0,
+                                              maxY: chartMaxY,
+                                              gridData: FlGridData(
+                                                show: widget
+                                                    .chartPreferences
+                                                    .gridLines,
+                                                drawHorizontalLine: true,
+                                                horizontalInterval:
+                                                    chartMaxY / 2,
+                                                drawVerticalLine: true,
+                                                verticalInterval:
+                                                    scale.tickInterval,
+                                                getDrawingHorizontalLine: (_) =>
+                                                    FlLine(
+                                                      color: AppColors.overlay(
+                                                        context,
+                                                        0.025,
+                                                      ),
+                                                      strokeWidth: 1,
+                                                    ),
+                                                getDrawingVerticalLine: (_) =>
+                                                    FlLine(
+                                                      color: AppColors.overlay(
+                                                        context,
+                                                        0.03,
+                                                      ),
+                                                      strokeWidth: 1,
+                                                    ),
+                                              ),
+                                              titlesData: const FlTitlesData(
+                                                show: false,
+                                              ),
+                                              borderData: FlBorderData(
+                                                show: false,
+                                              ),
+                                              lineTouchData:
+                                                  const LineTouchData(
+                                                    enabled: false,
+                                                  ),
+                                              lineBarsData: [
+                                                LineChartBarData(
+                                                  isCurved: widget
+                                                      .chartPreferences
+                                                      .smoothLines,
+                                                  curveSmoothness: 0.38,
+                                                  preventCurveOverShooting:
+                                                      true,
+                                                  spots: animatedSamples
+                                                      .map(
+                                                        (sample) => FlSpot(
+                                                          scale.xFor(
+                                                            sample.timestamp,
+                                                          ),
+                                                          sample.value,
+                                                        ),
+                                                      )
+                                                      .toList(growable: false),
+                                                  color: widget.accent,
+                                                  barWidth: 2,
+                                                  isStrokeCapRound: true,
+                                                  dotData: const FlDotData(
+                                                    show: false,
+                                                  ),
+                                                  belowBarData: BarAreaData(
+                                                    show: widget
+                                                        .chartPreferences
+                                                        .areaFill,
+                                                    gradient: LinearGradient(
+                                                      begin:
+                                                          Alignment.topCenter,
+                                                      end: Alignment
+                                                          .bottomCenter,
+                                                      colors: [
+                                                        widget.accent
+                                                            .withValues(
+                                                              alpha: 0.18,
+                                                            ),
+                                                        widget.accent
+                                                            .withValues(
+                                                              alpha: 0,
+                                                            ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            duration: Duration.zero,
+                                          );
+                                        },
+                                      );
+                                    },
+                                  ),
+                                ),
+
+                                SizedBox(height: sectionGap),
+
+                                Text(
+                                  widget.title,
+                                  style: TextStyle(
+                                    color: titleColor,
+                                    fontSize: compact ? 13 : 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+
+                                SizedBox(height: compact ? 2 : 4),
+
+                                Text(
+                                  widget.value,
+                                  style: TextStyle(
+                                    fontSize: valueSize,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: -2,
+                                    color: AppColors.textPrimary(context),
+                                  ),
+                                ),
+
+                                SizedBox(height: compact ? 2 : 4),
+
+                                Text(
+                                  widget.subtitle,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: subtitleColor,
+                                    fontSize: compact ? 11 : 12,
+                                    height: 1.1,
                                   ),
                                 ),
                               ],
                             ),
-
-                            const SizedBox(height: 10),
-
-                            SizedBox(
-                              height: 36,
-                              child: SmoothTelemetrySeries(
-                                samples: widget.graphPoints,
-                                duration:
-                                    widget.chartPreferences.animationDuration,
-                                builder: (context, animatedSamples) {
-                                  return LayoutBuilder(
-                                    builder: (context, constraints) {
-                                      final scale = generateTimeAxisTicks(
-                                        samples: animatedSamples,
-                                        width: constraints.maxWidth,
-                                      );
-                                      final chartMaxY = telemetryChartMaxY(
-                                        animatedSamples,
-                                        widget.metricKind,
-                                      );
-
-                                      return LineChart(
-                                        LineChartData(
-                                          minX: 0,
-                                          maxX: scale.maxX,
-                                          minY: 0,
-                                          maxY: chartMaxY,
-                                          gridData: FlGridData(
-                                            show: widget
-                                                .chartPreferences
-                                                .gridLines,
-                                            drawHorizontalLine: true,
-                                            horizontalInterval: chartMaxY / 2,
-                                            drawVerticalLine: true,
-                                            verticalInterval:
-                                                scale.tickInterval,
-                                            getDrawingHorizontalLine: (_) =>
-                                                FlLine(
-                                                  color: AppColors.overlay(
-                                                    context,
-                                                    0.025,
-                                                  ),
-                                                  strokeWidth: 1,
-                                                ),
-                                            getDrawingVerticalLine: (_) =>
-                                                FlLine(
-                                                  color: AppColors.overlay(
-                                                    context,
-                                                    0.03,
-                                                  ),
-                                                  strokeWidth: 1,
-                                                ),
-                                          ),
-                                          titlesData: const FlTitlesData(
-                                            show: false,
-                                          ),
-                                          borderData: FlBorderData(show: false),
-                                          lineTouchData: const LineTouchData(
-                                            enabled: false,
-                                          ),
-                                          lineBarsData: [
-                                            LineChartBarData(
-                                              isCurved: widget
-                                                  .chartPreferences
-                                                  .smoothLines,
-                                              curveSmoothness: 0.38,
-                                              preventCurveOverShooting: true,
-                                              spots: animatedSamples
-                                                  .map(
-                                                    (sample) => FlSpot(
-                                                      scale.xFor(
-                                                        sample.timestamp,
-                                                      ),
-                                                      sample.value,
-                                                    ),
-                                                  )
-                                                  .toList(growable: false),
-                                              color: widget.accent,
-                                              barWidth: 2,
-                                              isStrokeCapRound: true,
-                                              dotData: const FlDotData(
-                                                show: false,
-                                              ),
-                                              belowBarData: BarAreaData(
-                                                show: widget
-                                                    .chartPreferences
-                                                    .areaFill,
-                                                gradient: LinearGradient(
-                                                  begin: Alignment.topCenter,
-                                                  end: Alignment.bottomCenter,
-                                                  colors: [
-                                                    widget.accent.withValues(
-                                                      alpha: 0.18,
-                                                    ),
-                                                    widget.accent.withValues(
-                                                      alpha: 0,
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        duration: Duration.zero,
-                                      );
-                                    },
-                                  );
-                                },
-                              ),
-                            ),
-
-                            const SizedBox(height: 10),
-
-                            Text(
-                              widget.title,
-                              style: TextStyle(
-                                color: titleColor,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-
-                            const SizedBox(height: 4),
-
-                            Text(
-                              widget.value,
-                              style: TextStyle(
-                                fontSize: hovering || focused ? 38 : 32,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: -2,
-                                color: AppColors.textPrimary(context),
-                              ),
-                            ),
-
-                            const SizedBox(height: 4),
-
-                            Text(
-                              widget.subtitle,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: subtitleColor,
-                                fontSize: 12,
-                                height: 1.1,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
@@ -399,8 +479,8 @@ class _MetricCardState extends State<MetricCard> {
                 ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }

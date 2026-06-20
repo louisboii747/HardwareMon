@@ -5,3 +5,4 @@ Icon=com.hardwaremon.HardwareMon
 Type=Application
 Categories=System;Monitor;
 StartupNotify=true
+StartupWMClass=com.hardwaremon.HardwareMon

@@ -5,11 +5,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import '../models/chart_preferences.dart';
+import '../models/dashboard_preferences.dart';
+import '../models/telemetry_sample.dart';
 import '../../services/update_prompt_service.dart';
 import '../utils/telemetry_chart.dart';
 import '../services/desktop_integration_service.dart';
 import '../widgets/glass_panel.dart';
 import '../widgets/metric_card.dart';
+import '../widgets/metric_alert_action.dart';
+import '../widgets/command_palette.dart';
+import '../widgets/system_pulse_background.dart';
+import '../widgets/telemetry_strip.dart';
 import '../widgets/telemetry_studio.dart';
 import 'pages/performance_page.dart';
 import 'pages/processes_page.dart';
@@ -27,9 +33,11 @@ class ShellScreen extends StatefulWidget {
 class _ShellScreenState extends State<ShellScreen> {
   late TelemetryService telemetry;
   late ChartPreferences chartPreferences;
+  late DashboardPreferences dashboardPreferences;
   StreamSubscription<DesktopCommand>? _desktopCommandSubscription;
 
   int selectedIndex = 0;
+  int _previousIndex = 0;
 
   @override
   void initState() {
@@ -37,9 +45,11 @@ class _ShellScreenState extends State<ShellScreen> {
 
     telemetry = TelemetryService();
     chartPreferences = ChartPreferences();
+    dashboardPreferences = DashboardPreferences();
 
     telemetry.start();
     chartPreferences.load();
+    dashboardPreferences.load();
     DesktopIntegrationService.instance.attachTelemetry(telemetry);
     _desktopCommandSubscription = DesktopIntegrationService.instance.commands
         .listen(_handleDesktopCommand);
@@ -54,6 +64,11 @@ class _ShellScreenState extends State<ShellScreen> {
         setState(() {});
       }
     });
+    dashboardPreferences.addListener(() {
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   @override
@@ -62,6 +77,7 @@ class _ShellScreenState extends State<ShellScreen> {
     DesktopIntegrationService.instance.detachTelemetry(telemetry);
     telemetry.stop();
     chartPreferences.dispose();
+    dashboardPreferences.dispose();
     super.dispose();
   }
 
@@ -74,14 +90,7 @@ class _ShellScreenState extends State<ShellScreen> {
       case DesktopCommand.telemetryStudio:
         Navigator.of(context).popUntil((route) => route.isFirst);
         _selectPage(2);
-        await Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (context) => TelemetryStudioPage(
-              telemetry: telemetry,
-              chartPreferences: chartPreferences,
-            ),
-          ),
-        );
+        await _openTelemetryStudio();
         break;
       case DesktopCommand.checkForUpdates:
         await UpdatePromptService.checkForUpdates(context);
@@ -95,68 +104,315 @@ class _ShellScreenState extends State<ShellScreen> {
 
   void _selectPage(int index) {
     if (selectedIndex == index) return;
-    setState(() => selectedIndex = index);
+    setState(() {
+      _previousIndex = selectedIndex;
+      selectedIndex = index;
+    });
+  }
+
+  Future<void> _openTelemetryStudio() {
+    return Navigator.of(context).push(
+      PageRouteBuilder<void>(
+        transitionDuration: const Duration(milliseconds: 420),
+        reverseTransitionDuration: const Duration(milliseconds: 300),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            TelemetryStudioPage(
+              telemetry: telemetry,
+              chartPreferences: chartPreferences,
+            ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curved = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+          );
+          return FadeTransition(
+            opacity: curved,
+            child: ScaleTransition(
+              scale: Tween(begin: 0.985, end: 1.0).animate(curved),
+              child: child,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  SystemCondition get _systemCondition => evaluateSystemCondition(
+    cpuUsage: telemetry.cpuUsage,
+    ramUsage: telemetry.ramUsage,
+    cpuTemperature: telemetry.cpuTemp,
+    gpuTemperature: telemetry.gpuTemp,
+    paused: telemetry.isPaused,
+    hasError: telemetry.lastError != null,
+  );
+
+  Future<void> _copySystemSnapshot() async {
+    final capturedAt = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+    final snapshot =
+        '''
+HardwareMon snapshot · $capturedAt
+Status: ${_systemCondition.label}
+CPU: ${telemetry.cpuUsage}% · ${telemetry.cpuTemp}°C · ${telemetry.cpuClockGHz.toStringAsFixed(2)} GHz · ${telemetry.cpuPower.toStringAsFixed(1)} W
+Memory: ${telemetry.ramUsage}% · ${telemetry.ramUsed.toStringAsFixed(1)} / ${telemetry.ramTotal.toStringAsFixed(1)} GB
+GPU: ${telemetry.gpuUsage}% · ${telemetry.gpuTemp}°C · ${telemetry.gpuPower.toStringAsFixed(1)} W
+Disk: ${telemetry.diskUsage}%
+''';
+
+    await Clipboard.setData(ClipboardData(text: snapshot.trim()));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Live system snapshot copied'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Future<void> _showKeyboardShortcuts() {
+    const shortcuts = [
+      ('Command palette', 'Ctrl K'),
+      ('Navigate pages', 'Alt 1–4'),
+      ('Refresh telemetry', 'F5 / Ctrl R'),
+      ('Pause or resume', 'Ctrl P'),
+      ('Reset session statistics', 'Ctrl Shift R'),
+      ('Copy live snapshot', 'Ctrl Shift C'),
+      ('Open settings', 'Ctrl ,'),
+    ];
+
+    return showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.keyboard_rounded, size: 22),
+            SizedBox(width: 10),
+            Text('Keyboard shortcuts'),
+          ],
+        ),
+        content: SizedBox(
+          width: 420,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final shortcut in shortcuts)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 7),
+                  child: Row(
+                    children: [
+                      Expanded(child: Text(shortcut.$1)),
+                      _ShortcutLabel(label: shortcut.$2),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Done'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<CommandPaletteAction> _commandPaletteActions() {
+    return [
+      CommandPaletteAction(
+        id: 'dashboard',
+        title: 'Open Dashboard',
+        description: 'Return to the live system overview',
+        section: 'Navigate',
+        shortcut: 'Alt 1',
+        icon: Icons.dashboard_rounded,
+        selected: selectedIndex == 0,
+        keywords: const ['home', 'overview'],
+        run: () => _selectPage(0),
+      ),
+      CommandPaletteAction(
+        id: 'processes',
+        title: 'Open Processes',
+        description: 'Inspect user and system resource usage',
+        section: 'Navigate',
+        shortcut: 'Alt 2',
+        icon: Icons.list_rounded,
+        selected: selectedIndex == 1,
+        keywords: const ['apps', 'pid', 'tasks'],
+        run: () => _selectPage(1),
+      ),
+      CommandPaletteAction(
+        id: 'performance',
+        title: 'Open Performance',
+        description: 'Explore detailed live and historical metrics',
+        section: 'Navigate',
+        shortcut: 'Alt 3',
+        icon: Icons.analytics_rounded,
+        selected: selectedIndex == 2,
+        keywords: const ['charts', 'graphs', 'history'],
+        run: () => _selectPage(2),
+      ),
+      CommandPaletteAction(
+        id: 'settings',
+        title: 'Open Settings',
+        description: 'Configure monitoring and desktop behaviour',
+        section: 'Navigate',
+        shortcut: 'Ctrl ,',
+        icon: Icons.settings_rounded,
+        selected: selectedIndex == 3,
+        keywords: const ['preferences', 'configure'],
+        run: () => _selectPage(3),
+      ),
+      for (final workspace in DashboardWorkspace.values)
+        CommandPaletteAction(
+          id: 'workspace-${workspace.name}',
+          title: 'Apply ${workspace.label} Workspace',
+          description: workspace.description,
+          section: 'Dashboard workspaces',
+          icon: switch (workspace) {
+            DashboardWorkspace.overview => Icons.dashboard_customize_rounded,
+            DashboardWorkspace.workload => Icons.speed_rounded,
+            DashboardWorkspace.thermals => Icons.thermostat_rounded,
+            DashboardWorkspace.power => Icons.bolt_rounded,
+          },
+          selected: dashboardPreferences.workspace == workspace,
+          keywords: const ['dashboard', 'preset', 'layout', 'apply'],
+          run: () {
+            _selectPage(0);
+            return _applyDashboardWorkspace(workspace);
+          },
+        ),
+      CommandPaletteAction(
+        id: 'studio',
+        title: 'Launch Telemetry Studio',
+        description: 'Compare CPU, memory, and GPU on one canvas',
+        section: 'Telemetry',
+        icon: Icons.stacked_line_chart_rounded,
+        keywords: const ['compare', 'expanded', 'canvas'],
+        run: _openTelemetryStudio,
+      ),
+      CommandPaletteAction(
+        id: 'pause',
+        title: telemetry.isPaused ? 'Resume Telemetry' : 'Pause Telemetry',
+        description: telemetry.isPaused
+            ? 'Continue collecting live samples'
+            : 'Freeze the current telemetry view',
+        section: 'Telemetry',
+        shortcut: 'Ctrl P',
+        icon: telemetry.isPaused
+            ? Icons.play_arrow_rounded
+            : Icons.pause_rounded,
+        selected: telemetry.isPaused,
+        keywords: const ['freeze', 'live', 'resume'],
+        run: telemetry.togglePaused,
+      ),
+      CommandPaletteAction(
+        id: 'refresh',
+        title: 'Refresh Everything Now',
+        description: 'Fetch current values and historical telemetry',
+        section: 'Telemetry',
+        shortcut: 'F5',
+        icon: Icons.refresh_rounded,
+        keywords: const ['reload', 'sync', 'update'],
+        run: () => telemetry.refreshNow(includeHistory: true),
+      ),
+      CommandPaletteAction(
+        id: 'reset-statistics',
+        title: 'Reset Session Min/Max',
+        description: 'Start a fresh statistics window',
+        section: 'Telemetry',
+        shortcut: 'Ctrl Shift R',
+        icon: Icons.restart_alt_rounded,
+        keywords: const ['clear', 'session', 'minimum', 'maximum'],
+        run: telemetry.resetSessionStatistics,
+      ),
+      CommandPaletteAction(
+        id: 'copy-snapshot',
+        title: 'Copy Live System Snapshot',
+        description: 'Copy a timestamped diagnostic summary',
+        section: 'Quick actions',
+        shortcut: 'Ctrl Shift C',
+        icon: Icons.content_copy_rounded,
+        keywords: const ['clipboard', 'share', 'diagnostic'],
+        run: _copySystemSnapshot,
+      ),
+      CommandPaletteAction(
+        id: 'ambient',
+        title: chartPreferences.ambientEffects
+            ? 'Disable Ambient System Pulse'
+            : 'Enable Ambient System Pulse',
+        description: 'Let the background subtly reflect system activity',
+        section: 'Appearance',
+        icon: Icons.blur_on_rounded,
+        selected: chartPreferences.ambientEffects,
+        keywords: const ['background', 'glow', 'visual'],
+        run: () => _toggleChartPreference(ChartPreference.ambientEffects),
+      ),
+      CommandPaletteAction(
+        id: 'ticker',
+        title: chartPreferences.telemetryTicker
+            ? 'Hide Live Telemetry Strip'
+            : 'Show Live Telemetry Strip',
+        description: 'Toggle the compact system health summary',
+        section: 'Appearance',
+        icon: Icons.view_stream_rounded,
+        selected: chartPreferences.telemetryTicker,
+        keywords: const ['health', 'status', 'metrics'],
+        run: () => _toggleChartPreference(ChartPreference.telemetryTicker),
+      ),
+      CommandPaletteAction(
+        id: 'grid',
+        title: chartPreferences.gridLines
+            ? 'Hide Chart Grid Lines'
+            : 'Show Chart Grid Lines',
+        description: 'Change graph density across the application',
+        section: 'Appearance',
+        shortcut: 'Ctrl G',
+        icon: Icons.grid_4x4_rounded,
+        selected: chartPreferences.gridLines,
+        keywords: const ['graph', 'chart'],
+        run: () => _toggleChartPreference(ChartPreference.gridLines),
+      ),
+      CommandPaletteAction(
+        id: 'shortcuts',
+        title: 'Show Keyboard Shortcuts',
+        description: 'See every global desktop shortcut',
+        section: 'Help',
+        icon: Icons.keyboard_rounded,
+        keywords: const ['keys', 'hotkeys', 'help'],
+        run: _showKeyboardShortcuts,
+      ),
+      CommandPaletteAction(
+        id: 'updates',
+        title: 'Check for Updates',
+        description: 'Look for a newer HardwareMon release',
+        section: 'Help',
+        icon: Icons.system_update_alt_rounded,
+        keywords: const ['version', 'release', 'upgrade'],
+        run: () => UpdatePromptService.checkForUpdates(context),
+      ),
+    ];
+  }
+
+  Future<void> _showCommandPalette() {
+    final telemetrySummary =
+        'CPU ${telemetry.cpuUsage}%  ·  RAM ${telemetry.ramUsage}%  ·  GPU ${telemetry.gpuTemp}°';
+    return showHardwareMonCommandPalette(
+      context: context,
+      actions: _commandPaletteActions(),
+      systemSummary:
+          '${_systemCondition.label} · ${_systemCondition.description}',
+      telemetrySummary: telemetrySummary,
+      systemColor: _systemCondition.color,
+    );
   }
 
   Widget buildDashboard() {
-    final cpuCard =
-        MetricCard(
-              title: 'CPU Usage',
-              value: '${telemetry.cpuUsage}%',
-              subtitle: telemetry.cpuName,
-              icon: Icons.memory_rounded,
-              accent: Colors.cyan,
-              graphPoints: telemetry.cpuHistory,
-              chartPreferences: chartPreferences,
-              statisticsSince: telemetry.sessionStatisticsStartedAt,
-            )
-            .animate()
-            .fadeIn(duration: 700.ms, curve: Curves.easeOutCubic)
-            .slideY(
-              begin: 0.08,
-              end: 0,
-              duration: 700.ms,
-              curve: Curves.easeOutCubic,
-            );
-    final memoryCard =
-        MetricCard(
-              title: 'Memory',
-              value: '${telemetry.ramUsage}%',
-              subtitle: 'System memory usage',
-              icon: Icons.storage_rounded,
-              accent: Colors.purple,
-              graphPoints: telemetry.ramHistory,
-              chartPreferences: chartPreferences,
-              statisticsSince: telemetry.sessionStatisticsStartedAt,
-            )
-            .animate()
-            .fadeIn(delay: 120.ms, duration: 700.ms)
-            .slideY(
-              begin: 0.08,
-              end: 0,
-              duration: 700.ms,
-              curve: Curves.easeOutCubic,
-            );
-    final gpuCard =
-        MetricCard(
-              title: 'GPU Temp',
-              value: '${telemetry.gpuTemp}°',
-              subtitle: 'Live telemetry',
-              icon: Icons.graphic_eq_rounded,
-              accent: Colors.orange,
-              graphPoints: telemetry.gpuTempHistory,
-              chartPreferences: chartPreferences,
-              metricKind: TelemetryMetricKind.temperature,
-              statisticsSince: telemetry.sessionStatisticsStartedAt,
-            )
-            .animate()
-            .fadeIn(delay: 220.ms, duration: 700.ms)
-            .slideY(
-              begin: 0.08,
-              end: 0,
-              duration: 700.ms,
-              curve: Curves.easeOutCubic,
-            );
+    final metrics = _dashboardMetrics(dashboardPreferences.workspace);
+    final cards = [
+      for (var index = 0; index < metrics.length; index++)
+        _buildDashboardMetricCard(metrics[index], index),
+    ];
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -164,26 +420,42 @@ class _ShellScreenState extends State<ShellScreen> {
           return SingleChildScrollView(
             child: Column(
               children: [
-                SizedBox(height: 300, child: cpuCard),
+                _DashboardWorkspaceSelector(
+                  selected: dashboardPreferences.workspace,
+                  onSelected: _applyDashboardWorkspace,
+                ),
+                const SizedBox(height: 14),
+                SizedBox(height: 280, child: cards[0]),
                 const SizedBox(height: 16),
-                SizedBox(height: 250, child: memoryCard),
+                SizedBox(height: 230, child: cards[1]),
                 const SizedBox(height: 16),
-                SizedBox(height: 250, child: gpuCard),
+                SizedBox(height: 230, child: cards[2]),
               ],
             ),
           );
         }
 
-        return Row(
+        return Column(
           children: [
-            Expanded(flex: 2, child: cpuCard),
-            const SizedBox(width: 24),
+            _DashboardWorkspaceSelector(
+              selected: dashboardPreferences.workspace,
+              onSelected: _applyDashboardWorkspace,
+            ),
+            const SizedBox(height: 14),
             Expanded(
-              child: Column(
+              child: Row(
                 children: [
-                  Expanded(child: memoryCard),
-                  const SizedBox(height: 24),
-                  Expanded(child: gpuCard),
+                  Expanded(flex: 2, child: cards[0]),
+                  const SizedBox(width: 24),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Expanded(child: cards[1]),
+                        const SizedBox(height: 16),
+                        Expanded(child: cards[2]),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -191,6 +463,130 @@ class _ShellScreenState extends State<ShellScreen> {
         );
       },
     );
+  }
+
+  Future<void> _applyDashboardWorkspace(DashboardWorkspace workspace) async {
+    await dashboardPreferences.setWorkspace(workspace);
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${workspace.label} workspace applied'),
+        duration: const Duration(milliseconds: 1400),
+      ),
+    );
+  }
+
+  Widget _buildDashboardMetricCard(_DashboardMetric metric, int index) {
+    final card = MetricCard(
+      title: metric.title,
+      value: metric.value,
+      subtitle: metric.subtitle,
+      icon: metric.icon,
+      accent: metric.accent,
+      graphPoints: metric.samples,
+      chartPreferences: chartPreferences,
+      metricKind: metric.metricKind,
+      statisticsSince: telemetry.sessionStatisticsStartedAt,
+      alertKind: metric.alertKind,
+      alertValue: metric.alertValue,
+    );
+
+    if (!chartPreferences.animations) return card;
+
+    return card
+        .animate(key: ValueKey('${dashboardPreferences.workspace.name}-$index'))
+        .fadeIn(
+          delay: Duration(milliseconds: index * 90),
+          duration: 520.ms,
+          curve: Curves.easeOutCubic,
+        )
+        .slideY(
+          begin: 0.05,
+          end: 0,
+          delay: Duration(milliseconds: index * 90),
+          duration: 520.ms,
+          curve: Curves.easeOutCubic,
+        );
+  }
+
+  List<_DashboardMetric> _dashboardMetrics(DashboardWorkspace workspace) {
+    final cpuUsage = _DashboardMetric(
+      title: 'CPU Usage',
+      value: '${telemetry.cpuUsage}%',
+      subtitle: telemetry.cpuName,
+      icon: Icons.memory_rounded,
+      accent: Colors.cyan,
+      samples: telemetry.cpuHistory,
+      alertKind: MetricAlertKind.cpuUsage,
+      alertValue: telemetry.cpuUsage.toDouble(),
+    );
+    final memory = _DashboardMetric(
+      title: 'Memory',
+      value: '${telemetry.ramUsage}%',
+      subtitle: 'System memory usage',
+      icon: Icons.storage_rounded,
+      accent: Colors.purple,
+      samples: telemetry.ramHistory,
+      alertKind: MetricAlertKind.ramUsage,
+      alertValue: telemetry.ramUsage.toDouble(),
+    );
+    final gpuUsage = _DashboardMetric(
+      title: 'GPU Usage',
+      value: '${telemetry.gpuUsage}%',
+      subtitle: 'Graphics workload',
+      icon: Icons.show_chart_rounded,
+      accent: Colors.lightBlueAccent,
+      samples: telemetry.gpuUsageHistory,
+    );
+    final cpuTemperature = _DashboardMetric(
+      title: 'CPU Temp',
+      value: '${telemetry.cpuTemp}°',
+      subtitle: 'Package temperature',
+      icon: Icons.thermostat_rounded,
+      accent: Colors.redAccent,
+      samples: telemetry.cpuTempHistory,
+      metricKind: TelemetryMetricKind.temperature,
+      alertKind: MetricAlertKind.cpuTemperature,
+      alertValue: telemetry.cpuTemp.toDouble(),
+    );
+    final gpuTemperature = _DashboardMetric(
+      title: 'GPU Temp',
+      value: '${telemetry.gpuTemp}°',
+      subtitle: 'Graphics temperature',
+      icon: Icons.graphic_eq_rounded,
+      accent: Colors.orange,
+      samples: telemetry.gpuTempHistory,
+      metricKind: TelemetryMetricKind.temperature,
+      alertKind: MetricAlertKind.gpuTemperature,
+      alertValue: telemetry.gpuTemp.toDouble(),
+    );
+    final cpuPower = _DashboardMetric(
+      title: 'CPU Power',
+      value: '${telemetry.cpuPower.toStringAsFixed(1)} W',
+      subtitle: 'Package power draw',
+      icon: Icons.bolt_rounded,
+      accent: Colors.amber,
+      samples: telemetry.cpuPowerHistory,
+      metricKind: TelemetryMetricKind.watts,
+    );
+    final gpuPower = _DashboardMetric(
+      title: 'GPU Power',
+      value: '${telemetry.gpuPower.toStringAsFixed(1)} W',
+      subtitle: 'Board power draw',
+      icon: Icons.electric_bolt_rounded,
+      accent: Colors.lightGreenAccent,
+      samples: telemetry.gpuPowerHistory,
+      metricKind: TelemetryMetricKind.watts,
+    );
+
+    return switch (workspace) {
+      DashboardWorkspace.overview => [cpuUsage, memory, gpuTemperature],
+      DashboardWorkspace.workload => [cpuUsage, gpuUsage, memory],
+      DashboardWorkspace.thermals => [cpuTemperature, gpuTemperature, cpuPower],
+      DashboardWorkspace.power => [cpuPower, gpuPower, gpuUsage],
+    };
   }
 
   Widget getCurrentPage() {
@@ -208,7 +604,11 @@ class _ShellScreenState extends State<ShellScreen> {
         );
 
       case 3:
-        return SettingsPage(telemetry: telemetry);
+        return SettingsPage(
+          telemetry: telemetry,
+          chartPreferences: chartPreferences,
+          dashboardPreferences: dashboardPreferences,
+        );
 
       default:
         return buildDashboard();
@@ -236,6 +636,8 @@ class _ShellScreenState extends State<ShellScreen> {
     final controls = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+        _CommandPaletteButton(onPressed: _showCommandPalette),
+        const SizedBox(width: 8),
         _TelemetryStatus(
           label: statusText,
           paused: telemetry.isPaused,
@@ -291,7 +693,13 @@ class _ShellScreenState extends State<ShellScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              controls,
+              SizedBox(
+                width: double.infinity,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: controls,
+                ),
+              ),
             ],
           );
         }
@@ -326,8 +734,17 @@ class _ShellScreenState extends State<ShellScreen> {
             _selectPage(2),
         const SingleActivator(LogicalKeyboardKey.digit4, alt: true): () =>
             _selectPage(3),
+        const SingleActivator(LogicalKeyboardKey.keyK, control: true):
+            _showCommandPalette,
+        const SingleActivator(
+          LogicalKeyboardKey.keyP,
+          control: true,
+          shift: true,
+        ): _showCommandPalette,
         const SingleActivator(LogicalKeyboardKey.keyP, control: true): () =>
             telemetry.togglePaused(),
+        const SingleActivator(LogicalKeyboardKey.f5): () =>
+            telemetry.refreshNow(includeHistory: true),
         const SingleActivator(LogicalKeyboardKey.keyR, control: true): () =>
             telemetry.refreshNow(includeHistory: true),
         const SingleActivator(
@@ -339,6 +756,13 @@ class _ShellScreenState extends State<ShellScreen> {
             _toggleChartPreference(ChartPreference.gridLines),
         const SingleActivator(LogicalKeyboardKey.keyM, control: true): () =>
             _toggleChartPreference(ChartPreference.animations),
+        const SingleActivator(
+          LogicalKeyboardKey.keyC,
+          control: true,
+          shift: true,
+        ): _copySystemSnapshot,
+        const SingleActivator(LogicalKeyboardKey.comma, control: true): () =>
+            _selectPage(3),
       },
       child: Focus(
         autofocus: true,
@@ -355,27 +779,11 @@ class _ShellScreenState extends State<ShellScreen> {
 
             child: Stack(
               children: [
-                Positioned(
-                  top: -120,
-                  left: -120,
-
-                  child: Container(
-                    width: 400,
-                    height: 400,
-
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-
-                      gradient: RadialGradient(
-                        colors: [
-                          Colors.cyan.withValues(
-                            alpha: AppColors.isLight(context) ? 0.12 : 0.08,
-                          ),
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
-                  ),
+                SystemPulseBackground(
+                  cpuUsage: telemetry.cpuUsage,
+                  ramUsage: telemetry.ramUsage,
+                  gpuTemperature: telemetry.gpuTemp,
+                  enabled: chartPreferences.ambientEffects,
                 ),
 
                 SafeArea(
@@ -453,22 +861,70 @@ class _ShellScreenState extends State<ShellScreen> {
 
                               _buildHeader(context),
 
-                              const SizedBox(height: 32),
+                              AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 280),
+                                switchInCurve: Curves.easeOutCubic,
+                                switchOutCurve: Curves.easeInCubic,
+                                transitionBuilder: (child, animation) =>
+                                    FadeTransition(
+                                      opacity: animation,
+                                      child: SizeTransition(
+                                        sizeFactor: animation,
+                                        alignment: Alignment.topCenter,
+                                        child: child,
+                                      ),
+                                    ),
+                                child: chartPreferences.telemetryTicker
+                                    ? Padding(
+                                        key: const ValueKey(
+                                          'telemetry-strip-visible',
+                                        ),
+                                        padding: const EdgeInsets.only(top: 16),
+                                        child: TelemetryStrip(
+                                          cpuUsage: telemetry.cpuUsage,
+                                          cpuTemperature: telemetry.cpuTemp,
+                                          ramUsage: telemetry.ramUsage,
+                                          gpuUsage: telemetry.gpuUsage,
+                                          gpuTemperature: telemetry.gpuTemp,
+                                          diskUsage: telemetry.diskUsage,
+                                          paused: telemetry.isPaused,
+                                          hasError: telemetry.lastError != null,
+                                          onOpenPerformance: () =>
+                                              _selectPage(2),
+                                          onCopySnapshot: _copySystemSnapshot,
+                                        ),
+                                      )
+                                    : const SizedBox.shrink(
+                                        key: ValueKey('telemetry-strip-hidden'),
+                                      ),
+                              ),
+
+                              SizedBox(
+                                height: chartPreferences.telemetryTicker
+                                    ? 20
+                                    : 32,
+                              ),
 
                               Expanded(
                                 child: AnimatedSwitcher(
-                                  duration: const Duration(milliseconds: 450),
+                                  duration: chartPreferences.animations
+                                      ? const Duration(milliseconds: 420)
+                                      : Duration.zero,
 
                                   switchInCurve: Curves.easeOutCubic,
                                   switchOutCurve: Curves.easeOutCubic,
 
                                   transitionBuilder: (child, animation) {
+                                    final direction =
+                                        selectedIndex >= _previousIndex
+                                        ? 1.0
+                                        : -1.0;
                                     return FadeTransition(
                                       opacity: animation,
 
                                       child: SlideTransition(
                                         position: Tween<Offset>(
-                                          begin: const Offset(0.03, 0),
+                                          begin: Offset(0.025 * direction, 0),
                                           end: Offset.zero,
                                         ).animate(animation),
 
@@ -494,6 +950,114 @@ class _ShellScreenState extends State<ShellScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _DashboardMetric {
+  final String title;
+  final String value;
+  final String subtitle;
+  final IconData icon;
+  final Color accent;
+  final List<TelemetrySample> samples;
+  final TelemetryMetricKind metricKind;
+  final MetricAlertKind? alertKind;
+  final double? alertValue;
+
+  const _DashboardMetric({
+    required this.title,
+    required this.value,
+    required this.subtitle,
+    required this.icon,
+    required this.accent,
+    required this.samples,
+    this.metricKind = TelemetryMetricKind.percentage,
+    this.alertKind,
+    this.alertValue,
+  });
+}
+
+class _DashboardWorkspaceSelector extends StatelessWidget {
+  final DashboardWorkspace selected;
+  final ValueChanged<DashboardWorkspace> onSelected;
+
+  const _DashboardWorkspaceSelector({
+    required this.selected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: AppColors.surface(context).withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border(context)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.dashboard_customize_rounded,
+            size: 17,
+            color: AppColors.accent,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Workspace',
+            style: TextStyle(
+              color: AppColors.textSecondary(context),
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (final workspace in DashboardWorkspace.values) ...[
+                    ChoiceChip(
+                      label: Text(workspace.label),
+                      selected: workspace == selected,
+                      onSelected: (_) => onSelected(workspace),
+                      visualDensity: VisualDensity.compact,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      selectedColor: AppColors.accent.withValues(alpha: 0.18),
+                      side: BorderSide(
+                        color: workspace == selected
+                            ? AppColors.accent.withValues(alpha: 0.36)
+                            : AppColors.border(context),
+                      ),
+                      labelStyle: TextStyle(
+                        color: workspace == selected
+                            ? AppColors.textPrimary(context)
+                            : AppColors.textMuted(context),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (workspace != DashboardWorkspace.values.last)
+                      const SizedBox(width: 7),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Tooltip(
+            message: selected.description,
+            child: Icon(
+              Icons.info_outline_rounded,
+              size: 15,
+              color: AppColors.textMuted(context),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -584,6 +1148,107 @@ class _DockItemState extends State<_DockItem> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CommandPaletteButton extends StatefulWidget {
+  final VoidCallback onPressed;
+
+  const _CommandPaletteButton({required this.onPressed});
+
+  @override
+  State<_CommandPaletteButton> createState() => _CommandPaletteButtonState();
+}
+
+class _CommandPaletteButtonState extends State<_CommandPaletteButton> {
+  bool _hovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: 'Open command palette  •  Ctrl+K',
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _hovering = true),
+        onExit: (_) => setState(() => _hovering = false),
+        child: GestureDetector(
+          onTap: widget.onPressed,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            height: 38,
+            padding: const EdgeInsets.symmetric(horizontal: 11),
+            decoration: BoxDecoration(
+              color: _hovering
+                  ? AppColors.accent.withValues(alpha: 0.13)
+                  : AppColors.overlay(context, 0.045),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: _hovering
+                    ? AppColors.accent.withValues(alpha: 0.3)
+                    : AppColors.border(context),
+              ),
+              boxShadow: _hovering
+                  ? [
+                      BoxShadow(
+                        color: AppColors.accent.withValues(alpha: 0.1),
+                        blurRadius: 20,
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.search_rounded,
+                  size: 17,
+                  color: _hovering
+                      ? AppColors.accent
+                      : AppColors.textSecondary(context),
+                ),
+                const SizedBox(width: 7),
+                Text(
+                  'Quick actions',
+                  style: TextStyle(
+                    color: AppColors.textSecondary(context),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 9),
+                const _ShortcutLabel(label: 'Ctrl K'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ShortcutLabel extends StatelessWidget {
+  final String label;
+
+  const _ShortcutLabel({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.overlay(context, 0.055),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: AppColors.border(context)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: AppColors.textMuted(context),
+          fontSize: 8,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
@@ -715,13 +1380,50 @@ class _ChartOptionsButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Tooltip(
-      message: 'Chart display options',
+      message: 'Display options',
       child: PopupMenuButton<ChartPreference>(
         tooltip: '',
         onSelected: onSelected,
         color: AppColors.surfaceElevated(context),
         position: PopupMenuPosition.under,
         itemBuilder: (context) => [
+          PopupMenuItem<ChartPreference>(
+            enabled: false,
+            height: 28,
+            child: Text(
+              'INTERFACE',
+              style: TextStyle(
+                color: AppColors.textMuted(context),
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
+          CheckedPopupMenuItem(
+            value: ChartPreference.ambientEffects,
+            checked: preferences.ambientEffects,
+            child: const Text('Ambient system pulse'),
+          ),
+          CheckedPopupMenuItem(
+            value: ChartPreference.telemetryTicker,
+            checked: preferences.telemetryTicker,
+            child: const Text('Live telemetry strip'),
+          ),
+          const PopupMenuDivider(),
+          PopupMenuItem<ChartPreference>(
+            enabled: false,
+            height: 28,
+            child: Text(
+              'CHARTS',
+              style: TextStyle(
+                color: AppColors.textMuted(context),
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
           CheckedPopupMenuItem(
             value: ChartPreference.smoothLines,
             checked: preferences.smoothLines,

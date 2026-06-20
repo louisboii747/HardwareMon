@@ -196,15 +196,17 @@ jobs:
       # ─────────────────────────────────────────────
       - name: Create desktop entry
         run: |
-          cat <<'EOF' > pkg/usr/share/applications/hardwaremon.desktop
+          cat <<'EOF' > pkg/usr/share/applications/com.hardwaremon.HardwareMon.desktop
           [Desktop Entry]
           Name=HardwareMon
           Comment=Modern system monitoring platform
           Exec=hardwaremon
-          Icon=hardwaremon
+          Icon=com.hardwaremon.HardwareMon
           Terminal=false
           Type=Application
           Categories=System;Monitor;
+          StartupNotify=true
+          StartupWMClass=com.hardwaremon.HardwareMon
           EOF
 
       # ─────────────────────────────────────────────
@@ -212,8 +214,8 @@ jobs:
       # ─────────────────────────────────────────────
       - name: Copy icon
         run: |
-          cp "Untitled design.png" \
-          pkg/usr/share/icons/hicolor/256x256/apps/hardwaremon.png
+          cp "hardwaremon_app/assets/hardwaremon.png" \
+          pkg/usr/share/icons/hicolor/256x256/apps/com.hardwaremon.HardwareMon.png
 
       # ─────────────────────────────────────────────
       # Create nfpm config
@@ -242,11 +244,11 @@ jobs:
               dst: /usr/lib/hardwaremon/
               type: tree
 
-            - src: pkg/usr/share/applications/hardwaremon.desktop
-              dst: /usr/share/applications/hardwaremon.desktop
+            - src: pkg/usr/share/applications/com.hardwaremon.HardwareMon.desktop
+              dst: /usr/share/applications/com.hardwaremon.HardwareMon.desktop
 
-            - src: pkg/usr/share/icons/hicolor/256x256/apps/hardwaremon.png
-              dst: /usr/share/icons/hicolor/256x256/apps/hardwaremon.png
+            - src: pkg/usr/share/icons/hicolor/256x256/apps/com.hardwaremon.HardwareMon.png
+              dst: /usr/share/icons/hicolor/256x256/apps/com.hardwaremon.HardwareMon.png
           EOF
 
       # ─────────────────────────────────────────────
