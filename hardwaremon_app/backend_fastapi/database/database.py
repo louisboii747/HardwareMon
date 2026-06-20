@@ -45,5 +45,22 @@ def init_database():
         )
     """)
 
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS storage_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            drive_id TEXT NOT NULL,
+            mount_point TEXT NOT NULL,
+            capacity_percent REAL,
+            read_bps REAL,
+            write_bps REAL,
+            temperature_c REAL
+        )
+    """)
+    conn.execute("""
+        CREATE INDEX IF NOT EXISTS idx_storage_history_drive_timestamp
+        ON storage_history (drive_id, timestamp)
+    """)
+
     conn.commit()
     conn.close()

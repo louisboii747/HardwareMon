@@ -4,6 +4,8 @@ import threading
 
 from fastapi import FastAPI
 from telemetry.system import router as system_router
+from telemetry.network import router as network_router
+from telemetry.storage import router as storage_router
 from routes.processes import router as processes_router
 from multiprocessing import freeze_support
 from database.database import init_database
@@ -34,6 +36,8 @@ app = FastAPI(
 )
 
 app.include_router(system_router)
+app.include_router(network_router)
+app.include_router(storage_router)
 app.include_router(processes_router)
 app.include_router(history_router)
 

@@ -3,6 +3,7 @@
 from pathlib import Path
 
 lhm_dir = Path('third_party/LibreHardwareMonitor')
+app_icon = Path('../windows/runner/resources/app_icon.ico')
 lhm_datas = [
     (str(path), str(lhm_dir / path.relative_to(lhm_dir).parent))
     for path in lhm_dir.rglob('*')
@@ -35,7 +36,8 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=True,
+    console=False,
+    icon=str(app_icon),
 )
 
 coll = COLLECT(

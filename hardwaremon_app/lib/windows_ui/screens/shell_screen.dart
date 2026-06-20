@@ -20,6 +20,8 @@ import '../widgets/telemetry_strip.dart';
 import '../widgets/telemetry_studio.dart';
 import 'pages/performance_page.dart';
 import 'pages/processes_page.dart';
+import 'pages/network_page.dart';
+import 'pages/storage_page.dart';
 import 'pages/settings_page.dart';
 import '../services/telemetry_service.dart';
 import '../core/theme/app_colors.dart';
@@ -108,7 +110,7 @@ class _ShellScreenState extends State<ShellScreen> {
         break;
       case DesktopCommand.settings:
         Navigator.of(context).popUntil((route) => route.isFirst);
-        _selectPage(3);
+        _selectPage(5);
         break;
     }
   }
@@ -182,7 +184,7 @@ Disk: ${telemetry.diskUsage}%
   Future<void> _showKeyboardShortcuts() {
     const shortcuts = [
       ('Command palette', 'Ctrl K'),
-      ('Navigate pages', 'Alt 1–4'),
+      ('Navigate pages', 'Alt 1–6'),
       ('Refresh telemetry', 'F5 / Ctrl R'),
       ('Pause or resume', 'Ctrl P'),
       ('Reset session statistics', 'Ctrl Shift R'),
@@ -264,15 +266,44 @@ Disk: ${telemetry.diskUsage}%
         run: () => _selectPage(2),
       ),
       CommandPaletteAction(
+        id: 'network',
+        title: 'Open Network',
+        description: 'Inspect adapters, bandwidth, and test endpoints',
+        section: 'Navigate',
+        shortcut: 'Alt 4',
+        icon: Icons.language_rounded,
+        selected: selectedIndex == 3,
+        keywords: const ['ping', 'adapter', 'bandwidth', 'latency'],
+        run: () => _selectPage(3),
+      ),
+      CommandPaletteAction(
+        id: 'storage',
+        title: 'Open Storage',
+        description: 'Inspect drives, capacity, health, usage, and performance',
+        section: 'Navigate',
+        shortcut: 'Alt 5',
+        icon: Icons.storage_rounded,
+        selected: selectedIndex == 4,
+        keywords: const [
+          'disk',
+          'drive',
+          'capacity',
+          'smart',
+          'benchmark',
+          'space',
+        ],
+        run: () => _selectPage(4),
+      ),
+      CommandPaletteAction(
         id: 'settings',
         title: 'Open Settings',
         description: 'Configure monitoring and desktop behaviour',
         section: 'Navigate',
-        shortcut: 'Ctrl ,',
+        shortcut: 'Alt 6',
         icon: Icons.settings_rounded,
-        selected: selectedIndex == 3,
+        selected: selectedIndex == 5,
         keywords: const ['preferences', 'configure'],
-        run: () => _selectPage(3),
+        run: () => _selectPage(5),
       ),
       for (final workspace in DashboardWorkspace.values)
         CommandPaletteAction(
@@ -615,6 +646,12 @@ Disk: ${telemetry.diskUsage}%
         );
 
       case 3:
+        return const NetworkPage();
+
+      case 4:
+        return const StoragePage();
+
+      case 5:
         return SettingsPage(
           telemetry: telemetry,
           chartPreferences: chartPreferences,
@@ -745,6 +782,10 @@ Disk: ${telemetry.diskUsage}%
             _selectPage(2),
         const SingleActivator(LogicalKeyboardKey.digit4, alt: true): () =>
             _selectPage(3),
+        const SingleActivator(LogicalKeyboardKey.digit5, alt: true): () =>
+            _selectPage(4),
+        const SingleActivator(LogicalKeyboardKey.digit6, alt: true): () =>
+            _selectPage(5),
         const SingleActivator(LogicalKeyboardKey.keyK, control: true):
             _showCommandPalette,
         const SingleActivator(
@@ -773,7 +814,7 @@ Disk: ${telemetry.diskUsage}%
           shift: true,
         ): _copySystemSnapshot,
         const SingleActivator(LogicalKeyboardKey.comma, control: true): () =>
-            _selectPage(3),
+            _selectPage(5),
       },
       child: Focus(
         autofocus: true,
@@ -850,11 +891,31 @@ Disk: ${telemetry.diskUsage}%
                                 const SizedBox(height: 12),
 
                                 _DockItem(
-                                  icon: Icons.settings_rounded,
-                                  label: 'Settings',
+                                  icon: Icons.language_rounded,
+                                  label: 'Network',
                                   shortcut: 'Alt+4',
                                   active: selectedIndex == 3,
                                   onTap: () => _selectPage(3),
+                                ),
+
+                                const SizedBox(height: 12),
+
+                                _DockItem(
+                                  icon: Icons.storage_rounded,
+                                  label: 'Storage',
+                                  shortcut: 'Alt+5',
+                                  active: selectedIndex == 4,
+                                  onTap: () => _selectPage(4),
+                                ),
+
+                                const SizedBox(height: 12),
+
+                                _DockItem(
+                                  icon: Icons.settings_rounded,
+                                  label: 'Settings',
+                                  shortcut: 'Alt+6',
+                                  active: selectedIndex == 5,
+                                  onTap: () => _selectPage(5),
                                 ),
                               ],
                             ),

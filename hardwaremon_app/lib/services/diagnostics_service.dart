@@ -6,7 +6,9 @@ import '../windows_ui/services/settings_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../windows_ui/core/backend_config.dart';
+import '../windows_ui/services/network_service.dart';
 
 class DiagnosticsService {
   static Future<String> exportDiagnostics() async {
@@ -22,6 +24,9 @@ class DiagnosticsService {
     final packageInfo = await PackageInfo.fromPlatform();
 
     Map<String, dynamic>? telemetry;
+    Map<String, dynamic>? networkTelemetry;
+    Map<String, dynamic>? lastPingResult;
+    String? selectedInterface;
 
     try {
       final response = await http.get(
@@ -31,6 +36,32 @@ class DiagnosticsService {
       telemetry = jsonDecode(response.body);
     } catch (_) {
       telemetry = null;
+    }
+
+    try {
+      final response = await http.get(
+        Uri.parse('${BackendConfig.baseUrl}/network'),
+      );
+      if (response.statusCode == 200) {
+        networkTelemetry = Map<String, dynamic>.from(
+          jsonDecode(response.body) as Map,
+        );
+      }
+    } catch (_) {
+      networkTelemetry = null;
+    }
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      selectedInterface = prefs.getString(NetworkService.selectedInterfaceKey);
+      final encodedResult = prefs.getString(NetworkService.lastPingResultKey);
+      if (encodedResult != null) {
+        lastPingResult = Map<String, dynamic>.from(
+          jsonDecode(encodedResult) as Map,
+        );
+      }
+    } catch (_) {
+      lastPingResult = null;
     }
 
     final buffer = StringBuffer();
@@ -125,6 +156,57 @@ class DiagnosticsService {
       buffer.writeln('Telemetry unavailable');
     }
 
+    buffer.writeln('');
+    buffer.writeln('Network');
+    buffer.writeln('-------');
+    buffer.writeln(
+      'Endpoint Status: ${networkTelemetry != null ? "Reachable" : "Unavailable"}',
+    );
+    if (networkTelemetry != null) {
+      final interfaces =
+          networkTelemetry['interfaces'] as List<dynamic>? ?? const [];
+      buffer.writeln(
+        'Selected Interface: ${selectedInterface ?? networkTelemetry['active_interface'] ?? 'None'}',
+      );
+      buffer.writeln(
+        'Active Interface: ${networkTelemetry['active_interface'] ?? 'None'}',
+      );
+      buffer.writeln(
+        'Local IP: ${networkTelemetry['local_ip'] ?? 'Unavailable'}',
+      );
+      buffer.writeln(
+        'Gateway: ${networkTelemetry['gateway'] ?? 'Unavailable'}',
+      );
+      buffer.writeln('Download Speed: ${networkTelemetry['download_bps']} B/s');
+      buffer.writeln('Upload Speed: ${networkTelemetry['upload_bps']} B/s');
+      buffer.writeln('Total Received: ${networkTelemetry['bytes_received']} B');
+      buffer.writeln('Total Sent: ${networkTelemetry['bytes_sent']} B');
+      buffer.writeln(
+        'Available Interfaces: ${interfaces.map((item) => item is Map ? item['name'] : item).join(', ')}',
+      );
+    } else {
+      buffer.writeln('Network telemetry unavailable');
+    }
+    buffer.writeln('');
+
+    buffer.writeln('Last Ping Result');
+    buffer.writeln('----------------');
+    if (lastPingResult != null) {
+      buffer.writeln('Target: ${lastPingResult['target']}');
+      buffer.writeln('Resolved Host: ${lastPingResult['resolved_host']}');
+      buffer.writeln('Reachable: ${lastPingResult['reachable']}');
+      buffer.writeln('Latency: ${lastPingResult['latency_ms']} ms');
+      buffer.writeln('Average: ${lastPingResult['average_ms']} ms');
+      buffer.writeln('Minimum: ${lastPingResult['min_ms']} ms');
+      buffer.writeln('Maximum: ${lastPingResult['max_ms']} ms');
+      buffer.writeln('Jitter: ${lastPingResult['jitter_ms']} ms');
+      buffer.writeln('Packet Loss: ${lastPingResult['packet_loss_percent']}%');
+      buffer.writeln('Samples: ${lastPingResult['samples']}');
+      buffer.writeln('Checked At: ${lastPingResult['checked_at']}');
+      buffer.writeln('Error: ${lastPingResult['error'] ?? 'None'}');
+    } else {
+      buffer.writeln('No ping result has been recorded.');
+    }
     buffer.writeln('');
 
     final updaterLog = File(

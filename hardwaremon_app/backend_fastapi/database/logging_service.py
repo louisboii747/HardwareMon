@@ -3,12 +3,14 @@ import time
 
 from database.database import get_connection
 from telemetry.system import collect_stats
+from telemetry.storage import collect_storage_stats
 
 
 def log_telemetry():
     while True:
         try:
             stats = collect_stats()
+            storage = collect_storage_stats()
 
             conn = get_connection()
 
@@ -42,6 +44,31 @@ def log_telemetry():
                     stats["gpu_power"],
                     stats["gpu_vram_used"],
                 ),
+            )
+
+            conn.executemany(
+                """
+                INSERT INTO storage_history (
+                    drive_id,
+                    mount_point,
+                    capacity_percent,
+                    read_bps,
+                    write_bps,
+                    temperature_c
+                )
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                [
+                    (
+                        drive["id"],
+                        drive["mount_point"],
+                        drive["used_percent"],
+                        drive["read_bps"],
+                        drive["write_bps"],
+                        drive["temperature_c"],
+                    )
+                    for drive in storage["drives"]
+                ],
             )
 
             conn.commit()
