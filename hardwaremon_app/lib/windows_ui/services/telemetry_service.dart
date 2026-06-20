@@ -5,8 +5,11 @@ import 'package:http/http.dart' as http;
 import '../../services/alert_service.dart';
 import 'settings_service.dart';
 import '../core/backend_config.dart';
+import '../models/telemetry_sample.dart';
 
 class TelemetryService extends ChangeNotifier {
+  static const _maxLiveSamples = 3600;
+
   int cpuUsage = 0;
   int cpuTemp = 0;
   int ramUsage = 0;
@@ -29,19 +32,37 @@ class TelemetryService extends ChangeNotifier {
   String cpuName = 'Loading...';
 
   // Live telemetry history
-  final List<double> cpuHistory = [];
-  final List<double> ramHistory = [];
-  final List<double> gpuTempHistory = [];
-  final List<double> gpuUsageHistory = [];
+  final List<TelemetrySample> cpuHistory = [];
+  final List<TelemetrySample> cpuTempHistory = [];
+  final List<TelemetrySample> cpuClockHistory = [];
+  final List<TelemetrySample> cpuPowerHistory = [];
+  final List<TelemetrySample> ramHistory = [];
+  final List<TelemetrySample> ramUsedHistory = [];
+  final List<TelemetrySample> ramAvailableHistory = [];
+  final List<TelemetrySample> ramTotalHistory = [];
+  final List<TelemetrySample> gpuTempHistory = [];
+  final List<TelemetrySample> gpuUsageHistory = [];
+  final List<TelemetrySample> gpuPowerHistory = [];
+  final List<TelemetrySample> gpuVramUsedHistory = [];
 
   // Historical database telemetry
-  final List<double> historicalCpuHistory = [];
-  final List<double> historicalRamHistory = [];
-  final List<double> historicalGpuHistory = [];
+  final List<TelemetrySample> historicalCpuHistory = [];
+  final List<TelemetrySample> historicalRamHistory = [];
+  final List<TelemetrySample> historicalGpuHistory = [];
 
   Timer? _timer;
+  Duration _refreshDuration = const Duration(seconds: 1);
+  bool _fetchInProgress = false;
+
+  bool isPaused = false;
+  bool isRefreshing = false;
+  DateTime? lastUpdated;
+  String? lastError;
 
   Future<void> fetchStats() async {
+    if (_fetchInProgress) return;
+    _fetchInProgress = true;
+
     try {
       final response = await http.get(
         Uri.parse('${BackendConfig.baseUrl}/stats'),
@@ -68,26 +89,19 @@ class TelemetryService extends ChangeNotifier {
 
       cpuName = data['cpu_name'] ?? 'Unknown CPU';
 
-      cpuHistory.add(cpuUsage.toDouble());
-      ramHistory.add(ramUsage.toDouble());
-      gpuTempHistory.add(gpuTemp.toDouble());
-      gpuUsageHistory.add(gpuUsage.toDouble());
-
-      if (cpuHistory.length > 30) {
-        cpuHistory.removeAt(0);
-      }
-
-      if (ramHistory.length > 30) {
-        ramHistory.removeAt(0);
-      }
-
-      if (gpuTempHistory.length > 30) {
-        gpuTempHistory.removeAt(0);
-      }
-
-      if (gpuUsageHistory.length > 30) {
-        gpuUsageHistory.removeAt(0);
-      }
+      final sampledAt = DateTime.now();
+      _appendSample(cpuHistory, cpuUsage.toDouble(), sampledAt);
+      _appendSample(cpuTempHistory, cpuTemp.toDouble(), sampledAt);
+      _appendSample(cpuClockHistory, cpuClockGHz, sampledAt);
+      _appendSample(cpuPowerHistory, cpuPower, sampledAt);
+      _appendSample(ramHistory, ramUsage.toDouble(), sampledAt);
+      _appendSample(ramUsedHistory, ramUsed, sampledAt);
+      _appendSample(ramAvailableHistory, ramAvailable, sampledAt);
+      _appendSample(ramTotalHistory, ramTotal, sampledAt);
+      _appendSample(gpuTempHistory, gpuTemp.toDouble(), sampledAt);
+      _appendSample(gpuUsageHistory, gpuUsage.toDouble(), sampledAt);
+      _appendSample(gpuPowerHistory, gpuPower, sampledAt);
+      _appendSample(gpuVramUsedHistory, gpuVramUsed, sampledAt);
 
       await AlertService.instance.evaluate(
         cpuTemperature: cpuTemp.toDouble(),
@@ -97,16 +111,22 @@ class TelemetryService extends ChangeNotifier {
         diskUsage: diskUsage.toDouble(),
       );
 
+      lastUpdated = sampledAt;
+      lastError = null;
       notifyListeners();
     } catch (e) {
+      lastError = e.toString();
       debugPrint('Telemetry fetch failed: $e');
+      notifyListeners();
+    } finally {
+      _fetchInProgress = false;
     }
   }
 
   Future<void> loadHistory() async {
     try {
       final response = await http.get(
-        Uri.parse('${BackendConfig.baseUrl}/history?limit=100'),
+        Uri.parse('${BackendConfig.baseUrl}/history?limit=720'),
       );
 
       final List<dynamic> data = jsonDecode(response.body);
@@ -116,16 +136,33 @@ class TelemetryService extends ChangeNotifier {
       historicalGpuHistory.clear();
 
       for (final item in data.reversed) {
-        historicalCpuHistory.add((item['cpu_usage'] ?? 0).toDouble());
+        final timestamp = _parseHistoryTimestamp(item['timestamp']);
 
-        historicalRamHistory.add((item['ram_usage'] ?? 0).toDouble());
-
-        historicalGpuHistory.add((item['gpu_usage'] ?? 0).toDouble());
+        historicalCpuHistory.add(
+          TelemetrySample(
+            timestamp: timestamp,
+            value: (item['cpu_usage'] ?? 0).toDouble(),
+          ),
+        );
+        historicalRamHistory.add(
+          TelemetrySample(
+            timestamp: timestamp,
+            value: (item['ram_usage'] ?? 0).toDouble(),
+          ),
+        );
+        historicalGpuHistory.add(
+          TelemetrySample(
+            timestamp: timestamp,
+            value: (item['gpu_usage'] ?? 0).toDouble(),
+          ),
+        );
       }
 
       notifyListeners();
     } catch (e) {
+      lastError = e.toString();
       debugPrint('History fetch failed: $e');
+      notifyListeners();
     }
   }
 
@@ -133,27 +170,22 @@ class TelemetryService extends ChangeNotifier {
     final settings = await SettingsService().loadSettings();
     AlertService.instance.updateSettings(settings);
 
-    Duration refreshDuration;
-
     switch (settings.refreshInterval) {
       case '2s':
-        refreshDuration = const Duration(seconds: 2);
+        _refreshDuration = const Duration(seconds: 2);
         break;
 
       case '5s':
-        refreshDuration = const Duration(seconds: 5);
+        _refreshDuration = const Duration(seconds: 5);
         break;
 
       default:
-        refreshDuration = const Duration(seconds: 1);
+        _refreshDuration = const Duration(seconds: 1);
     }
 
-    await fetchStats();
-    await loadHistory();
-
-    _timer?.cancel();
-
-    _timer = Timer.periodic(refreshDuration, (_) => fetchStats());
+    isPaused = false;
+    await refreshNow(includeHistory: true);
+    _scheduleTimer();
   }
 
   Future<void> restart() async {
@@ -163,5 +195,69 @@ class TelemetryService extends ChangeNotifier {
 
   void stop() {
     _timer?.cancel();
+  }
+
+  Future<void> refreshNow({bool includeHistory = false}) async {
+    if (isRefreshing) return;
+
+    isRefreshing = true;
+    notifyListeners();
+
+    try {
+      await fetchStats();
+      if (includeHistory) {
+        await loadHistory();
+      }
+    } finally {
+      isRefreshing = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> setPaused(bool paused) async {
+    if (isPaused == paused) return;
+
+    isPaused = paused;
+    _timer?.cancel();
+    notifyListeners();
+
+    if (!paused) {
+      await refreshNow();
+      _scheduleTimer();
+    }
+  }
+
+  Future<void> togglePaused() => setPaused(!isPaused);
+
+  void _scheduleTimer() {
+    _timer?.cancel();
+    if (isPaused) return;
+
+    _timer = Timer.periodic(_refreshDuration, (_) => fetchStats());
+  }
+
+  void _appendSample(
+    List<TelemetrySample> history,
+    double value,
+    DateTime timestamp,
+  ) {
+    history.add(TelemetrySample(timestamp: timestamp, value: value));
+
+    if (history.length > _maxLiveSamples) {
+      history.removeRange(0, history.length - _maxLiveSamples);
+    }
+  }
+
+  DateTime _parseHistoryTimestamp(dynamic rawTimestamp) {
+    final value = rawTimestamp?.toString().trim();
+    if (value == null || value.isEmpty) return DateTime.now();
+
+    final isoValue = value.contains('T') ? value : value.replaceFirst(' ', 'T');
+    final hasTimezone =
+        isoValue.endsWith('Z') ||
+        RegExp(r'[+-]\d{2}:\d{2}$').hasMatch(isoValue);
+    final parsed = DateTime.tryParse(hasTimezone ? isoValue : '${isoValue}Z');
+
+    return (parsed ?? DateTime.now().toUtc()).toLocal();
   }
 }

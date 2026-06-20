@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../models/chart_preferences.dart';
+import '../models/telemetry_sample.dart';
 import '../screens/metric_focus_screen.dart';
+import '../utils/telemetry_chart.dart';
 
 class ExpandableMetricCard extends StatelessWidget {
   final Widget closedChild;
@@ -13,8 +16,9 @@ class ExpandableMetricCard extends StatelessWidget {
   final Color accent;
 
   final List<double> graphPoints;
+  final ChartPreferences chartPreferences;
 
-  const ExpandableMetricCard({
+  ExpandableMetricCard({
     super.key,
     required this.closedChild,
     required this.title,
@@ -23,7 +27,8 @@ class ExpandableMetricCard extends StatelessWidget {
     required this.icon,
     required this.accent,
     required this.graphPoints,
-  });
+    ChartPreferences? chartPreferences,
+  }) : chartPreferences = chartPreferences ?? ChartPreferences();
 
   @override
   Widget build(BuildContext context) {
@@ -44,13 +49,33 @@ class ExpandableMetricCard extends StatelessWidget {
               opaque: false,
 
               pageBuilder: (_, _, _) {
+                final now = DateTime.now();
+                final timestampedPoints = graphPoints
+                    .asMap()
+                    .entries
+                    .map(
+                      (entry) => TelemetrySample(
+                        timestamp: now.subtract(
+                          Duration(
+                            seconds: (graphPoints.length - entry.key - 1) * 5,
+                          ),
+                        ),
+                        value: entry.value,
+                      ),
+                    )
+                    .toList(growable: false);
+
                 return MetricFocusScreen(
                   title: title,
                   value: value,
                   subtitle: subtitle,
                   icon: icon,
                   accent: accent,
-                  graphPoints: graphPoints,
+                  graphPoints: timestampedPoints,
+                  chartPreferences: chartPreferences,
+                  metricKind: title.toLowerCase().contains('temp')
+                      ? TelemetryMetricKind.temperature
+                      : TelemetryMetricKind.percentage,
                 );
               },
 
