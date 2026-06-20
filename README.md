@@ -60,6 +60,18 @@
       <img src="https://github.com/user-attachments/assets/c90896b7-7de2-49a9-a0bf-5ab61d121875" width="100%">
     </td>
   </tr>
+  <tr>
+    <th>Performance</th>
+    <th>Settings</th>
+  </tr>
+  <tr>
+    <td>
+      <img src="https://github.com/user-attachments/assets/cc65ea00-37a5-458d-8d8e-b330b9177668" width="100%">
+    </td>
+    <td>
+      <img src="https://github.com/user-attachments/assets/2950baf1-f103-4cc2-856b-7bcb3480e3ba" width="100%">
+    </td>
+  </tr>
 </table>
 
 
