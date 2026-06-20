@@ -8,6 +8,7 @@ import '../models/chart_preferences.dart';
 import '../models/dashboard_preferences.dart';
 import '../models/telemetry_sample.dart';
 import '../../services/update_prompt_service.dart';
+import '../../services/update_service.dart';
 import '../utils/telemetry_chart.dart';
 import '../services/desktop_integration_service.dart';
 import '../widgets/glass_panel.dart';
@@ -67,6 +68,16 @@ class _ShellScreenState extends State<ShellScreen> {
     dashboardPreferences.addListener(() {
       if (mounted) {
         setState(() {});
+      }
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final updateState = UpdateService.instance.state;
+      if (updateState.stage == UpdateStage.complete ||
+          updateState.stage == UpdateStage.failed) {
+        UpdatePromptService.showStartupResult(context);
+      } else {
+        UpdatePromptService.checkAutomatically(context);
       }
     });
   }

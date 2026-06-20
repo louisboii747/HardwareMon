@@ -36,7 +36,16 @@ Write-Host "Building Flutter Windows release..."
 
 Set-Location ".."
 
-flutter build windows --release
+$flutterVersion = if ($env:APP_VERSION) {
+    $env:APP_VERSION.TrimStart("v")
+}
+else {
+    "18.0.0-dev"
+}
+
+flutter build windows --release `
+    --build-name="$flutterVersion" `
+    --dart-define="APP_VERSION=$flutterVersion"
 
 # Return to installer folder
 Set-Location "../installer"

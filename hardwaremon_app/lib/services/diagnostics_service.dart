@@ -5,6 +5,7 @@ import '../windows_ui/models/app_settings.dart';
 import '../windows_ui/services/settings_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
 import '../windows_ui/core/backend_config.dart';
 
 class DiagnosticsService {
@@ -18,6 +19,7 @@ class DiagnosticsService {
     );
     final settingsService = SettingsService();
     final AppSettings settings = await settingsService.loadSettings();
+    final packageInfo = await PackageInfo.fromPlatform();
 
     Map<String, dynamic>? telemetry;
 
@@ -86,7 +88,8 @@ class DiagnosticsService {
     buffer.writeln('');
     buffer.writeln('Application');
     buffer.writeln('-----------');
-    buffer.writeln('Version: 18.0.0.dev');
+    buffer.writeln('Version: ${packageInfo.version}');
+    buffer.writeln('Build Number: ${packageInfo.buildNumber}');
     buffer.writeln('Backend: FastAPI');
     buffer.writeln('Telemetry Source: LibreHardwareMonitor');
     buffer.writeln('');
@@ -122,6 +125,25 @@ class DiagnosticsService {
       buffer.writeln('Telemetry unavailable');
     }
 
+    buffer.writeln('');
+
+    final updaterLog = File(
+      Platform.isWindows ? '$logsDir\\updater.log' : '$logsDir/updater.log',
+    );
+    buffer.writeln('Updater');
+    buffer.writeln('-------');
+    buffer.writeln('Log: ${updaterLog.path}');
+    if (await updaterLog.exists()) {
+      final content = await updaterLog.readAsString();
+      const maxCharacters = 40000;
+      buffer.writeln(
+        content.length > maxCharacters
+            ? content.substring(content.length - maxCharacters)
+            : content,
+      );
+    } else {
+      buffer.writeln('No updater log has been created yet.');
+    }
     buffer.writeln('');
 
     await file.writeAsString(buffer.toString());

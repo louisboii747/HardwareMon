@@ -5,9 +5,9 @@ import '../../models/dashboard_preferences.dart';
 import '../../services/settings_service.dart';
 import '../../services/telemetry_service.dart';
 import '../../services/desktop_integration_service.dart';
-import '../../../services/update_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme_controller.dart';
+import '../../widgets/update_center.dart';
 import '../../../services/log_service.dart';
 import '../../../services/diagnostics_service.dart';
 import '../../../services/alert_service.dart';
@@ -436,146 +436,8 @@ class _SettingsPageState extends State<SettingsPage> {
                 },
               ),
             ),
-
-            _settingRow(
-              'Check for Updates',
-              ElevatedButton(
-                onPressed: () async {
-                  try {
-                    final result = await UpdateService.checkForUpdates();
-
-                    if (!context.mounted) return;
-
-                    if (result['developmentBuild']) {
-                      await showDialog(
-                        context: context,
-                        builder: (_) => AlertDialog(
-                          title: const Text('Development Build'),
-                          content: Text(
-                            'You are running a development build.\n\n'
-                            'Current: ${result['current']}\n'
-                            'Latest Stable: ${result['latest']}',
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text('OK'),
-                            ),
-                          ],
-                        ),
-                      );
-                    } else if (result['updateAvailable']) {
-                      final install = await showDialog<bool>(
-                        context: context,
-                        builder: (_) => AlertDialog(
-                          title: const Text('Update Available'),
-                          content: Text(
-                            'Current Version: ${result['current']}\n'
-                            'Latest Version: ${result['latest']}\n\n'
-                            'Would you like to download the update now?',
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, false),
-                              child: const Text('Later'),
-                            ),
-                            ElevatedButton(
-                              onPressed: () => Navigator.pop(context, true),
-                              child: const Text('Download'),
-                            ),
-                          ],
-                        ),
-                      );
-
-                      if (install == true) {
-                        final path =
-                            await UpdateService.downloadLatestRelease();
-
-                        if (!context.mounted) return;
-
-                        await showDialog(
-                          context: context,
-                          builder: (_) => AlertDialog(
-                            title: const Text('Download Complete'),
-                            content: Text(
-                              'Update downloaded successfully.\n\n'
-                              'Saved to:\n$path',
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text('OK'),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-                    } else {
-                      await showDialog(
-                        context: context,
-                        builder: (_) => AlertDialog(
-                          title: const Text('Up To Date'),
-                          content: const Text(
-                            'You already have the latest version installed.',
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text('OK'),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    if (!context.mounted) return;
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Failed to check for updates: $e'),
-                      ),
-                    );
-                  }
-                },
-                child: const Text('Check'),
-              ),
-            ),
-
-            _settingRow(
-              'Download Latest Release',
-              ElevatedButton(
-                onPressed: () async {
-                  try {
-                    final path = await UpdateService.downloadLatestRelease();
-
-                    if (!context.mounted) return;
-
-                    await showDialog(
-                      context: context,
-                      builder: (_) => AlertDialog(
-                        title: const Text('Download Complete'),
-                        content: Text(
-                          'Update downloaded successfully.\n\nSaved to:\n$path',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('OK'),
-                          ),
-                        ],
-                      ),
-                    );
-                  } catch (e) {
-                    if (!context.mounted) return;
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Download failed: $e')),
-                    );
-                  }
-                },
-                child: const Text('Download'),
-              ),
-            ),
+            const SizedBox(height: 8),
+            const UpdateSettingsPanel(),
           ]),
 
           _buildSection('Advanced', [

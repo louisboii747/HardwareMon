@@ -14,6 +14,7 @@ import 'package:flutter_gui/windows_ui/screens/shell_screen.dart';
 import 'package:flutter_gui/windows_ui/services/desktop_integration_service.dart';
 import 'package:flutter_gui/windows_ui/services/settings_service.dart';
 import 'package:flutter_gui/services/alert_service.dart';
+import 'package:flutter_gui/services/update_service.dart';
 import 'package:flutter_gui/widgets/alert_settings_widgets.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -241,6 +242,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await AppThemeController.instance.load();
+  await UpdateService.instance.initialize();
 
   final loadedSettings = await SettingsService().loadSettings();
   await AlertService.instance.initialize(loadedSettings);

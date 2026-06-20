@@ -1,98 +1,40 @@
 import 'package:flutter/material.dart';
 
+import '../windows_ui/services/settings_service.dart';
+import '../windows_ui/widgets/update_center.dart';
 import 'update_service.dart';
 
 class UpdatePromptService {
-  static Future<void> checkForUpdates(BuildContext context) async {
-    try {
-      final result = await UpdateService.checkForUpdates();
-      if (!context.mounted) return;
+  static Future<void> checkForUpdates(BuildContext context) {
+    return showUpdateCenter(context, checkImmediately: true);
+  }
 
-      if (result['developmentBuild'] == true) {
-        await showDialog<void>(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('Development Build'),
-            content: Text(
-              'You are running a development build.\n\n'
-              'Current: ${result['current']}\n'
-              'Latest Stable: ${result['latest']}',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
-        return;
-      }
+  static Future<void> showStartupResult(BuildContext context) {
+    return showUpdateCenter(context, checkImmediately: false);
+  }
 
-      if (result['updateAvailable'] == true) {
-        final install = await showDialog<bool>(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('Update Available'),
-            content: Text(
-              'Current Version: ${result['current']}\n'
-              'Latest Version: ${result['latest']}\n\n'
-              'Would you like to download the update now?',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Later'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Download'),
-              ),
-            ],
-          ),
-        );
+  static Future<void> checkAutomatically(BuildContext context) async {
+    final settingsService = SettingsService();
+    final settings = await settingsService.loadSettings();
+    if (!settings.autoUpdateChecks || !context.mounted) return;
 
-        if (install == true) {
-          final path = await UpdateService.downloadLatestRelease();
-          if (!context.mounted) return;
+    final lastCheckValue = await settingsService.getString(
+      'lastAutomaticUpdateCheck',
+      '',
+    );
+    final lastCheck = DateTime.tryParse(lastCheckValue);
+    if (lastCheck != null &&
+        DateTime.now().difference(lastCheck) < const Duration(hours: 24)) {
+      return;
+    }
 
-          await showDialog<void>(
-            context: context,
-            builder: (_) => AlertDialog(
-              title: const Text('Download Complete'),
-              content: Text(
-                'Update downloaded successfully.\n\nSaved to:\n$path',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('OK'),
-                ),
-              ],
-            ),
-          );
-        }
-        return;
-      }
-
-      await showDialog<void>(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text('Up To Date'),
-          content: const Text('You already have the latest version installed.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-    } catch (error) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to check for updates: $error')),
-      );
+    await settingsService.setString(
+      'lastAutomaticUpdateCheck',
+      DateTime.now().toIso8601String(),
+    );
+    final state = await UpdateService.instance.checkForUpdates();
+    if (state.updateAvailable && context.mounted) {
+      await showUpdateCenter(context, checkImmediately: false);
     }
   }
 }

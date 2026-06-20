@@ -124,6 +124,7 @@ jobs:
         run: |
           flutter build linux --release \
             --split-debug-info=symbols \
+            --build-name="${{ steps.version.outputs.version }}" \
             --dart-define=APP_VERSION="${{ steps.version.outputs.version }}"
 
       # ─────────────────────────────────────────────
