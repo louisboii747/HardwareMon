@@ -54,10 +54,10 @@
   </tr>
   <tr>
     <td>
-      <img src="https://github.com/user-attachments/assets/5c7dc4f7-54e0-4a63-acd9-4ec0d2bbacde" width="100%">
+      <img src="https://github.com/user-attachments/assets/ee0f186d-75f6-4700-b29e-c6f8ff2ecaad" alt="Dashboard" width="100%">
     </td>
     <td>
-      <img src="https://github.com/user-attachments/assets/c90896b7-7de2-49a9-a0bf-5ab61d121875" width="100%">
+      <img src="https://github.com/user-attachments/assets/c9186d9b-5b33-4294-a734-3ce8ce5d898d" alt="Processes" width="100%">
     </td>
   </tr>
   <tr>
@@ -66,13 +66,15 @@
   </tr>
   <tr>
     <td>
-      <img src="https://github.com/user-attachments/assets/cc65ea00-37a5-458d-8d8e-b330b9177668" width="100%">
+      <img src="https://github.com/user-attachments/assets/cc65ea00-37a5-458d-8d8e-b330b9177668" alt="Performance" width="100%">
     </td>
     <td>
-      <img src="https://github.com/user-attachments/assets/2950baf1-f103-4cc2-856b-7bcb3480e3ba" width="100%">
+      <img src="https://github.com/user-attachments/assets/2950baf1-f103-4cc2-856b-7bcb3480e3ba" alt="Settings" width="100%">
     </td>
   </tr>
 </table>
+
+
 
 
 
