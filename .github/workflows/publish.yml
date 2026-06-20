@@ -61,7 +61,8 @@ jobs:
             python3-pip \
             upx \
             rpm \
-            libnotify-dev
+            libnotify-dev \
+            libayatana-appindicator3-dev
 
       # ─────────────────────────────────────────────
       # Install Python dependencies
@@ -182,7 +183,7 @@ jobs:
           export HARDWAREMON_BACKEND_MANAGED=1
 
           # Launch Flutter app
-          "$APP_DIR/hardwaremon-bin"
+          "$APP_DIR/hardwaremon-bin" "$@"
 
           # Cleanup backend after app exits
           kill $BACKEND_PID
@@ -256,15 +257,27 @@ jobs:
 
       - name: Build DEB package
         run: |
+          cp nfpm.yaml nfpm-deb.yaml
+          cat <<'EOF' >> nfpm-deb.yaml
+          depends:
+            - libayatana-appindicator3-1
+          EOF
+
           nfpm pkg \
-            --config nfpm.yaml \
+            --config nfpm-deb.yaml \
             --packager deb \
             --target dist/hardwaremon.deb
 
       - name: Build RPM package
         run: |
+          cp nfpm.yaml nfpm-rpm.yaml
+          cat <<'EOF' >> nfpm-rpm.yaml
+          depends:
+            - libayatana-appindicator-gtk3
+          EOF
+
           nfpm pkg \
-            --config nfpm.yaml \
+            --config nfpm-rpm.yaml \
             --packager rpm \
             --target dist/hardwaremon.rpm
 

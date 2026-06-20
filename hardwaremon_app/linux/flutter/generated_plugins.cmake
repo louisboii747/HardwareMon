@@ -6,6 +6,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   bitsdojo_window_linux
   local_notifier
   screen_retriever_linux
+  tray_manager
   window_manager
 )
 

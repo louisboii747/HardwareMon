@@ -6,6 +6,7 @@ import '../../services/alert_service.dart';
 import 'settings_service.dart';
 import '../core/backend_config.dart';
 import '../models/telemetry_sample.dart';
+import '../utils/time_axis.dart';
 
 class TelemetryService extends ChangeNotifier {
   static const _maxLiveSamples = 3600;
@@ -53,11 +54,15 @@ class TelemetryService extends ChangeNotifier {
   Timer? _timer;
   Duration _refreshDuration = const Duration(seconds: 1);
   bool _fetchInProgress = false;
+  int _historyRequestId = 0;
 
   bool isPaused = false;
   bool isRefreshing = false;
+  bool isHistoryLoading = false;
   DateTime? lastUpdated;
   String? lastError;
+  DateTime sessionStatisticsStartedAt = DateTime.now();
+  TelemetryTimeRange historicalRange = TelemetryTimeRange.last1Hour;
 
   Future<void> fetchStats() async {
     if (_fetchInProgress) return;
@@ -123,34 +128,45 @@ class TelemetryService extends ChangeNotifier {
     }
   }
 
-  Future<void> loadHistory() async {
+  Future<void> loadHistory({TelemetryTimeRange? range}) async {
+    final requestId = ++_historyRequestId;
+    isHistoryLoading = true;
+    notifyListeners();
+
     try {
-      final response = await http.get(
-        Uri.parse('${BackendConfig.baseUrl}/history?limit=720'),
+      final requestedRange = range ?? historicalRange;
+      final uri = Uri.parse('${BackendConfig.baseUrl}/history').replace(
+        queryParameters: {
+          'range_seconds': '${requestedRange.duration.inSeconds}',
+          'points': '720',
+        },
       );
+      final response = await http.get(uri);
+      if (response.statusCode != 200) {
+        throw StateError('History request failed (${response.statusCode})');
+      }
 
       final List<dynamic> data = jsonDecode(response.body);
-
-      historicalCpuHistory.clear();
-      historicalRamHistory.clear();
-      historicalGpuHistory.clear();
+      final cpuSamples = <TelemetrySample>[];
+      final ramSamples = <TelemetrySample>[];
+      final gpuSamples = <TelemetrySample>[];
 
       for (final item in data.reversed) {
         final timestamp = _parseHistoryTimestamp(item['timestamp']);
 
-        historicalCpuHistory.add(
+        cpuSamples.add(
           TelemetrySample(
             timestamp: timestamp,
             value: (item['cpu_usage'] ?? 0).toDouble(),
           ),
         );
-        historicalRamHistory.add(
+        ramSamples.add(
           TelemetrySample(
             timestamp: timestamp,
             value: (item['ram_usage'] ?? 0).toDouble(),
           ),
         );
-        historicalGpuHistory.add(
+        gpuSamples.add(
           TelemetrySample(
             timestamp: timestamp,
             value: (item['gpu_usage'] ?? 0).toDouble(),
@@ -158,11 +174,30 @@ class TelemetryService extends ChangeNotifier {
         );
       }
 
+      if (requestId != _historyRequestId) return;
+
+      historicalCpuHistory
+        ..clear()
+        ..addAll(cpuSamples);
+      historicalRamHistory
+        ..clear()
+        ..addAll(ramSamples);
+      historicalGpuHistory
+        ..clear()
+        ..addAll(gpuSamples);
+      historicalRange = requestedRange;
+      lastError = null;
       notifyListeners();
     } catch (e) {
+      if (requestId != _historyRequestId) return;
       lastError = e.toString();
       debugPrint('History fetch failed: $e');
       notifyListeners();
+    } finally {
+      if (requestId == _historyRequestId) {
+        isHistoryLoading = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -228,6 +263,18 @@ class TelemetryService extends ChangeNotifier {
   }
 
   Future<void> togglePaused() => setPaused(!isPaused);
+
+  Future<void> setHistoricalRange(TelemetryTimeRange range) async {
+    if (historicalRange == range && historicalCpuHistory.isNotEmpty) return;
+    historicalRange = range;
+    notifyListeners();
+    await loadHistory(range: range);
+  }
+
+  void resetSessionStatistics() {
+    sessionStatisticsStartedAt = DateTime.now();
+    notifyListeners();
+  }
 
   void _scheduleTimer() {
     _timer?.cancel();

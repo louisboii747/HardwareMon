@@ -67,6 +67,38 @@ class AlertService extends ChangeNotifier {
     }
   }
 
+  Future<bool> showDesktopNotification({
+    required String identifier,
+    required String title,
+    required String body,
+    bool silent = true,
+    VoidCallback? onClick,
+  }) async {
+    if (!_initialized) {
+      await initialize(_settings);
+    }
+    if (!_notificationsAvailable) {
+      return false;
+    }
+
+    try {
+      final notification = LocalNotification(
+        identifier: identifier,
+        title: title,
+        body: body,
+        silent: silent,
+      );
+      if (onClick != null) {
+        notification.onClick = onClick;
+      }
+      await notification.show();
+      return true;
+    } catch (error) {
+      debugPrint('Failed to show desktop notification: $error');
+      return false;
+    }
+  }
+
   Future<void> evaluate({
     required double cpuTemperature,
     required double gpuTemperature,
@@ -188,23 +220,14 @@ class AlertService extends ChangeNotifier {
     }
     notifyListeners();
 
-    if (!_notificationsAvailable) {
-      return;
-    }
-
-    try {
-      final notification = LocalNotification(
-        identifier: '${check.key}-${event.occurredAt.millisecondsSinceEpoch}',
-        title: 'HardwareMon alert',
-        body:
-            '${check.label} reached ${_formatValue(check.value)}${check.unit} '
-            '(threshold ${_formatValue(check.threshold)}${check.unit}).',
-        silent: !_settings.alertSounds,
-      );
-      await notification.show();
-    } catch (error) {
-      debugPrint('Failed to show desktop notification: $error');
-    }
+    await showDesktopNotification(
+      identifier: '${check.key}-${event.occurredAt.millisecondsSinceEpoch}',
+      title: 'HardwareMon alert',
+      body:
+          '${check.label} reached ${_formatValue(check.value)}${check.unit} '
+          '(threshold ${_formatValue(check.threshold)}${check.unit}).',
+      silent: !_settings.alertSounds,
+    );
   }
 
   Future<void> _loadHistory() async {

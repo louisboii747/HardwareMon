@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import '../core/theme/app_colors.dart';
 import '../models/chart_preferences.dart';
 import '../models/telemetry_sample.dart';
+import '../models/telemetry_statistics.dart';
 import '../utils/telemetry_chart.dart';
 import '../utils/time_axis.dart';
 import '../widgets/smooth_telemetry_series.dart';
@@ -21,6 +22,7 @@ class MetricFocusScreen extends StatefulWidget {
   final List<TelemetrySample> graphPoints;
   final ChartPreferences chartPreferences;
   final TelemetryMetricKind metricKind;
+  final DateTime? statisticsSince;
 
   const MetricFocusScreen({
     super.key,
@@ -32,6 +34,7 @@ class MetricFocusScreen extends StatefulWidget {
     required this.graphPoints,
     required this.chartPreferences,
     this.metricKind = TelemetryMetricKind.percentage,
+    this.statisticsSince,
   });
 
   @override
@@ -144,13 +147,10 @@ class _MetricFocusScreenState extends State<MetricFocusScreen> {
   @override
   Widget build(BuildContext context) {
     final inspectedSample = selectedSample;
-    final average = points.isEmpty
-        ? null
-        : points.fold<double>(0, (sum, sample) => sum + sample.value) /
-              points.length;
-    final peak = points.isEmpty
-        ? null
-        : points.map((sample) => sample.value).reduce((a, b) => a > b ? a : b);
+    final statistics = calculateTelemetryStatistics(
+      points,
+      since: widget.statisticsSince,
+    );
 
     return CallbackShortcuts(
       bindings: {
@@ -287,15 +287,26 @@ class _MetricFocusScreenState extends State<MetricFocusScreen> {
                               children: [
                                 _buildStat(
                                   'Average',
-                                  average == null
+                                  statistics.sampleCount == 0
                                       ? '--'
-                                      : _formatValue(average),
+                                      : _formatValue(statistics.average),
                                 ),
                                 _buildStat(
                                   'Peak',
-                                  peak == null ? '--' : _formatValue(peak),
+                                  statistics.sampleCount == 0
+                                      ? '--'
+                                      : _formatValue(statistics.maximum),
                                 ),
-                                _buildStat('Samples', '${points.length}'),
+                                _buildStat(
+                                  'Minimum',
+                                  statistics.sampleCount == 0
+                                      ? '--'
+                                      : _formatValue(statistics.minimum),
+                                ),
+                                _buildStat(
+                                  'Samples',
+                                  '${statistics.sampleCount}',
+                                ),
                               ],
                             ),
                             const SizedBox(height: 28),

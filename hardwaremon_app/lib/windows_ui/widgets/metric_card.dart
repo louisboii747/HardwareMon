@@ -5,6 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../core/theme/app_colors.dart';
 import '../models/chart_preferences.dart';
 import '../models/telemetry_sample.dart';
+import '../models/telemetry_statistics.dart';
 import '../screens/metric_focus_screen.dart';
 import '../utils/telemetry_chart.dart';
 import '../utils/time_axis.dart';
@@ -20,6 +21,7 @@ class MetricCard extends StatefulWidget {
   final List<TelemetrySample> graphPoints;
   final ChartPreferences chartPreferences;
   final TelemetryMetricKind metricKind;
+  final DateTime? statisticsSince;
 
   const MetricCard({
     super.key,
@@ -31,6 +33,7 @@ class MetricCard extends StatefulWidget {
     required this.graphPoints,
     required this.chartPreferences,
     this.metricKind = TelemetryMetricKind.percentage,
+    this.statisticsSince,
   });
 
   @override
@@ -58,6 +61,7 @@ class _MetricCardState extends State<MetricCard> {
             graphPoints: widget.graphPoints,
             chartPreferences: widget.chartPreferences,
             metricKind: widget.metricKind,
+            statisticsSince: widget.statisticsSince,
           );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -75,10 +79,47 @@ class _MetricCardState extends State<MetricCard> {
     );
   }
 
+  Future<void> _copyValue() async {
+    await Clipboard.setData(
+      ClipboardData(text: '${widget.title}: ${widget.value}'),
+    );
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${widget.title} copied'),
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
+  Future<void> _showContextMenu(TapDownDetails details) async {
+    final selection = await showMenu<String>(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        details.globalPosition.dx,
+        details.globalPosition.dy,
+        details.globalPosition.dx,
+        details.globalPosition.dy,
+      ),
+      items: const [
+        PopupMenuItem(value: 'open', child: Text('Open details')),
+        PopupMenuItem(value: 'copy', child: Text('Copy current value')),
+      ],
+    );
+
+    if (selection == 'open') _openMetric();
+    if (selection == 'copy') await _copyValue();
+  }
+
   @override
   Widget build(BuildContext context) {
     final titleColor = AppColors.textSecondary(context);
     final subtitleColor = AppColors.textMuted(context);
+    final statistics = calculateTelemetryStatistics(
+      widget.graphPoints,
+      since: widget.statisticsSince,
+    );
 
     return AnimatedBuilder(
       animation: widget.chartPreferences,
@@ -108,6 +149,7 @@ class _MetricCardState extends State<MetricCard> {
               onExit: (_) => setState(() => hovering = false),
               child: GestureDetector(
                 onTap: _openMetric,
+                onSecondaryTapDown: _showContextMenu,
                 child: AnimatedScale(
                   duration: const Duration(milliseconds: 220),
                   curve: Curves.easeOutCubic,
@@ -151,6 +193,37 @@ class _MetricCardState extends State<MetricCard> {
                                 ),
 
                                 const Spacer(),
+
+                                if (statistics.sampleCount > 1) ...[
+                                  _TrendBadge(
+                                    statistics: statistics,
+                                    metricKind: widget.metricKind,
+                                  ),
+                                  const SizedBox(width: 6),
+                                ],
+
+                                AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 160),
+                                  child: hovering || focused
+                                      ? Tooltip(
+                                          message: 'Copy current value',
+                                          child: IconButton(
+                                            key: const ValueKey('copy'),
+                                            onPressed: _copyValue,
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                            iconSize: 15,
+                                            icon: const Icon(
+                                              Icons.copy_rounded,
+                                            ),
+                                          ),
+                                        )
+                                      : const SizedBox.shrink(
+                                          key: ValueKey('hidden'),
+                                        ),
+                                ),
+
+                                const SizedBox(width: 4),
 
                                 Container(
                                   width: 8,
@@ -328,6 +401,47 @@ class _MetricCardState extends State<MetricCard> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _TrendBadge extends StatelessWidget {
+  final TelemetryStatistics statistics;
+  final TelemetryMetricKind metricKind;
+
+  const _TrendBadge({required this.statistics, required this.metricKind});
+
+  @override
+  Widget build(BuildContext context) {
+    final rising = statistics.isRising;
+    final falling = statistics.isFalling;
+    final color = rising
+        ? Colors.orangeAccent
+        : falling
+        ? Colors.lightBlueAccent
+        : AppColors.textMuted(context);
+    final icon = rising
+        ? Icons.trending_up_rounded
+        : falling
+        ? Icons.trending_down_rounded
+        : Icons.trending_flat_rounded;
+    final delta = statistics.delta.abs();
+
+    return Tooltip(
+      message:
+          'Since the previous sample: ${rising
+              ? '+'
+              : falling
+              ? '−'
+              : ''}${formatTelemetryValue(delta, metricKind)}',
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, size: 14, color: color),
       ),
     );
   }

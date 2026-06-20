@@ -47,6 +47,7 @@ dependencies:
   path_provider: ^2.1.5
   package_info_plus: ^8.0.0
   local_notifier: ^0.1.6
+  tray_manager: ^0.5.3
 
 dev_dependencies:
   flutter_test:
@@ -68,6 +69,9 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  assets:
+    - web/icons/Icon-192.png
+    - windows/runner/resources/app_icon.ico
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -1,11 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import '../models/chart_preferences.dart';
+import '../../services/update_prompt_service.dart';
 import '../utils/telemetry_chart.dart';
+import '../services/desktop_integration_service.dart';
 import '../widgets/glass_panel.dart';
 import '../widgets/metric_card.dart';
+import '../widgets/telemetry_studio.dart';
 import 'pages/performance_page.dart';
 import 'pages/processes_page.dart';
 import 'pages/settings_page.dart';
@@ -22,6 +27,7 @@ class ShellScreen extends StatefulWidget {
 class _ShellScreenState extends State<ShellScreen> {
   late TelemetryService telemetry;
   late ChartPreferences chartPreferences;
+  StreamSubscription<DesktopCommand>? _desktopCommandSubscription;
 
   int selectedIndex = 0;
 
@@ -34,6 +40,9 @@ class _ShellScreenState extends State<ShellScreen> {
 
     telemetry.start();
     chartPreferences.load();
+    DesktopIntegrationService.instance.attachTelemetry(telemetry);
+    _desktopCommandSubscription = DesktopIntegrationService.instance.commands
+        .listen(_handleDesktopCommand);
 
     telemetry.addListener(() {
       if (mounted) {
@@ -49,9 +58,39 @@ class _ShellScreenState extends State<ShellScreen> {
 
   @override
   void dispose() {
+    _desktopCommandSubscription?.cancel();
+    DesktopIntegrationService.instance.detachTelemetry(telemetry);
     telemetry.stop();
     chartPreferences.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleDesktopCommand(DesktopCommand command) async {
+    if (!mounted) return;
+
+    switch (command) {
+      case DesktopCommand.showHardwareMon:
+        break;
+      case DesktopCommand.telemetryStudio:
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        _selectPage(2);
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (context) => TelemetryStudioPage(
+              telemetry: telemetry,
+              chartPreferences: chartPreferences,
+            ),
+          ),
+        );
+        break;
+      case DesktopCommand.checkForUpdates:
+        await UpdatePromptService.checkForUpdates(context);
+        break;
+      case DesktopCommand.settings:
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        _selectPage(3);
+        break;
+    }
   }
 
   void _selectPage(int index) {
@@ -69,6 +108,7 @@ class _ShellScreenState extends State<ShellScreen> {
               accent: Colors.cyan,
               graphPoints: telemetry.cpuHistory,
               chartPreferences: chartPreferences,
+              statisticsSince: telemetry.sessionStatisticsStartedAt,
             )
             .animate()
             .fadeIn(duration: 700.ms, curve: Curves.easeOutCubic)
@@ -87,6 +127,7 @@ class _ShellScreenState extends State<ShellScreen> {
               accent: Colors.purple,
               graphPoints: telemetry.ramHistory,
               chartPreferences: chartPreferences,
+              statisticsSince: telemetry.sessionStatisticsStartedAt,
             )
             .animate()
             .fadeIn(delay: 120.ms, duration: 700.ms)
@@ -106,6 +147,7 @@ class _ShellScreenState extends State<ShellScreen> {
               graphPoints: telemetry.gpuTempHistory,
               chartPreferences: chartPreferences,
               metricKind: TelemetryMetricKind.temperature,
+              statisticsSince: telemetry.sessionStatisticsStartedAt,
             )
             .animate()
             .fadeIn(delay: 220.ms, duration: 700.ms)
@@ -220,6 +262,13 @@ class _ShellScreenState extends State<ShellScreen> {
           onPressed: telemetry.togglePaused,
         ),
         const SizedBox(width: 8),
+        _ShellControlButton(
+          label: 'Reset session min/max',
+          shortcut: 'Ctrl+Shift+R',
+          icon: Icons.restart_alt_rounded,
+          onPressed: telemetry.resetSessionStatistics,
+        ),
+        const SizedBox(width: 8),
         _ChartOptionsButton(
           preferences: chartPreferences,
           onSelected: _toggleChartPreference,
@@ -281,6 +330,11 @@ class _ShellScreenState extends State<ShellScreen> {
             telemetry.togglePaused(),
         const SingleActivator(LogicalKeyboardKey.keyR, control: true): () =>
             telemetry.refreshNow(includeHistory: true),
+        const SingleActivator(
+          LogicalKeyboardKey.keyR,
+          control: true,
+          shift: true,
+        ): telemetry.resetSessionStatistics,
         const SingleActivator(LogicalKeyboardKey.keyG, control: true): () =>
             _toggleChartPreference(ChartPreference.gridLines),
         const SingleActivator(LogicalKeyboardKey.keyM, control: true): () =>

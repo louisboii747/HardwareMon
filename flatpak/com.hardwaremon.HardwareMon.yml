@@ -12,6 +12,7 @@ finish-args:
   - --device=all
   - --filesystem=host
   - --talk-name=org.freedesktop.Notifications
+  - --talk-name=org.kde.StatusNotifierWatcher
 
 modules:
   - name: hardwaremon
@@ -19,8 +20,10 @@ modules:
 
     build-commands:
       - mkdir -p /app/bin
+      - mkdir -p /app/lib
 
       - cp -r . /app/bin/
+      - cp -r runtime-libs/. /app/lib/
 
       - chmod +x /app/bin/hardwaremon
 

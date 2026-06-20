@@ -6,6 +6,7 @@ import '../../core/theme/app_colors.dart';
 import '../../models/chart_preferences.dart';
 import '../../utils/telemetry_chart.dart';
 import '../../widgets/metric_card.dart';
+import '../../widgets/telemetry_studio.dart';
 
 class PerformancePage extends StatelessWidget {
   final TelemetryService telemetry;
@@ -42,6 +43,10 @@ class PerformancePage extends StatelessWidget {
             chartPreferences: chartPreferences,
           ),
           const SizedBox(height: 24),
+          TelemetryStudio(
+            telemetry: telemetry,
+            chartPreferences: chartPreferences,
+          ),
           _PerformanceSection(
             title: 'CPU',
             icon: Icons.memory_rounded,
@@ -55,6 +60,7 @@ class PerformancePage extends StatelessWidget {
                 accent: Colors.cyan,
                 graphPoints: telemetry.cpuHistory,
                 chartPreferences: chartPreferences,
+                statisticsSince: telemetry.sessionStatisticsStartedAt,
               ),
               MetricCard(
                 title: 'CPU Temperature',
@@ -65,6 +71,7 @@ class PerformancePage extends StatelessWidget {
                 graphPoints: telemetry.cpuTempHistory,
                 chartPreferences: chartPreferences,
                 metricKind: TelemetryMetricKind.temperature,
+                statisticsSince: telemetry.sessionStatisticsStartedAt,
               ),
               MetricCard(
                 title: 'CPU Clock',
@@ -75,6 +82,7 @@ class PerformancePage extends StatelessWidget {
                 graphPoints: telemetry.cpuClockHistory,
                 chartPreferences: chartPreferences,
                 metricKind: TelemetryMetricKind.gigahertz,
+                statisticsSince: telemetry.sessionStatisticsStartedAt,
               ),
               MetricCard(
                 title: 'CPU Power',
@@ -85,6 +93,7 @@ class PerformancePage extends StatelessWidget {
                 graphPoints: telemetry.cpuPowerHistory,
                 chartPreferences: chartPreferences,
                 metricKind: TelemetryMetricKind.watts,
+                statisticsSince: telemetry.sessionStatisticsStartedAt,
               ),
             ],
           ),
@@ -101,6 +110,7 @@ class PerformancePage extends StatelessWidget {
                 accent: Colors.purple,
                 graphPoints: telemetry.ramHistory,
                 chartPreferences: chartPreferences,
+                statisticsSince: telemetry.sessionStatisticsStartedAt,
               ),
               MetricCard(
                 title: 'RAM Used',
@@ -111,6 +121,7 @@ class PerformancePage extends StatelessWidget {
                 graphPoints: telemetry.ramUsedHistory,
                 chartPreferences: chartPreferences,
                 metricKind: TelemetryMetricKind.gigabytes,
+                statisticsSince: telemetry.sessionStatisticsStartedAt,
               ),
               MetricCard(
                 title: 'RAM Available',
@@ -121,6 +132,7 @@ class PerformancePage extends StatelessWidget {
                 graphPoints: telemetry.ramAvailableHistory,
                 chartPreferences: chartPreferences,
                 metricKind: TelemetryMetricKind.gigabytes,
+                statisticsSince: telemetry.sessionStatisticsStartedAt,
               ),
               MetricCard(
                 title: 'Total RAM',
@@ -131,6 +143,7 @@ class PerformancePage extends StatelessWidget {
                 graphPoints: telemetry.ramTotalHistory,
                 chartPreferences: chartPreferences,
                 metricKind: TelemetryMetricKind.gigabytes,
+                statisticsSince: telemetry.sessionStatisticsStartedAt,
               ),
             ],
           ),
@@ -148,6 +161,7 @@ class PerformancePage extends StatelessWidget {
                 graphPoints: telemetry.gpuTempHistory,
                 chartPreferences: chartPreferences,
                 metricKind: TelemetryMetricKind.temperature,
+                statisticsSince: telemetry.sessionStatisticsStartedAt,
               ),
               MetricCard(
                 title: 'GPU Usage',
@@ -157,6 +171,7 @@ class PerformancePage extends StatelessWidget {
                 accent: Colors.blue,
                 graphPoints: telemetry.gpuUsageHistory,
                 chartPreferences: chartPreferences,
+                statisticsSince: telemetry.sessionStatisticsStartedAt,
               ),
               MetricCard(
                 title: 'GPU Power',
@@ -167,6 +182,7 @@ class PerformancePage extends StatelessWidget {
                 graphPoints: telemetry.gpuPowerHistory,
                 chartPreferences: chartPreferences,
                 metricKind: TelemetryMetricKind.watts,
+                statisticsSince: telemetry.sessionStatisticsStartedAt,
               ),
               MetricCard(
                 title: 'VRAM Used',
@@ -177,6 +193,7 @@ class PerformancePage extends StatelessWidget {
                 graphPoints: telemetry.gpuVramUsedHistory,
                 chartPreferences: chartPreferences,
                 metricKind: TelemetryMetricKind.gigabytes,
+                statisticsSince: telemetry.sessionStatisticsStartedAt,
               ),
             ],
           ),
@@ -301,6 +318,21 @@ class _PerformanceControls extends StatelessWidget {
                     )
                   : const Icon(Icons.refresh_rounded, size: 16),
               label: const Text('Refresh'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.textSecondary(context),
+                side: BorderSide(color: AppColors.border(context)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+          Tooltip(
+            message: 'Reset session minimum, maximum, and average values',
+            child: OutlinedButton.icon(
+              onPressed: telemetry.resetSessionStatistics,
+              icon: const Icon(Icons.restart_alt_rounded, size: 16),
+              label: const Text('Reset stats'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.textSecondary(context),
                 side: BorderSide(color: AppColors.border(context)),

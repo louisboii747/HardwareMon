@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/app_settings.dart';
 import '../../services/settings_service.dart';
 import '../../services/telemetry_service.dart';
+import '../../services/desktop_integration_service.dart';
 import '../../../services/update_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme_controller.dart';
@@ -21,12 +22,25 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   final SettingsService settingsService = SettingsService();
+  final DesktopIntegrationService desktopIntegration =
+      DesktopIntegrationService.instance;
   AppSettings settings = const AppSettings();
 
   @override
   void initState() {
     super.initState();
+    desktopIntegration.addListener(_onDesktopIntegrationChanged);
     _loadSettings();
+  }
+
+  @override
+  void dispose() {
+    desktopIntegration.removeListener(_onDesktopIntegrationChanged);
+    super.dispose();
+  }
+
+  void _onDesktopIntegrationChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadSettings() async {
@@ -38,6 +52,7 @@ class _SettingsPageState extends State<SettingsPage> {
       settings = loadedSettings;
     });
     AlertService.instance.updateSettings(loadedSettings);
+    desktopIntegration.applySettings(loadedSettings);
   }
 
   Future<void> _updateSettings(AppSettings updatedSettings) async {
@@ -48,19 +63,65 @@ class _SettingsPageState extends State<SettingsPage> {
     await settingsService.saveSettings(updatedSettings);
     AlertService.instance.updateSettings(updatedSettings);
     AppThemeController.instance.setTheme(updatedSettings.theme);
+    desktopIntegration.applySettings(updatedSettings);
+  }
+
+  Future<void> _setLaunchOnStartup(bool enabled) async {
+    final result = await desktopIntegration.setLaunchOnStartup(enabled);
+    if (!mounted) return;
+
+    if (!result.success) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(result.description)));
+      return;
+    }
+
+    await _updateSettings(settings.copyWith(launchOnStartup: result.enabled));
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(result.description)));
+  }
+
+  Future<void> _setTraySetting({
+    required bool value,
+    required AppSettings Function(bool value) update,
+  }) async {
+    if (value && !desktopIntegration.trayAvailable) {
+      final detail =
+          desktopIntegration.trayError ??
+          'The system tray is unavailable in this desktop environment.';
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(detail)));
+      return;
+    }
+
+    await _updateSettings(update(value));
   }
 
   Future<void> _resetSettings() async {
     const defaults = AppSettings();
+    final startupResult = await desktopIntegration.setLaunchOnStartup(
+      defaults.launchOnStartup,
+    );
+    final effectiveDefaults = defaults.copyWith(
+      launchOnStartup: startupResult.success && startupResult.enabled,
+      minimiseToTray:
+          defaults.minimiseToTray && desktopIntegration.trayAvailable,
+      closeToTray: defaults.closeToTray && desktopIntegration.trayAvailable,
+    );
 
-    await settingsService.saveSettings(defaults);
+    await settingsService.saveSettings(effectiveDefaults);
 
     setState(() {
-      settings = defaults;
+      settings = effectiveDefaults;
     });
 
-    AppThemeController.instance.setTheme(defaults.theme);
-    AlertService.instance.updateSettings(defaults);
+    AppThemeController.instance.setTheme(effectiveDefaults.theme);
+    AlertService.instance.updateSettings(effectiveDefaults);
+    desktopIntegration.applySettings(effectiveDefaults);
   }
 
   Future<void> _showResetDialog() async {
@@ -123,11 +184,9 @@ class _SettingsPageState extends State<SettingsPage> {
               'Launch on Startup',
               Switch(
                 value: settings.launchOnStartup,
-                onChanged: (value) async {
-                  await _updateSettings(
-                    settings.copyWith(launchOnStartup: value),
-                  );
-                },
+                onChanged: desktopIntegration.startupStatus.supported
+                    ? _setLaunchOnStartup
+                    : null,
               ),
             ),
 
@@ -135,11 +194,11 @@ class _SettingsPageState extends State<SettingsPage> {
               'Minimise to Tray',
               Switch(
                 value: settings.minimiseToTray,
-                onChanged: (value) async {
-                  await _updateSettings(
-                    settings.copyWith(minimiseToTray: value),
-                  );
-                },
+                onChanged: (value) => _setTraySetting(
+                  value: value,
+                  update: (enabled) =>
+                      settings.copyWith(minimiseToTray: enabled),
+                ),
               ),
             ),
 
@@ -147,11 +206,13 @@ class _SettingsPageState extends State<SettingsPage> {
               'Close to Tray',
               Switch(
                 value: settings.closeToTray,
-                onChanged: (value) async {
-                  await _updateSettings(settings.copyWith(closeToTray: value));
-                },
+                onChanged: (value) => _setTraySetting(
+                  value: value,
+                  update: (enabled) => settings.copyWith(closeToTray: enabled),
+                ),
               ),
             ),
+            _desktopIntegrationStatus(),
           ]),
 
           _buildSection('Monitoring', [
@@ -579,6 +640,47 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
           trailing,
+        ],
+      ),
+    );
+  }
+
+  Widget _desktopIntegrationStatus() {
+    final startupStatus = desktopIntegration.startupStatus;
+    final trayDetail = desktopIntegration.trayAvailable
+        ? 'System tray integration is ready.'
+        : desktopIntegration.trayError ??
+              'System tray integration has not been initialized.';
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.overlay(context, 0.035),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border(context)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            startupStatus.description,
+            style: TextStyle(
+              color: AppColors.textSecondary(context),
+              fontSize: 11,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            trayDetail,
+            style: TextStyle(
+              color: desktopIntegration.trayAvailable
+                  ? Colors.greenAccent
+                  : Colors.amber,
+              fontSize: 11,
+            ),
+          ),
         ],
       ),
     );

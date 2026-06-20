@@ -11,6 +11,7 @@ import 'package:flutter_gui/windows_ui/core/theme/app_theme.dart';
 import 'package:flutter_gui/windows_ui/core/theme/app_theme_controller.dart';
 import 'package:flutter_gui/windows_ui/models/app_settings.dart';
 import 'package:flutter_gui/windows_ui/screens/shell_screen.dart';
+import 'package:flutter_gui/windows_ui/services/desktop_integration_service.dart';
 import 'package:flutter_gui/windows_ui/services/settings_service.dart';
 import 'package:flutter_gui/services/alert_service.dart';
 import 'package:flutter_gui/widgets/alert_settings_widgets.dart';
@@ -241,8 +242,13 @@ Future<void> main() async {
 
   await AppThemeController.instance.load();
 
-  final alertSettings = await SettingsService().loadSettings();
-  await AlertService.instance.initialize(alertSettings);
+  final loadedSettings = await SettingsService().loadSettings();
+  await AlertService.instance.initialize(loadedSettings);
+  final effectiveSettings = await DesktopIntegrationService.instance.initialize(
+    settings: loadedSettings,
+    onExit: stopBackend,
+  );
+  AlertService.instance.updateSettings(effectiveSettings);
 
   if (Platform.environment['HARDWAREMON_BACKEND_MANAGED'] != '1') {
     await startBackend();

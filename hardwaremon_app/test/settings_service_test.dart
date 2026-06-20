@@ -11,6 +11,9 @@ void main() {
     SharedPreferences.setMockInitialValues({});
 
     const expected = AppSettings(
+      launchOnStartup: false,
+      minimiseToTray: false,
+      closeToTray: false,
       cpuAlerts: true,
       ramAlerts: true,
       temperatureAlerts: true,
@@ -28,6 +31,9 @@ void main() {
     final actual = await service.loadSettings();
 
     expect(actual.cpuAlerts, isTrue);
+    expect(actual.launchOnStartup, isFalse);
+    expect(actual.minimiseToTray, isFalse);
+    expect(actual.closeToTray, isFalse);
     expect(actual.ramAlerts, isTrue);
     expect(actual.temperatureAlerts, isTrue);
     expect(actual.diskAlerts, isTrue);
