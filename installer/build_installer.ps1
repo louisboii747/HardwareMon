@@ -42,10 +42,13 @@ $flutterVersion = if ($env:APP_VERSION) {
 else {
     "18.0.0-dev"
 }
+$flutterMetadata = flutter --version --machine | ConvertFrom-Json
+$flutterFrameworkVersion = $flutterMetadata.frameworkVersion
 
 flutter build windows --release `
     --build-name="$flutterVersion" `
-    --dart-define="APP_VERSION=$flutterVersion"
+    --dart-define="APP_VERSION=$flutterVersion" `
+    --dart-define="HARDWAREMON_FLUTTER_VERSION=$flutterFrameworkVersion"
 
 # Return to installer folder
 Set-Location "../installer"

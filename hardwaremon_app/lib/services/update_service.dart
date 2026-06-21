@@ -36,8 +36,14 @@ enum UpdateStage {
 
 extension UpdateBuildChannelLabel on UpdateBuildChannel {
   String get label => switch (this) {
-    UpdateBuildChannel.stable => 'Stable build',
-    UpdateBuildChannel.development => 'Development build',
+    UpdateBuildChannel.stable => 'Stable',
+    UpdateBuildChannel.development => 'Development',
+    UpdateBuildChannel.localDebug => 'Development',
+  };
+
+  String get buildDescription => switch (this) {
+    UpdateBuildChannel.stable => 'Stable release build',
+    UpdateBuildChannel.development => 'Development release build',
     UpdateBuildChannel.localDebug => 'Local debug build',
   };
 }
@@ -414,6 +420,7 @@ class UpdateService extends ChangeNotifier {
         updateAvailable: updateAvailable,
         hasMatchingAsset: asset != null,
         latestVersion: release.version,
+        comparison: comparison,
       );
 
       _setState(
@@ -777,9 +784,13 @@ class UpdateService extends ChangeNotifier {
     } else if (_runtime.platform == UpdatePlatform.linux) {
       final linuxPackage = await _detectLinuxPackage();
       packageType = linuxPackage.type;
-      if (linuxPackage.version != null &&
+      if ((compiledVersion.isEmpty || compiledVersion == 'dev build') &&
+          linuxPackage.version != null &&
           linuxPackage.version!.trim().isNotEmpty) {
-        version = normalizeVersion(linuxPackage.version!);
+        version = normalizePackageVersion(
+          linuxPackage.version!,
+          linuxPackage.type,
+        );
       }
     }
 
@@ -1071,12 +1082,17 @@ rm -f -- "$PACKAGE_PATH"
     required bool updateAvailable,
     required bool hasMatchingAsset,
     required String latestVersion,
+    required int comparison,
   }) {
     if (channel == UpdateBuildChannel.localDebug) {
       return 'Local debug builds are not compared as installed releases.';
     }
     if (channel == UpdateBuildChannel.development) {
-      return 'Development builds do not automatically downgrade to stable.';
+      return comparison < 0
+          ? 'Stable $latestVersion is newer, but development builds are not '
+                'automatically replaced.'
+          : 'This development build is ahead of or equivalent to stable '
+                '$latestVersion.';
     }
     if (!updateAvailable) {
       return 'HardwareMon is up to date.';
@@ -1279,4 +1295,14 @@ String normalizeVersion(String value) {
     normalized = normalized.substring(epochSeparator + 1);
   }
   return normalized;
+}
+
+String normalizePackageVersion(String value, UpdatePackageType packageType) {
+  final normalized = normalizeVersion(value);
+  if (packageType != UpdatePackageType.deb) return normalized;
+
+  final stableWithDebianRevision = RegExp(
+    r'^(\d+\.\d+\.\d+)-\d+(?:[.+~].*)?$',
+  ).firstMatch(normalized);
+  return stableWithDebianRevision?.group(1) ?? normalized;
 }

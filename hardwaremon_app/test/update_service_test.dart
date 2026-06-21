@@ -32,6 +32,20 @@ void main() {
     expect(UpdateService.compareVersions('18.3.0', '18.2.4'), greaterThan(0));
   });
 
+  test(
+    'Debian package revisions do not turn stable builds into dev builds',
+    () {
+      expect(
+        normalizePackageVersion('1:18.2.4-1', UpdatePackageType.deb),
+        '18.2.4',
+      );
+      expect(
+        normalizePackageVersion('18.3.0-dev', UpdatePackageType.deb),
+        '18.3.0-dev',
+      );
+    },
+  );
+
   test('asset matching never crosses package types', () {
     final assets = [
       _asset('HardwareMon-v18.2.4.exe'),
@@ -89,7 +103,24 @@ void main() {
 
       expect(state.channel, UpdateBuildChannel.development);
       expect(state.updateAvailable, isFalse);
-      expect(state.statusMessage, contains('do not automatically downgrade'));
+      expect(state.statusMessage, contains('ahead of or equivalent'));
+    },
+  );
+
+  test(
+    'development build behind stable reports comparison without an update',
+    () async {
+      final fixture = await _fixture(
+        version: '18.2.3-dev',
+        platform: UpdatePlatform.windows,
+      );
+      addTearDown(fixture.dispose);
+
+      final state = await fixture.service.checkForUpdates();
+
+      expect(state.channel, UpdateBuildChannel.development);
+      expect(state.updateAvailable, isFalse);
+      expect(state.statusMessage, contains('Stable 18.2.4 is newer'));
     },
   );
 

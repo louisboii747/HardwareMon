@@ -12,6 +12,10 @@ from database.database import init_database
 from lhm_launcher import start_lhm
 from database.logging_service import start_logging
 from routes.history import router as history_router
+from routes.optimization import router as optimization_router
+
+
+BACKEND_VERSION = "1.1.0"
 
 
 freeze_support()  # Ensure compatibility with Windows
@@ -31,7 +35,7 @@ async def lifespan(_app):
 
 app = FastAPI(
     title="HardwareMon Backend",
-    version="1.0.0",
+    version=BACKEND_VERSION,
     lifespan=lifespan,
 )
 
@@ -40,11 +44,16 @@ app.include_router(network_router)
 app.include_router(storage_router)
 app.include_router(processes_router)
 app.include_router(history_router)
+app.include_router(optimization_router)
 
 
 @app.get("/")
 async def root():
-    return {"status": "online", "backend": "HardwareMon FastAPI"}
+    return {
+        "status": "online",
+        "backend": "HardwareMon FastAPI",
+        "version": BACKEND_VERSION,
+    }
 
 
 import uvicorn

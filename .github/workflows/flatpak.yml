@@ -61,10 +61,28 @@ jobs:
         working-directory: hardwaremon_app
         run: flutter pub get
 
+      - name: Resolve build metadata
+        id: version
+        working-directory: hardwaremon_app
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            VERSION="${{ github.ref_name }}"
+            VERSION="${VERSION#v}"
+          else
+            VERSION="$(awk '/^version:/ {print $2; exit}' pubspec.yaml)"
+            VERSION="${VERSION%%+*}"
+          fi
+          FLUTTER_VERSION="$(flutter --version --machine | jq -r '.frameworkVersion')"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "flutter_version=$FLUTTER_VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Build Flutter Linux app
         working-directory: hardwaremon_app
         run: |
-          flutter build linux --release
+          flutter build linux --release \
+            --build-name="${{ steps.version.outputs.version }}" \
+            --dart-define=APP_VERSION="${{ steps.version.outputs.version }}" \
+            --dart-define=HARDWAREMON_FLUTTER_VERSION="${{ steps.version.outputs.flutter_version }}"
 
           mkdir -p build/linux/x64/release/bundle/runtime-libs
 

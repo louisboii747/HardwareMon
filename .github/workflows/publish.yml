@@ -93,8 +93,10 @@ jobs:
         run: |
           VERSION="${{ github.ref_name }}"
           VERSION="${VERSION#v}"
+          FLUTTER_VERSION="$(flutter --version --machine | jq -r '.frameworkVersion')"
 
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "flutter_version=$FLUTTER_VERSION" >> $GITHUB_OUTPUT
 
       # ─────────────────────────────────────────────
       # GPG
@@ -125,7 +127,8 @@ jobs:
           flutter build linux --release \
             --split-debug-info=symbols \
             --build-name="${{ steps.version.outputs.version }}" \
-            --dart-define=APP_VERSION="${{ steps.version.outputs.version }}"
+            --dart-define=APP_VERSION="${{ steps.version.outputs.version }}" \
+            --dart-define=HARDWAREMON_FLUTTER_VERSION="${{ steps.version.outputs.flutter_version }}"
 
       # ─────────────────────────────────────────────
       # Build FastAPI backend

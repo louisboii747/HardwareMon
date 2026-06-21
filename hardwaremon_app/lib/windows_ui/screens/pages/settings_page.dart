@@ -11,6 +11,8 @@ import '../../widgets/update_center.dart';
 import '../../../services/log_service.dart';
 import '../../../services/diagnostics_service.dart';
 import '../../../services/alert_service.dart';
+import '../../../services/build_info_service.dart';
+import '../../../services/update_service.dart';
 import '../../../widgets/alert_settings_widgets.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -34,12 +36,14 @@ class _SettingsPageState extends State<SettingsPage> {
   final DesktopIntegrationService desktopIntegration =
       DesktopIntegrationService.instance;
   AppSettings settings = const AppSettings();
+  RuntimeBuildInfo? buildInfo;
 
   @override
   void initState() {
     super.initState();
     desktopIntegration.addListener(_onDesktopIntegrationChanged);
     _loadSettings();
+    _loadBuildInfo();
   }
 
   @override
@@ -62,6 +66,12 @@ class _SettingsPageState extends State<SettingsPage> {
     });
     AlertService.instance.updateSettings(loadedSettings);
     desktopIntegration.applySettings(loadedSettings);
+  }
+
+  Future<void> _loadBuildInfo() async {
+    final loaded = await BuildInfoService().load();
+    if (!mounted) return;
+    setState(() => buildInfo = loaded);
   }
 
   Future<void> _updateSettings(AppSettings updatedSettings) async {
@@ -504,15 +514,11 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ]),
 
-          _buildSection('About', [
-            _settingRow('Version', const Text('18.0.0.dev')),
-
-            _settingRow('Platform', const Text('Windows / Linux')),
-
-            _settingRow('Backend', const Text('FastAPI')),
-
-            _settingRow('Telemetry', const Text('LibreHardwareMonitor')),
-          ]),
+          AnimatedBuilder(
+            animation: UpdateService.instance,
+            builder: (context, _) =>
+                _buildAboutSection(UpdateService.instance.state),
+          ),
         ],
       ),
     );
@@ -538,6 +544,122 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(height: 16),
 
           ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAboutSection(UpdateState updateState) {
+    final info = buildInfo;
+    final cards = [
+      _AboutDetail(
+        label: 'Version',
+        value: updateState.currentVersion,
+        description: 'Installed application version',
+        icon: Icons.tag_rounded,
+        color: Colors.cyan,
+      ),
+      _AboutDetail(
+        label: 'Release channel',
+        value: updateState.channel.label,
+        description: updateState.channel.buildDescription,
+        icon: Icons.alt_route_rounded,
+        color: updateState.channel == UpdateBuildChannel.stable
+            ? Colors.greenAccent
+            : Colors.purpleAccent,
+      ),
+      _AboutDetail(
+        label: 'Build type',
+        value: info?.buildType ?? 'Detecting…',
+        description: 'Flutter compiler mode',
+        icon: Icons.build_circle_outlined,
+        color: Colors.orange,
+      ),
+      _AboutDetail(
+        label: 'Platform',
+        value: info?.platform ?? updateState.platform.label,
+        description: updateState.packageType.label,
+        icon: Icons.desktop_windows_rounded,
+        color: Colors.blueAccent,
+      ),
+      _AboutDetail(
+        label: 'Flutter',
+        value: info?.flutterVersion ?? 'Detecting…',
+        description: info?.flutterVersion == 'Not embedded'
+            ? 'Build metadata was not embedded'
+            : 'Framework version',
+        icon: Icons.flutter_dash_rounded,
+        color: Colors.lightBlueAccent,
+      ),
+      _AboutDetail(
+        label: 'Backend',
+        value: info?.backendVersion ?? 'Detecting…',
+        description: 'Local FastAPI telemetry service',
+        icon: Icons.dns_rounded,
+        color: Colors.tealAccent,
+      ),
+    ];
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.accent.withValues(alpha: 0.08),
+            AppColors.surface(context),
+            Colors.purple.withValues(alpha: 0.04),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border(context)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.info_outline_rounded, color: AppColors.accent),
+              SizedBox(width: 10),
+              Text(
+                'About HardwareMon',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Runtime and release information from the installed application.',
+            style: TextStyle(
+              color: AppColors.textSecondary(context),
+              fontSize: 11,
+            ),
+          ),
+          const SizedBox(height: 18),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final columns = constraints.maxWidth >= 900
+                  ? 3
+                  : constraints.maxWidth >= 560
+                  ? 2
+                  : 1;
+              final width =
+                  (constraints.maxWidth - ((columns - 1) * 12)) / columns;
+              return Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  for (final card in cards)
+                    SizedBox(
+                      width: width,
+                      child: _AboutCard(detail: card),
+                    ),
+                ],
+              );
+            },
+          ),
         ],
       ),
     );
@@ -600,6 +722,113 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AboutDetail {
+  final String label;
+  final String value;
+  final String description;
+  final IconData icon;
+  final Color color;
+
+  const _AboutDetail({
+    required this.label,
+    required this.value,
+    required this.description,
+    required this.icon,
+    required this.color,
+  });
+}
+
+class _AboutCard extends StatefulWidget {
+  final _AboutDetail detail;
+
+  const _AboutCard({required this.detail});
+
+  @override
+  State<_AboutCard> createState() => _AboutCardState();
+}
+
+class _AboutCardState extends State<_AboutCard> {
+  bool hovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final detail = widget.detail;
+    return MouseRegion(
+      onEnter: (_) => setState(() => hovering = true),
+      onExit: (_) => setState(() => hovering = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        transform: Matrix4.translationValues(0, hovering ? -2 : 0, 0),
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: detail.color.withValues(alpha: hovering ? 0.09 : 0.045),
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(
+            color: detail.color.withValues(alpha: hovering ? 0.3 : 0.12),
+          ),
+          boxShadow: hovering
+              ? [
+                  BoxShadow(
+                    color: detail.color.withValues(alpha: 0.08),
+                    blurRadius: 18,
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: detail.color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: Icon(detail.icon, color: detail.color, size: 19),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    detail.label,
+                    style: TextStyle(
+                      color: AppColors.textSecondary(context),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    detail.value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    detail.description,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: AppColors.textMuted(context),
+                      fontSize: 9,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
