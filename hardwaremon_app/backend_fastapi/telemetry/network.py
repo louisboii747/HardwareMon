@@ -204,7 +204,7 @@ def ping_target(request: PingRequest) -> dict[str, Any]:
     try:
         display_target, host = normalize_target(request.target)
         resolved_host = _resolve_target(host)
-    except ValueError as error:
+    except ValueError:
         return {
             "target": request.target.strip(),
             "resolved_host": None,
@@ -217,7 +217,7 @@ def ping_target(request: PingRequest) -> dict[str, Any]:
             "packet_loss_percent": 100.0,
             "samples": 0,
             "sample_latencies_ms": [],
-            "error": str(error),
+            "error": "Invalid ping target.",
         }
 
     safe_count = max(1, min(10, int(request.count)))
