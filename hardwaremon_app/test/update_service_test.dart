@@ -148,6 +148,32 @@ void main() {
     expect(state.canInstallAutomatically, isFalse);
   });
 
+  test(
+    'successful update marker clears stale update state on restart',
+    () async {
+      final fixture = await _fixture(
+        version: '18.2.3',
+        platform: UpdatePlatform.windows,
+      );
+      addTearDown(fixture.dispose);
+      final marker = File(
+        '${fixture.directory.path}${Platform.pathSeparator}update-result.txt',
+      );
+      await marker.writeAsString(
+        'success\n18.2.4\nHardwareMon was updated successfully.\n',
+      );
+
+      await fixture.service.initialize();
+
+      expect(fixture.service.state.currentVersion, '18.2.4');
+      expect(fixture.service.state.latestVersion, '18.2.4');
+      expect(fixture.service.state.stage, UpdateStage.complete);
+      expect(fixture.service.state.updateAvailable, isFalse);
+      expect(await marker.exists(), isFalse);
+    },
+    skip: !Platform.isWindows,
+  );
+
   test('download streams progress and verifies GitHub asset size', () async {
     final packageBytes = List<int>.generate(128 * 1024, (index) => index % 251);
     final fixture = await _fixture(
@@ -167,7 +193,7 @@ void main() {
     expect(fixture.service.state.downloadedFilePath, file.path);
   });
 
-  test('Windows install launches only the verified installer helper', () async {
+  test('Windows install launches a hidden updater bootstrap', () async {
     final starts = <({String executable, List<String> arguments})>[];
     var closed = false;
     final fixture = await _fixture(
@@ -185,18 +211,48 @@ void main() {
     );
 
     expect(starts, hasLength(1));
-    expect(starts.single.executable, 'powershell.exe');
-    expect(starts.single.arguments, contains('-PackagePath'));
+    expect(starts.single.executable, 'wscript.exe');
     expect(
       starts.single.arguments.any((value) => value.endsWith('.exe')),
       isTrue,
     );
-    final helperPath =
-        starts.single.arguments[starts.single.arguments.indexOf('-File') + 1];
+    final launcherPath = starts.single.arguments.first;
+    final helperPath = starts.single.arguments[1];
+    final launcher = await File(launcherPath).readAsString();
     final helper = await File(helperPath).readAsString();
+    expect(launcher, contains('-WindowStyle Hidden'));
+    expect(launcher, contains('shell.Run command, 0, False'));
     expect(helper, contains('/VERYSILENT'));
     expect(helper, contains('-Verb RunAs'));
-    expect(helper, contains('Set-Content -LiteralPath \$MarkerPath'));
+    expect(helper, contains('updater-helper.log'));
+    expect(helper, contains('Move-Item -LiteralPath \$temporaryMarker'));
+    if (Platform.isWindows) {
+      final probeScript = File(
+        '${fixture.directory.path}${Platform.pathSeparator}updater-probe.ps1',
+      );
+      final probeResult = File(
+        '${fixture.directory.path}${Platform.pathSeparator}updater-probe.txt',
+      );
+      await probeScript.writeAsString(
+        'param([string]\$OutputPath)\n'
+        'Set-Content -LiteralPath \$OutputPath -Value "started"\n',
+      );
+      final bootstrap = await Process.run('cscript.exe', [
+        '//nologo',
+        launcherPath,
+        probeScript.path,
+        probeResult.path,
+      ]);
+      expect(bootstrap.exitCode, 0, reason: bootstrap.stderr.toString());
+      for (
+        var attempt = 0;
+        attempt < 40 && !await probeResult.exists();
+        attempt++
+      ) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      }
+      expect(await probeResult.readAsString(), contains('started'));
+    }
     expect(fixture.service.state.stage, UpdateStage.restarting);
     expect(closed, isTrue);
   });
@@ -227,6 +283,17 @@ void main() {
       final helper = await File(starts.single.arguments.first).readAsString();
       expect(helper, contains('pkexec apt install -y'));
       expect(helper, contains('nohup /usr/bin/hardwaremon'));
+      expect(helper, contains('updater-helper.log'));
+      final shellPath = Platform.isWindows
+          ? r'C:\Program Files\Git\bin\sh.exe'
+          : '/bin/sh';
+      if (await File(shellPath).exists()) {
+        final syntaxCheck = await Process.run(shellPath, [
+          '-n',
+          starts.single.arguments.first,
+        ]);
+        expect(syntaxCheck.exitCode, 0, reason: syntaxCheck.stderr.toString());
+      }
       expect(starts.single.arguments.last, UpdatePackageType.deb.name);
     },
   );

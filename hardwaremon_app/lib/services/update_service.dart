@@ -638,46 +638,32 @@ class UpdateService extends ChangeNotifier {
       ),
     );
 
-    final helper = switch (_state.packageType) {
-      UpdatePackageType.windowsInstaller => await _writeWindowsHelper(
-        packageFile: packageFile,
-        marker: marker,
-      ),
-      UpdatePackageType.deb || UpdatePackageType.rpm => await _writeLinuxHelper(
-        packageFile: packageFile,
-        marker: marker,
-      ),
-      _ => throw StateError('Automatic installation is not supported.'),
-    };
-
     if (_state.packageType == UpdatePackageType.windowsInstaller) {
-      await _processStarter('powershell.exe', [
-        '-NoProfile',
-        '-ExecutionPolicy',
-        'Bypass',
-        '-File',
+      final helper = await _writeWindowsHelper(
+        packageFile: packageFile,
+        marker: marker,
+      );
+      final launcher = await _writeWindowsLauncher(packageFile.parent);
+      await _processStarter('wscript.exe', [
+        launcher.path,
         helper.path,
-        '-PackagePath',
         packageFile.path,
-        '-AppPath',
         _runtime.executablePath,
-        '-AppPid',
         '${_runtime.processId}',
-        '-MarkerPath',
         marker.path,
-        '-Version',
         _state.latestVersion,
-        '-UpdateDirectory',
-        packageFile.parent.path,
       ], ProcessStartMode.detached);
     } else {
+      final helper = await _writeLinuxHelper(
+        packageFile: packageFile,
+        marker: marker,
+      );
       await _processStarter('/bin/sh', [
         helper.path,
         packageFile.path,
         '${_runtime.processId}',
         marker.path,
         _state.latestVersion,
-        packageFile.parent.path,
         _state.packageType.name,
       ], ProcessStartMode.detached);
     }
@@ -861,16 +847,32 @@ param(
   [Parameter(Mandatory=$true)][string]$AppPath,
   [Parameter(Mandatory=$true)][int]$AppPid,
   [Parameter(Mandatory=$true)][string]$MarkerPath,
-  [Parameter(Mandatory=$true)][string]$Version,
-  [Parameter(Mandatory=$true)][string]$UpdateDirectory
+  [Parameter(Mandatory=$true)][string]$Version
 )
 
 $ErrorActionPreference = "Stop"
 $status = "failed"
 $message = "The installer did not complete."
+$logPath = Join-Path (Split-Path -Parent $MarkerPath) "updater-helper.log"
+
+function Write-UpdateLog([string]$Text) {
+  New-Item -ItemType Directory -Path (Split-Path -Parent $logPath) -Force | Out-Null
+  Add-Content -LiteralPath $logPath -Value "$(Get-Date -Format o) $Text"
+}
 
 try {
-  Wait-Process -Id $AppPid -ErrorAction SilentlyContinue
+  Write-UpdateLog "Helper started for version $Version; waiting for PID $AppPid."
+  $deadline = (Get-Date).AddSeconds(90)
+  while ((Get-Process -Id $AppPid -ErrorAction SilentlyContinue) -and
+         ((Get-Date) -lt $deadline)) {
+    Start-Sleep -Milliseconds 250
+  }
+
+  if (Get-Process -Id $AppPid -ErrorAction SilentlyContinue) {
+    throw "HardwareMon did not exit within 90 seconds."
+  }
+
+  Write-UpdateLog "Starting installer $PackagePath."
   $installer = Start-Process `
     -FilePath $PackagePath `
     -ArgumentList @("/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CLOSEAPPLICATIONS", "/SP-") `
@@ -881,29 +883,59 @@ try {
   if ($installer.ExitCode -eq 0) {
     $status = "success"
     $message = "HardwareMon was updated successfully."
+    Write-UpdateLog $message
   }
   else {
     $message = "The installer exited with code $($installer.ExitCode)."
+    Write-UpdateLog $message
   }
 }
 catch {
   $message = $_.Exception.Message
+  Write-UpdateLog "Update failed: $message"
 }
 
 New-Item -ItemType Directory -Path (Split-Path $MarkerPath) -Force | Out-Null
-Set-Content -LiteralPath $MarkerPath -Value @($status, $Version, $message)
+$temporaryMarker = "$MarkerPath.tmp"
+Set-Content -LiteralPath $temporaryMarker -Value @($status, $Version, $message)
+Move-Item -LiteralPath $temporaryMarker -Destination $MarkerPath -Force
 
 if (Test-Path -LiteralPath $AppPath) {
-  Start-Process -FilePath $AppPath
+  Write-UpdateLog "Restarting HardwareMon from $AppPath."
+  Start-Process -FilePath $AppPath -WorkingDirectory (Split-Path -Parent $AppPath)
+}
+else {
+  Write-UpdateLog "Restart skipped because the application path is missing: $AppPath"
 }
 
-Start-Process -FilePath "powershell.exe" -WindowStyle Hidden -ArgumentList @(
-  "-NoProfile",
-  "-Command",
-  "Start-Sleep -Seconds 3; Remove-Item -LiteralPath '$($UpdateDirectory.Replace("'", "''"))' -Recurse -Force -ErrorAction SilentlyContinue"
-)
+Remove-Item -LiteralPath $PackagePath -Force -ErrorAction SilentlyContinue
 ''');
     return helper;
+  }
+
+  Future<File> _writeWindowsLauncher(Directory updateDirectory) async {
+    final launcher = File(_joinPath(updateDirectory.path, 'launch-update.vbs'));
+    await launcher.writeAsString(r'''
+Option Explicit
+
+Function QuoteArgument(value)
+  QuoteArgument = Chr(34) & Replace(value, Chr(34), Chr(34) & Chr(34)) & Chr(34)
+End Function
+
+Dim shell
+Dim command
+Dim index
+
+Set shell = CreateObject("WScript.Shell")
+command = "powershell.exe -NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File " & QuoteArgument(WScript.Arguments(0))
+
+For index = 1 To WScript.Arguments.Count - 1
+  command = command & " " & QuoteArgument(WScript.Arguments(index))
+Next
+
+shell.Run command, 0, False
+''');
+    return launcher;
   }
 
   Future<File> _writeLinuxHelper({
@@ -918,17 +950,32 @@ PACKAGE_PATH="$1"
 APP_PID="$2"
 MARKER_PATH="$3"
 VERSION="$4"
-UPDATE_DIRECTORY="$5"
-PACKAGE_TYPE="$6"
+PACKAGE_TYPE="$5"
+LOG_PATH="$(dirname "$MARKER_PATH")/updater-helper.log"
 
-while kill -0 "$APP_PID" 2>/dev/null; do
+log_update() {
+  mkdir -p "$(dirname "$LOG_PATH")"
+  printf '%s %s\n' "$(date -Iseconds)" "$1" >> "$LOG_PATH"
+}
+
+log_update "Helper started for version $VERSION; waiting for PID $APP_PID."
+WAIT_COUNT=0
+while kill -0 "$APP_PID" 2>/dev/null && [ "$WAIT_COUNT" -lt 360 ]; do
   sleep 0.25
+  WAIT_COUNT=$((WAIT_COUNT + 1))
 done
 
 STATUS="failed"
 MESSAGE="The package installer did not complete."
 
-if [ "$PACKAGE_TYPE" = "deb" ]; then
+if kill -0 "$APP_PID" 2>/dev/null; then
+  EXIT_CODE=124
+  MESSAGE="HardwareMon did not exit within 90 seconds."
+elif ! command -v pkexec >/dev/null 2>&1; then
+  EXIT_CODE=127
+  MESSAGE="pkexec is required to install system packages."
+elif [ "$PACKAGE_TYPE" = "deb" ]; then
+  log_update "Installing DEB package $PACKAGE_PATH."
   if command -v apt >/dev/null 2>&1; then
     pkexec apt install -y "$PACKAGE_PATH"
     EXIT_CODE=$?
@@ -937,6 +984,7 @@ if [ "$PACKAGE_TYPE" = "deb" ]; then
     EXIT_CODE=$?
   fi
 elif [ "$PACKAGE_TYPE" = "rpm" ]; then
+  log_update "Installing RPM package $PACKAGE_PATH."
   if command -v dnf >/dev/null 2>&1; then
     pkexec dnf install -y "$PACKAGE_PATH"
     EXIT_CODE=$?
@@ -954,16 +1002,24 @@ fi
 if [ "$EXIT_CODE" -eq 0 ]; then
   STATUS="success"
   MESSAGE="HardwareMon was updated successfully."
-else
+elif [ "$EXIT_CODE" -ne 124 ] && [ "$EXIT_CODE" -ne 127 ]; then
   MESSAGE="The package installer exited with code $EXIT_CODE."
 fi
 
 mkdir -p "$(dirname "$MARKER_PATH")"
-printf '%s\n%s\n%s\n' "$STATUS" "$VERSION" "$MESSAGE" > "$MARKER_PATH"
+TEMP_MARKER="$MARKER_PATH.tmp"
+printf '%s\n%s\n%s\n' "$STATUS" "$VERSION" "$MESSAGE" > "$TEMP_MARKER"
+mv -f "$TEMP_MARKER" "$MARKER_PATH"
+log_update "$MESSAGE"
 
-nohup /usr/bin/hardwaremon >/dev/null 2>&1 &
-sleep 2
-rm -rf -- "$UPDATE_DIRECTORY"
+if [ -x /usr/bin/hardwaremon ]; then
+  log_update "Restarting HardwareMon from /usr/bin/hardwaremon."
+  nohup /usr/bin/hardwaremon >/dev/null 2>&1 </dev/null &
+else
+  log_update "Restart skipped because /usr/bin/hardwaremon is missing."
+fi
+
+rm -f -- "$PACKAGE_PATH"
 ''');
     return helper;
   }

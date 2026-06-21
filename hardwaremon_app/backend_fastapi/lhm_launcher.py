@@ -9,6 +9,8 @@ import xml.etree.ElementTree as ET
 
 import requests
 
+from process_utils import hidden_process_kwargs
+
 IS_WINDOWS = platform.system() == "Windows"
 LHM_URL = "http://127.0.0.1:8085/data.json"
 
@@ -144,6 +146,7 @@ def start_lhm():
             cwd=lhm_dir,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
+            **hidden_process_kwargs(),
         )
 
     except OSError as e:

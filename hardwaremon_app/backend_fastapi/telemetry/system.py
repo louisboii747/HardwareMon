@@ -10,6 +10,7 @@ import subprocess
 import time
 import psutil
 from database.database import get_data_dir
+from process_utils import hidden_process_kwargs
 
 router = APIRouter()
 
@@ -206,6 +207,7 @@ def collect_nvidia_smi_stats():
             check=True,
             text=True,
             timeout=2,
+            **hidden_process_kwargs(),
         )
     except (OSError, subprocess.SubprocessError):
         return {}

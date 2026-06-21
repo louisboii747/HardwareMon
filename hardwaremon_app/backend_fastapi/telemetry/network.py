@@ -18,6 +18,8 @@ import psutil
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
+from process_utils import hidden_process_kwargs
+
 
 router = APIRouter(prefix="/network", tags=["network"])
 
@@ -228,6 +230,7 @@ def ping_target(request: PingRequest) -> dict[str, Any]:
             timeout=min(60.0, (request.count * request.timeout) + 3.0),
             check=False,
             shell=False,
+            **hidden_process_kwargs(),
         )
         output = f"{completed.stdout}\n{completed.stderr}"
         latencies = _latencies_from_output(output)
@@ -374,6 +377,7 @@ def _default_gateway() -> str | None:
                 timeout=2,
                 check=False,
                 shell=False,
+                **hidden_process_kwargs(),
             )
             for line in completed.stdout.splitlines():
                 fields = line.split()
