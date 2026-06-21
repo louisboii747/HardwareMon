@@ -220,14 +220,20 @@ def ping_target(request: PingRequest) -> dict[str, Any]:
             "error": str(error),
         }
 
-    command = _ping_command(resolved_host, request.count, request.timeout)
+    safe_count = max(1, min(10, int(request.count)))
+    safe_timeout = float(request.timeout)
+    if not math.isfinite(safe_timeout):
+        safe_timeout = 1.0
+    safe_timeout = max(0.2, min(5.0, safe_timeout))
+
+    command = _ping_command(resolved_host, safe_count, safe_timeout)
     try:
         completed = subprocess.run(
             command,
             capture_output=True,
             text=True,
             errors="replace",
-            timeout=min(60.0, (request.count * request.timeout) + 3.0),
+            timeout=min(60.0, (safe_count * safe_timeout) + 3.0),
             check=False,
             shell=False,
             **hidden_process_kwargs(),
