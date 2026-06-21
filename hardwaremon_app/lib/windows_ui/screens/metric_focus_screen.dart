@@ -448,6 +448,7 @@ class _MetricFocusScreenState extends State<MetricFocusScreen> {
                         final scale = generateTimeAxisTicks(
                           samples: animatedSamples,
                           width: constraints.maxWidth,
+                          density: widget.chartPreferences.timelineDensity,
                         );
                         final chartMaxY = telemetryChartMaxY(
                           animatedSamples,
@@ -610,14 +611,16 @@ class _MetricFocusScreenState extends State<MetricFocusScreen> {
                             lineBarsData: [
                               LineChartBarData(
                                 isCurved: widget.chartPreferences.smoothLines,
-                                curveSmoothness: 0.45,
+                                curveSmoothness:
+                                    widget.chartPreferences.smoothness,
                                 preventCurveOverShooting: true,
                                 spots: spots,
                                 showingIndicators: selectedIndex == null
                                     ? const []
                                     : [selectedIndex!],
                                 color: widget.accent,
-                                barWidth: 3,
+                                barWidth:
+                                    widget.chartPreferences.thickness * 1.35,
                                 isStrokeCapRound: true,
                                 dotData: const FlDotData(show: false),
                                 belowBarData: BarAreaData(

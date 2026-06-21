@@ -6,6 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import '../models/chart_preferences.dart';
 import '../models/dashboard_preferences.dart';
+import '../models/customization_preferences.dart';
 import '../models/telemetry_sample.dart';
 import '../../services/update_prompt_service.dart';
 import '../../services/update_service.dart';
@@ -23,6 +24,7 @@ import 'pages/processes_page.dart';
 import 'pages/network_page.dart';
 import 'pages/storage_page.dart';
 import 'pages/optimization_page.dart';
+import 'pages/customization_page.dart';
 import 'pages/settings_page.dart';
 import '../services/telemetry_service.dart';
 import '../core/theme/app_colors.dart';
@@ -38,6 +40,7 @@ class _ShellScreenState extends State<ShellScreen> {
   late TelemetryService telemetry;
   late ChartPreferences chartPreferences;
   late DashboardPreferences dashboardPreferences;
+  late CustomizationPreferences customizationPreferences;
   StreamSubscription<DesktopCommand>? _desktopCommandSubscription;
 
   int selectedIndex = 0;
@@ -50,10 +53,12 @@ class _ShellScreenState extends State<ShellScreen> {
     telemetry = TelemetryService();
     chartPreferences = ChartPreferences();
     dashboardPreferences = DashboardPreferences();
+    customizationPreferences = CustomizationPreferences();
 
     telemetry.start();
     chartPreferences.load();
     dashboardPreferences.load();
+    customizationPreferences.load();
     DesktopIntegrationService.instance.attachTelemetry(telemetry);
     _desktopCommandSubscription = DesktopIntegrationService.instance.commands
         .listen(_handleDesktopCommand);
@@ -69,6 +74,11 @@ class _ShellScreenState extends State<ShellScreen> {
       }
     });
     dashboardPreferences.addListener(() {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+    customizationPreferences.addListener(() {
       if (mounted) {
         setState(() {});
       }
@@ -92,6 +102,7 @@ class _ShellScreenState extends State<ShellScreen> {
     telemetry.stop();
     chartPreferences.dispose();
     dashboardPreferences.dispose();
+    customizationPreferences.dispose();
     super.dispose();
   }
 
@@ -111,7 +122,7 @@ class _ShellScreenState extends State<ShellScreen> {
         break;
       case DesktopCommand.settings:
         Navigator.of(context).popUntil((route) => route.isFirst);
-        _selectPage(6);
+        _selectPage(7);
         break;
     }
   }
@@ -185,7 +196,7 @@ Disk: ${telemetry.diskUsage}%
   Future<void> _showKeyboardShortcuts() {
     const shortcuts = [
       ('Command palette', 'Ctrl K'),
-      ('Navigate pages', 'Alt 1–7'),
+      ('Navigate pages', 'Alt 1–8'),
       ('Refresh telemetry', 'F5 / Ctrl R'),
       ('Pause or resume', 'Ctrl P'),
       ('Reset session statistics', 'Ctrl Shift R'),
@@ -314,15 +325,33 @@ Disk: ${telemetry.diskUsage}%
         run: () => _selectPage(5),
       ),
       CommandPaletteAction(
+        id: 'customization',
+        title: 'Open Customization',
+        description: 'Personalize layouts, themes, motion, and profiles',
+        section: 'Navigate',
+        shortcut: 'Alt 7',
+        icon: Icons.palette_rounded,
+        selected: selectedIndex == 6,
+        keywords: const [
+          'theme',
+          'accent',
+          'layout',
+          'sidebar',
+          'profile',
+          'widgets',
+        ],
+        run: () => _selectPage(6),
+      ),
+      CommandPaletteAction(
         id: 'settings',
         title: 'Open Settings',
         description: 'Configure monitoring and desktop behaviour',
         section: 'Navigate',
-        shortcut: 'Alt 7',
+        shortcut: 'Alt 8',
         icon: Icons.settings_rounded,
-        selected: selectedIndex == 6,
+        selected: selectedIndex == 7,
         keywords: const ['preferences', 'configure'],
-        run: () => _selectPage(6),
+        run: () => _selectPage(7),
       ),
       for (final workspace in DashboardWorkspace.values)
         CommandPaletteAction(
@@ -477,25 +506,6 @@ Disk: ${telemetry.diskUsage}%
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth < 760) {
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                _DashboardWorkspaceSelector(
-                  selected: dashboardPreferences.workspace,
-                  onSelected: _applyDashboardWorkspace,
-                ),
-                const SizedBox(height: 14),
-                SizedBox(height: 280, child: cards[0]),
-                const SizedBox(height: 16),
-                SizedBox(height: 230, child: cards[1]),
-                const SizedBox(height: 16),
-                SizedBox(height: 230, child: cards[2]),
-              ],
-            ),
-          );
-        }
-
         return Column(
           children: [
             _DashboardWorkspaceSelector(
@@ -504,21 +514,40 @@ Disk: ${telemetry.diskUsage}%
             ),
             const SizedBox(height: 14),
             Expanded(
-              child: Row(
-                children: [
-                  Expanded(flex: 2, child: cards[0]),
-                  const SizedBox(width: 24),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        Expanded(child: cards[1]),
-                        const SizedBox(height: 16),
-                        Expanded(child: cards[2]),
-                      ],
+              child: cards.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.visibility_off_rounded,
+                            size: 34,
+                            color: AppColors.textMuted(context),
+                          ),
+                          const SizedBox(height: 10),
+                          const Text('All cards in this workspace are hidden'),
+                          const SizedBox(height: 8),
+                          TextButton(
+                            onPressed: dashboardPreferences.resetDefaults,
+                            child: const Text('Restore dashboard cards'),
+                          ),
+                        ],
+                      ),
+                    )
+                  : GridView.builder(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: constraints.maxWidth >= 1050
+                            ? 3
+                            : constraints.maxWidth >= 680
+                            ? 2
+                            : 1,
+                        mainAxisExtent: dashboardPreferences.cardSize.height,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                      ),
+                      itemCount: cards.length,
+                      itemBuilder: (context, index) => cards[index],
                     ),
-                  ),
-                ],
-              ),
             ),
           ],
         );
@@ -552,38 +581,45 @@ Disk: ${telemetry.diskUsage}%
       statisticsSince: telemetry.sessionStatisticsStartedAt,
       alertKind: metric.alertKind,
       alertValue: metric.alertValue,
+      hoverEffects: customizationPreferences.hoverEffects,
+      transitionDuration: customizationPreferences.transitionDuration,
     );
 
-    if (!chartPreferences.animations) return card;
+    if (!chartPreferences.animations ||
+        !customizationPreferences.animationsEnabled) {
+      return card;
+    }
 
     return card
         .animate(key: ValueKey('${dashboardPreferences.workspace.name}-$index'))
         .fadeIn(
           delay: Duration(milliseconds: index * 90),
-          duration: 520.ms,
+          duration: customizationPreferences.transitionDuration,
           curve: Curves.easeOutCubic,
         )
         .slideY(
           begin: 0.05,
           end: 0,
           delay: Duration(milliseconds: index * 90),
-          duration: 520.ms,
+          duration: customizationPreferences.transitionDuration,
           curve: Curves.easeOutCubic,
         );
   }
 
   List<_DashboardMetric> _dashboardMetrics(DashboardWorkspace workspace) {
     final cpuUsage = _DashboardMetric(
+      id: DashboardMetricId.cpuUsage,
       title: 'CPU Usage',
       value: '${telemetry.cpuUsage}%',
       subtitle: telemetry.cpuName,
       icon: Icons.memory_rounded,
-      accent: Colors.cyan,
+      accent: AppColors.accent,
       samples: telemetry.cpuHistory,
       alertKind: MetricAlertKind.cpuUsage,
       alertValue: telemetry.cpuUsage.toDouble(),
     );
     final memory = _DashboardMetric(
+      id: DashboardMetricId.memory,
       title: 'Memory',
       value: '${telemetry.ramUsage}%',
       subtitle: 'System memory usage',
@@ -594,6 +630,7 @@ Disk: ${telemetry.diskUsage}%
       alertValue: telemetry.ramUsage.toDouble(),
     );
     final gpuUsage = _DashboardMetric(
+      id: DashboardMetricId.gpuUsage,
       title: 'GPU Usage',
       value: '${telemetry.gpuUsage}%',
       subtitle: 'Graphics workload',
@@ -602,6 +639,7 @@ Disk: ${telemetry.diskUsage}%
       samples: telemetry.gpuUsageHistory,
     );
     final cpuTemperature = _DashboardMetric(
+      id: DashboardMetricId.cpuTemperature,
       title: 'CPU Temp',
       value: '${telemetry.cpuTemp}°',
       subtitle: 'Package temperature',
@@ -613,6 +651,7 @@ Disk: ${telemetry.diskUsage}%
       alertValue: telemetry.cpuTemp.toDouble(),
     );
     final gpuTemperature = _DashboardMetric(
+      id: DashboardMetricId.gpuTemperature,
       title: 'GPU Temp',
       value: '${telemetry.gpuTemp}°',
       subtitle: 'Graphics temperature',
@@ -624,6 +663,7 @@ Disk: ${telemetry.diskUsage}%
       alertValue: telemetry.gpuTemp.toDouble(),
     );
     final cpuPower = _DashboardMetric(
+      id: DashboardMetricId.cpuPower,
       title: 'CPU Power',
       value: '${telemetry.cpuPower.toStringAsFixed(1)} W',
       subtitle: 'Package power draw',
@@ -633,6 +673,7 @@ Disk: ${telemetry.diskUsage}%
       metricKind: TelemetryMetricKind.watts,
     );
     final gpuPower = _DashboardMetric(
+      id: DashboardMetricId.gpuPower,
       title: 'GPU Power',
       value: '${telemetry.gpuPower.toStringAsFixed(1)} W',
       subtitle: 'Board power draw',
@@ -642,12 +683,17 @@ Disk: ${telemetry.diskUsage}%
       metricKind: TelemetryMetricKind.watts,
     );
 
-    return switch (workspace) {
+    final workspaceMetrics = switch (workspace) {
       DashboardWorkspace.overview => [cpuUsage, memory, gpuTemperature],
       DashboardWorkspace.workload => [cpuUsage, gpuUsage, memory],
       DashboardWorkspace.thermals => [cpuTemperature, gpuTemperature, cpuPower],
       DashboardWorkspace.power => [cpuPower, gpuPower, gpuUsage],
     };
+    final byId = {for (final metric in workspaceMetrics) metric.id: metric};
+    return dashboardPreferences
+        .orderedVisible(byId.keys)
+        .map((id) => byId[id]!)
+        .toList(growable: false);
   }
 
   Widget getCurrentPage() {
@@ -679,6 +725,14 @@ Disk: ${telemetry.diskUsage}%
         );
 
       case 6:
+        return CustomizationPage(
+          telemetry: telemetry,
+          chartPreferences: chartPreferences,
+          dashboardPreferences: dashboardPreferences,
+          customizationPreferences: customizationPreferences,
+        );
+
+      case 7:
         return SettingsPage(
           telemetry: telemetry,
           chartPreferences: chartPreferences,
@@ -815,6 +869,8 @@ Disk: ${telemetry.diskUsage}%
             _selectPage(5),
         const SingleActivator(LogicalKeyboardKey.digit7, alt: true): () =>
             _selectPage(6),
+        const SingleActivator(LogicalKeyboardKey.digit8, alt: true): () =>
+            _selectPage(7),
         const SingleActivator(LogicalKeyboardKey.keyK, control: true):
             _showCommandPalette,
         const SingleActivator(
@@ -843,7 +899,7 @@ Disk: ${telemetry.diskUsage}%
           shift: true,
         ): _copySystemSnapshot,
         const SingleActivator(LogicalKeyboardKey.comma, control: true): () =>
-            _selectPage(6),
+            _selectPage(7),
       },
       child: Focus(
         autofocus: true,
@@ -865,6 +921,7 @@ Disk: ${telemetry.diskUsage}%
                   ramUsage: telemetry.ramUsage,
                   gpuTemperature: telemetry.gpuTemp,
                   enabled: chartPreferences.ambientEffects,
+                  intensity: customizationPreferences.ambientGlowIntensity,
                 ),
 
                 SafeArea(
@@ -874,87 +931,187 @@ Disk: ${telemetry.diskUsage}%
                     child: Row(
                       children: [
                         SizedBox(
-                          width: 88,
+                          width: customizationPreferences.sidebarWidth,
 
                           child: GlassPanel(
                             padding: const EdgeInsets.symmetric(vertical: 20),
 
                             child: Column(
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.memory_rounded,
                                   color: AppColors.accent,
-                                  size: 28,
+                                  size:
+                                      customizationPreferences.sidebarIconSize +
+                                      4,
                                 ),
 
-                                const SizedBox(height: 32),
+                                const SizedBox(height: 20),
 
-                                _DockItem(
-                                  icon: Icons.dashboard_rounded,
-                                  label: 'Dashboard',
-                                  shortcut: 'Alt+1',
-                                  active: selectedIndex == 0,
-                                  onTap: () => _selectPage(0),
-                                ),
+                                Expanded(
+                                  child: SingleChildScrollView(
+                                    child: Column(
+                                      children: [
+                                        _DockItem(
+                                          icon: Icons.dashboard_rounded,
+                                          label: 'Dashboard',
+                                          shortcut: 'Alt+1',
+                                          active: selectedIndex == 0,
+                                          onTap: () => _selectPage(0),
+                                          showLabel:
+                                              customizationPreferences
+                                                  .showSidebarLabels ||
+                                              customizationPreferences
+                                                      .sidebarMode ==
+                                                  SidebarMode.expanded,
+                                          iconSize: customizationPreferences
+                                              .sidebarIconSize,
+                                          hoverEffects: customizationPreferences
+                                              .hoverEffects,
+                                        ),
 
-                                const SizedBox(height: 12),
+                                        const SizedBox(height: 12),
 
-                                _DockItem(
-                                  icon: Icons.list_rounded,
-                                  label: 'Processes',
-                                  shortcut: 'Alt+2',
-                                  active: selectedIndex == 1,
-                                  onTap: () => _selectPage(1),
-                                ),
+                                        _DockItem(
+                                          icon: Icons.list_rounded,
+                                          label: 'Processes',
+                                          shortcut: 'Alt+2',
+                                          active: selectedIndex == 1,
+                                          onTap: () => _selectPage(1),
+                                          showLabel:
+                                              customizationPreferences
+                                                  .showSidebarLabels ||
+                                              customizationPreferences
+                                                      .sidebarMode ==
+                                                  SidebarMode.expanded,
+                                          iconSize: customizationPreferences
+                                              .sidebarIconSize,
+                                          hoverEffects: customizationPreferences
+                                              .hoverEffects,
+                                        ),
 
-                                const SizedBox(height: 12),
+                                        const SizedBox(height: 12),
 
-                                _DockItem(
-                                  icon: Icons.analytics_rounded,
-                                  label: 'Performance',
-                                  shortcut: 'Alt+3',
-                                  active: selectedIndex == 2,
-                                  onTap: () => _selectPage(2),
-                                ),
+                                        _DockItem(
+                                          icon: Icons.analytics_rounded,
+                                          label: 'Performance',
+                                          shortcut: 'Alt+3',
+                                          active: selectedIndex == 2,
+                                          onTap: () => _selectPage(2),
+                                          showLabel:
+                                              customizationPreferences
+                                                  .showSidebarLabels ||
+                                              customizationPreferences
+                                                      .sidebarMode ==
+                                                  SidebarMode.expanded,
+                                          iconSize: customizationPreferences
+                                              .sidebarIconSize,
+                                          hoverEffects: customizationPreferences
+                                              .hoverEffects,
+                                        ),
 
-                                const SizedBox(height: 12),
+                                        const SizedBox(height: 12),
 
-                                _DockItem(
-                                  icon: Icons.language_rounded,
-                                  label: 'Network',
-                                  shortcut: 'Alt+4',
-                                  active: selectedIndex == 3,
-                                  onTap: () => _selectPage(3),
-                                ),
+                                        _DockItem(
+                                          icon: Icons.language_rounded,
+                                          label: 'Network',
+                                          shortcut: 'Alt+4',
+                                          active: selectedIndex == 3,
+                                          onTap: () => _selectPage(3),
+                                          showLabel:
+                                              customizationPreferences
+                                                  .showSidebarLabels ||
+                                              customizationPreferences
+                                                      .sidebarMode ==
+                                                  SidebarMode.expanded,
+                                          iconSize: customizationPreferences
+                                              .sidebarIconSize,
+                                          hoverEffects: customizationPreferences
+                                              .hoverEffects,
+                                        ),
 
-                                const SizedBox(height: 12),
+                                        const SizedBox(height: 12),
 
-                                _DockItem(
-                                  icon: Icons.storage_rounded,
-                                  label: 'Storage',
-                                  shortcut: 'Alt+5',
-                                  active: selectedIndex == 4,
-                                  onTap: () => _selectPage(4),
-                                ),
+                                        _DockItem(
+                                          icon: Icons.storage_rounded,
+                                          label: 'Storage',
+                                          shortcut: 'Alt+5',
+                                          active: selectedIndex == 4,
+                                          onTap: () => _selectPage(4),
+                                          showLabel:
+                                              customizationPreferences
+                                                  .showSidebarLabels ||
+                                              customizationPreferences
+                                                      .sidebarMode ==
+                                                  SidebarMode.expanded,
+                                          iconSize: customizationPreferences
+                                              .sidebarIconSize,
+                                          hoverEffects: customizationPreferences
+                                              .hoverEffects,
+                                        ),
 
-                                const SizedBox(height: 12),
+                                        const SizedBox(height: 12),
 
-                                _DockItem(
-                                  icon: Icons.auto_awesome_rounded,
-                                  label: 'Optimisation',
-                                  shortcut: 'Alt+6',
-                                  active: selectedIndex == 5,
-                                  onTap: () => _selectPage(5),
-                                ),
+                                        _DockItem(
+                                          icon: Icons.auto_awesome_rounded,
+                                          label: 'Optimisation',
+                                          shortcut: 'Alt+6',
+                                          active: selectedIndex == 5,
+                                          onTap: () => _selectPage(5),
+                                          showLabel:
+                                              customizationPreferences
+                                                  .showSidebarLabels ||
+                                              customizationPreferences
+                                                      .sidebarMode ==
+                                                  SidebarMode.expanded,
+                                          iconSize: customizationPreferences
+                                              .sidebarIconSize,
+                                          hoverEffects: customizationPreferences
+                                              .hoverEffects,
+                                        ),
 
-                                const SizedBox(height: 12),
+                                        const SizedBox(height: 12),
 
-                                _DockItem(
-                                  icon: Icons.settings_rounded,
-                                  label: 'Settings',
-                                  shortcut: 'Alt+7',
-                                  active: selectedIndex == 6,
-                                  onTap: () => _selectPage(6),
+                                        _DockItem(
+                                          icon: Icons.palette_rounded,
+                                          label: 'Customization',
+                                          shortcut: 'Alt+7',
+                                          active: selectedIndex == 6,
+                                          onTap: () => _selectPage(6),
+                                          showLabel:
+                                              customizationPreferences
+                                                  .showSidebarLabels ||
+                                              customizationPreferences
+                                                      .sidebarMode ==
+                                                  SidebarMode.expanded,
+                                          iconSize: customizationPreferences
+                                              .sidebarIconSize,
+                                          hoverEffects: customizationPreferences
+                                              .hoverEffects,
+                                        ),
+
+                                        const SizedBox(height: 12),
+
+                                        _DockItem(
+                                          icon: Icons.settings_rounded,
+                                          label: 'Settings',
+                                          shortcut: 'Alt+8',
+                                          active: selectedIndex == 7,
+                                          onTap: () => _selectPage(7),
+                                          showLabel:
+                                              customizationPreferences
+                                                  .showSidebarLabels ||
+                                              customizationPreferences
+                                                      .sidebarMode ==
+                                                  SidebarMode.expanded,
+                                          iconSize: customizationPreferences
+                                              .sidebarIconSize,
+                                          hoverEffects: customizationPreferences
+                                              .hoverEffects,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -1018,8 +1175,12 @@ Disk: ${telemetry.diskUsage}%
 
                               Expanded(
                                 child: AnimatedSwitcher(
-                                  duration: chartPreferences.animations
-                                      ? const Duration(milliseconds: 420)
+                                  duration:
+                                      chartPreferences.animations &&
+                                          customizationPreferences
+                                              .animationsEnabled
+                                      ? customizationPreferences
+                                            .transitionDuration
                                       : Duration.zero,
 
                                   switchInCurve: Curves.easeOutCubic,
@@ -1067,6 +1228,7 @@ Disk: ${telemetry.diskUsage}%
 }
 
 class _DashboardMetric {
+  final DashboardMetricId id;
   final String title;
   final String value;
   final String subtitle;
@@ -1078,6 +1240,7 @@ class _DashboardMetric {
   final double? alertValue;
 
   const _DashboardMetric({
+    required this.id,
     required this.title,
     required this.value,
     required this.subtitle,
@@ -1180,6 +1343,9 @@ class _DockItem extends StatefulWidget {
   final String shortcut;
   final bool active;
   final VoidCallback onTap;
+  final bool showLabel;
+  final double iconSize;
+  final bool hoverEffects;
 
   const _DockItem({
     required this.icon,
@@ -1187,6 +1353,9 @@ class _DockItem extends StatefulWidget {
     required this.shortcut,
     required this.onTap,
     this.active = false,
+    this.showLabel = false,
+    this.iconSize = 24,
+    this.hoverEffects = true,
   });
 
   @override
@@ -1229,12 +1398,29 @@ class _DockItemState extends State<_DockItem> {
             child: GestureDetector(
               onTap: widget.onTap,
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                width: 52,
+                duration: Duration(
+                  milliseconds:
+                      (180 * AppColors.sidebarMotionIntensity.clamp(0.1, 1.5))
+                          .round(),
+                ),
+                transform: Matrix4.translationValues(
+                  0,
+                  widget.hoverEffects && hovering
+                      ? -2 * AppColors.sidebarMotionIntensity
+                      : 0,
+                  0,
+                ),
+                width: widget.showLabel ? 160 : 52,
                 height: 52,
+                padding: EdgeInsets.symmetric(
+                  horizontal: widget.showLabel ? 12 : 0,
+                ),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(18),
-                  color: widget.active || hovering || focused
+                  color:
+                      widget.active ||
+                          (widget.hoverEffects && hovering) ||
+                          focused
                       ? AppColors.overlay(context, 0.08)
                       : Colors.transparent,
                   border: Border.all(
@@ -1252,9 +1438,33 @@ class _DockItemState extends State<_DockItem> {
                         ]
                       : [],
                 ),
-                child: Icon(
-                  widget.icon,
-                  color: widget.active ? activeColor : inactiveColor,
+                child: Row(
+                  mainAxisAlignment: widget.showLabel
+                      ? MainAxisAlignment.start
+                      : MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      widget.icon,
+                      size: widget.iconSize,
+                      color: widget.active ? AppColors.accent : inactiveColor,
+                    ),
+                    if (widget.showLabel) ...[
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          widget.label,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: widget.active ? activeColor : inactiveColor,
+                            fontSize: 11,
+                            fontWeight: widget.active
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ),

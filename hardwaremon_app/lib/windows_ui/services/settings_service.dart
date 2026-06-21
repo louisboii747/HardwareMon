@@ -22,6 +22,21 @@ class SettingsService {
     return prefs.getString(key) ?? defaultValue;
   }
 
+  Future<void> setDouble(String key, double value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(key, value);
+  }
+
+  Future<double> getDouble(String key, double defaultValue) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getDouble(key) ?? defaultValue;
+  }
+
+  Future<void> remove(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(key);
+  }
+
   Future<void> saveSettings(AppSettings settings) async {
     final prefs = await SharedPreferences.getInstance();
 

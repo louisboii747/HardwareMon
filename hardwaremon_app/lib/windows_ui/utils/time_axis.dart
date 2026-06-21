@@ -107,6 +107,7 @@ String formatTelemetryTooltipTimestamp(DateTime timestamp) {
 TimeAxisScale generateTimeAxisTicks({
   required List<TelemetrySample> samples,
   required double width,
+  double density = 1,
 }) {
   final now = DateTime.now();
   final ordered = samples.toList()
@@ -118,7 +119,9 @@ TimeAxisScale generateTimeAxisTicks({
   final hasRange = rawRange.inMilliseconds > 0;
   final visibleRange = hasRange ? rawRange : const Duration(minutes: 1);
   final maxX = visibleRange.inMilliseconds.toDouble();
-  final tickCount = hasRange ? adaptiveTimeLabelCount(width) : 1;
+  final tickCount = hasRange
+      ? adaptiveTimeLabelCount(width * density.clamp(0.55, 1.8))
+      : 1;
   final tickInterval = tickCount > 1 ? maxX / (tickCount - 1) : maxX;
 
   final ticks = List<TimeAxisTick>.generate(tickCount, (index) {

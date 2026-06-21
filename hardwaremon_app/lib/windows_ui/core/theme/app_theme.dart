@@ -30,41 +30,42 @@ class AppTheme {
     );
   }
 
-  static ThemeData darkTheme = ThemeData(
+  static ThemeData darkTheme(Color accent) => ThemeData(
     brightness: Brightness.dark,
     scaffoldBackgroundColor: AppColors.darkBackground,
-
     splashFactory: NoSplash.splashFactory,
-
-    colorScheme: const ColorScheme.dark(
-      primary: AppColors.accent,
-      surface: Color(0xFF111111),
+    colorScheme: ColorScheme.dark(
+      primary: accent,
+      secondary: accent,
+      surface: const Color(0xFF111111),
     ),
-
+    progressIndicatorTheme: ProgressIndicatorThemeData(color: accent),
     switchTheme: _switchTheme(
       selectedThumb: const Color(0xFFE8FBFF),
-      selectedTrack: AppColors.accent.withValues(alpha: 0.6),
+      selectedTrack: accent.withValues(alpha: 0.6),
       unselectedThumb: const Color(0xFFB9C1CA),
       unselectedTrack: const Color(0xFF252A31),
       outline: const Color(0xFF3A424D),
     ),
   );
 
-  static ThemeData lightTheme = ThemeData(
+  static ThemeData lightTheme(Color accent) => ThemeData(
     brightness: Brightness.light,
     scaffoldBackgroundColor: AppColors.lightBackground,
     splashFactory: NoSplash.splashFactory,
-    colorScheme: const ColorScheme.light(
-      primary: AppColors.accent,
-      surface: Color(0xFFFFFFFF),
-      onSurface: Color(0xFF111827),
+    colorScheme: ColorScheme.light(
+      primary: accent,
+      secondary: accent,
+      surface: const Color(0xFFFFFFFF),
+      onSurface: const Color(0xFF111827),
     ),
+    progressIndicatorTheme: ProgressIndicatorThemeData(color: accent),
     dropdownMenuTheme: const DropdownMenuThemeData(
       textStyle: TextStyle(color: Color(0xFF111827)),
     ),
     switchTheme: _switchTheme(
       selectedThumb: const Color(0xFFFFFFFF),
-      selectedTrack: AppColors.accent.withValues(alpha: 0.72),
+      selectedTrack: accent.withValues(alpha: 0.72),
       unselectedThumb: const Color(0xFFFFFFFF),
       unselectedTrack: const Color(0xFFD9E2EA),
       outline: const Color(0xFFB8C4CE),

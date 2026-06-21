@@ -7,6 +7,7 @@ class SystemPulseBackground extends StatelessWidget {
   final int ramUsage;
   final int gpuTemperature;
   final bool enabled;
+  final double intensity;
 
   const SystemPulseBackground({
     super.key,
@@ -14,11 +15,13 @@ class SystemPulseBackground extends StatelessWidget {
     required this.ramUsage,
     required this.gpuTemperature,
     required this.enabled,
+    this.intensity = 1,
   });
 
   @override
   Widget build(BuildContext context) {
-    final lightMultiplier = AppColors.isLight(context) ? 0.7 : 1.0;
+    final lightMultiplier =
+        (AppColors.isLight(context) ? 0.7 : 1.0) * intensity.clamp(0, 1.5);
 
     return IgnorePointer(
       child: AnimatedOpacity(
@@ -30,7 +33,7 @@ class SystemPulseBackground extends StatelessWidget {
           children: [
             _ActivityGlow(
               alignment: const Alignment(-1.08, -1.12),
-              color: Colors.cyanAccent,
+              color: AppColors.accent,
               activity: cpuUsage / 100,
               baseSize: 430,
               opacityMultiplier: lightMultiplier,

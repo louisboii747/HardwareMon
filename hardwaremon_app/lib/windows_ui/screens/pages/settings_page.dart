@@ -194,6 +194,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 items: const [
                   DropdownMenuItem(value: 'Dark', child: Text('Dark')),
                   DropdownMenuItem(value: 'Light', child: Text('Light')),
+                  DropdownMenuItem(value: 'System', child: Text('System')),
                 ],
                 onChanged: (value) async {
                   await _updateSettings(settings.copyWith(theme: value!));
@@ -619,11 +620,11 @@ class _SettingsPageState extends State<SettingsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(Icons.info_outline_rounded, color: AppColors.accent),
-              SizedBox(width: 10),
-              Text(
+              const SizedBox(width: 10),
+              const Text(
                 'About HardwareMon',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
               ),

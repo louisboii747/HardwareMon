@@ -301,11 +301,9 @@ class _HardwareMonAppState extends State<HardwareMonApp>
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'HardwareMon',
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
-          themeMode: AppThemeController.instance.isLight
-              ? ThemeMode.light
-              : ThemeMode.dark,
+          theme: AppTheme.lightTheme(AppThemeController.instance.accent),
+          darkTheme: AppTheme.darkTheme(AppThemeController.instance.accent),
+          themeMode: AppThemeController.instance.themeMode,
           home: const ShellScreen(),
         );
       },

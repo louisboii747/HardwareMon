@@ -231,7 +231,7 @@ class _TelemetryStudioState extends State<TelemetryStudio> {
                       color: AppColors.accent.withValues(alpha: 0.13),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.monitor_heart_rounded,
                       color: AppColors.accent,
                       size: 20,
@@ -388,6 +388,7 @@ class _TelemetryStudioState extends State<TelemetryStudio> {
         final scale = generateTimeAxisTicks(
           samples: axisSamples,
           width: constraints.maxWidth,
+          density: widget.chartPreferences.timelineDensity,
         );
 
         if (axisSamples.isEmpty) {
@@ -541,10 +542,12 @@ class _TelemetryStudioState extends State<TelemetryStudio> {
                             )
                             .toList(growable: false),
                         isCurved: widget.chartPreferences.smoothLines,
-                        curveSmoothness: 0.38,
+                        curveSmoothness: widget.chartPreferences.smoothness,
                         preventCurveOverShooting: true,
                         color: item.color,
-                        barWidth: widget.expanded ? 3.2 : 2.6,
+                        barWidth:
+                            widget.chartPreferences.thickness *
+                            (widget.expanded ? 1.35 : 1.1),
                         isStrokeCapRound: true,
                         dotData: const FlDotData(show: false),
                         belowBarData: BarAreaData(

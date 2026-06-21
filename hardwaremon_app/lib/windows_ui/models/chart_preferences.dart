@@ -11,6 +11,16 @@ enum ChartPreference {
   telemetryTicker,
 }
 
+enum GraphAnimationSpeed { relaxed, balanced, fast }
+
+extension GraphAnimationSpeedDetails on GraphAnimationSpeed {
+  String get label => switch (this) {
+    GraphAnimationSpeed.relaxed => 'Relaxed',
+    GraphAnimationSpeed.balanced => 'Balanced',
+    GraphAnimationSpeed.fast => 'Fast',
+  };
+}
+
 class ChartPreferences extends ChangeNotifier {
   static const _smoothLinesKey = 'chartSmoothLines';
   static const _areaFillKey = 'chartAreaFill';
@@ -18,6 +28,10 @@ class ChartPreferences extends ChangeNotifier {
   static const _animationsKey = 'chartAnimations';
   static const _ambientEffectsKey = 'ambientSystemEffects';
   static const _telemetryTickerKey = 'telemetryTicker';
+  static const _smoothnessKey = 'chartSmoothness';
+  static const _thicknessKey = 'chartThickness';
+  static const _timelineDensityKey = 'chartTimelineDensity';
+  static const _animationSpeedKey = 'chartAnimationSpeed';
 
   final SettingsService _settingsService;
 
@@ -30,9 +44,19 @@ class ChartPreferences extends ChangeNotifier {
   bool animations = true;
   bool ambientEffects = true;
   bool telemetryTicker = true;
+  double smoothness = 0.38;
+  double thickness = 2;
+  double timelineDensity = 1;
+  GraphAnimationSpeed animationSpeed = GraphAnimationSpeed.balanced;
 
-  Duration get animationDuration =>
-      animations ? const Duration(milliseconds: 700) : Duration.zero;
+  Duration get animationDuration {
+    if (!animations) return Duration.zero;
+    return switch (animationSpeed) {
+      GraphAnimationSpeed.relaxed => const Duration(milliseconds: 1050),
+      GraphAnimationSpeed.balanced => const Duration(milliseconds: 700),
+      GraphAnimationSpeed.fast => const Duration(milliseconds: 360),
+    };
+  }
 
   Future<void> load() async {
     smoothLines = await _settingsService.getBool(_smoothLinesKey, true);
@@ -41,6 +65,17 @@ class ChartPreferences extends ChangeNotifier {
     animations = await _settingsService.getBool(_animationsKey, true);
     ambientEffects = await _settingsService.getBool(_ambientEffectsKey, true);
     telemetryTicker = await _settingsService.getBool(_telemetryTickerKey, true);
+    smoothness = await _settingsService.getDouble(_smoothnessKey, 0.38);
+    thickness = await _settingsService.getDouble(_thicknessKey, 2);
+    timelineDensity = await _settingsService.getDouble(_timelineDensityKey, 1);
+    final storedAnimationSpeed = await _settingsService.getString(
+      _animationSpeedKey,
+      GraphAnimationSpeed.balanced.name,
+    );
+    animationSpeed = GraphAnimationSpeed.values.firstWhere(
+      (value) => value.name == storedAnimationSpeed,
+      orElse: () => GraphAnimationSpeed.balanced,
+    );
     notifyListeners();
   }
 
@@ -89,6 +124,34 @@ class ChartPreferences extends ChangeNotifier {
     };
   }
 
+  Future<void> setSmoothness(double value) async {
+    smoothness = value.clamp(0, 0.55);
+    smoothLines = smoothness > 0.02;
+    notifyListeners();
+    await Future.wait([
+      _settingsService.setDouble(_smoothnessKey, smoothness),
+      _settingsService.setBool(_smoothLinesKey, smoothLines),
+    ]);
+  }
+
+  Future<void> setThickness(double value) async {
+    thickness = value.clamp(1, 5);
+    notifyListeners();
+    await _settingsService.setDouble(_thicknessKey, thickness);
+  }
+
+  Future<void> setTimelineDensity(double value) async {
+    timelineDensity = value.clamp(0.55, 1.8);
+    notifyListeners();
+    await _settingsService.setDouble(_timelineDensityKey, timelineDensity);
+  }
+
+  Future<void> setAnimationSpeed(GraphAnimationSpeed value) async {
+    animationSpeed = value;
+    notifyListeners();
+    await _settingsService.setString(_animationSpeedKey, value.name);
+  }
+
   Future<void> resetDefaults() async {
     smoothLines = true;
     areaFill = true;
@@ -96,6 +159,10 @@ class ChartPreferences extends ChangeNotifier {
     animations = true;
     ambientEffects = true;
     telemetryTicker = true;
+    smoothness = 0.38;
+    thickness = 2;
+    timelineDensity = 1;
+    animationSpeed = GraphAnimationSpeed.balanced;
     notifyListeners();
 
     await Future.wait([
@@ -105,6 +172,13 @@ class ChartPreferences extends ChangeNotifier {
       _settingsService.setBool(_animationsKey, true),
       _settingsService.setBool(_ambientEffectsKey, true),
       _settingsService.setBool(_telemetryTickerKey, true),
+      _settingsService.setDouble(_smoothnessKey, 0.38),
+      _settingsService.setDouble(_thicknessKey, 2),
+      _settingsService.setDouble(_timelineDensityKey, 1),
+      _settingsService.setString(
+        _animationSpeedKey,
+        GraphAnimationSpeed.balanced.name,
+      ),
     ]);
   }
 }

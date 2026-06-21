@@ -138,7 +138,7 @@ Future<bool> showMetricAlertDialog({
                 color: AppColors.accent.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.notifications_active_rounded,
                 color: AppColors.accent,
                 size: 19,

@@ -9,14 +9,23 @@ class AppColors {
   static const lightBackgroundSecondary = Color(0xFFFFFFFF);
   static const lightBackgroundTertiary = Color(0xFFEAF2F8);
 
-  static const accent = Color(0xFF0891B2);
+  static Color accent = const Color(0xFF0891B2);
+  static double sidebarMotionIntensity = 1;
 
   static const cyan = Colors.cyan;
   static const purple = Colors.purple;
   static const orange = Colors.orange;
   static const red = Colors.redAccent;
 
-  static const glow = Color(0x227DD3FC);
+  static Color get glow => accent.withValues(alpha: 0.14);
+
+  static void setAccent(Color color) {
+    accent = color;
+  }
+
+  static void setSidebarMotionIntensity(double value) {
+    sidebarMotionIntensity = value.clamp(0, 1.5);
+  }
 
   static bool isLight(BuildContext context) {
     return Theme.of(context).brightness == Brightness.light;

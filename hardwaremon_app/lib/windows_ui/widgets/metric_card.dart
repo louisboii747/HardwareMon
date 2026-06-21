@@ -25,6 +25,8 @@ class MetricCard extends StatefulWidget {
   final DateTime? statisticsSince;
   final MetricAlertKind? alertKind;
   final double? alertValue;
+  final bool hoverEffects;
+  final Duration transitionDuration;
 
   const MetricCard({
     super.key,
@@ -39,6 +41,8 @@ class MetricCard extends StatefulWidget {
     this.statisticsSince,
     this.alertKind,
     this.alertValue,
+    this.hoverEffects = true,
+    this.transitionDuration = const Duration(milliseconds: 220),
   });
 
   @override
@@ -162,9 +166,11 @@ class _MetricCardState extends State<MetricCard> {
           final headerSize = compact ? 36.0 : 42.0;
           final chartHeight = compact ? 28.0 : 36.0;
           final sectionGap = compact ? 6.0 : 10.0;
+          final hoverEffectsActive =
+              widget.hoverEffects && (hovering || focused);
           final valueSize = compact
-              ? (hovering || focused ? 32.0 : 28.0)
-              : (hovering || focused ? 38.0 : 32.0);
+              ? (hoverEffectsActive ? 32.0 : 28.0)
+              : (hoverEffectsActive ? 38.0 : 32.0);
 
           return Semantics(
             button: true,
@@ -195,9 +201,9 @@ class _MetricCardState extends State<MetricCard> {
                     onTap: _openMetric,
                     onSecondaryTapDown: _showContextMenu,
                     child: AnimatedScale(
-                      duration: const Duration(milliseconds: 220),
+                      duration: widget.transitionDuration,
                       curve: Curves.easeOutCubic,
-                      scale: hovering || focused ? 1.01 : 1,
+                      scale: hoverEffectsActive ? 1.01 : 1,
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 180),
                         padding: const EdgeInsets.all(2),
@@ -251,7 +257,7 @@ class _MetricCardState extends State<MetricCard> {
                                       duration: const Duration(
                                         milliseconds: 160,
                                       ),
-                                      child: hovering || focused
+                                      child: hoverEffectsActive
                                           ? Row(
                                               key: const ValueKey('actions'),
                                               mainAxisSize: MainAxisSize.min,
@@ -329,6 +335,9 @@ class _MetricCardState extends State<MetricCard> {
                                           final scale = generateTimeAxisTicks(
                                             samples: animatedSamples,
                                             width: constraints.maxWidth,
+                                            density: widget
+                                                .chartPreferences
+                                                .timelineDensity,
                                           );
                                           final chartMaxY = telemetryChartMaxY(
                                             animatedSamples,
@@ -383,7 +392,9 @@ class _MetricCardState extends State<MetricCard> {
                                                   isCurved: widget
                                                       .chartPreferences
                                                       .smoothLines,
-                                                  curveSmoothness: 0.38,
+                                                  curveSmoothness: widget
+                                                      .chartPreferences
+                                                      .smoothness,
                                                   preventCurveOverShooting:
                                                       true,
                                                   spots: animatedSamples
@@ -397,7 +408,9 @@ class _MetricCardState extends State<MetricCard> {
                                                       )
                                                       .toList(growable: false),
                                                   color: widget.accent,
-                                                  barWidth: 2,
+                                                  barWidth: widget
+                                                      .chartPreferences
+                                                      .thickness,
                                                   isStrokeCapRound: true,
                                                   dotData: const FlDotData(
                                                     show: false,
