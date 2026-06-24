@@ -13,7 +13,7 @@ env:
   APP_NAME: HardwareMon
   FLUTTER_VERSION: "stable"
   APP_PATH: hardwaremon_app
-  APP_BUNDLE: hardwaremon_app/build/macos/Build/Products/Release/HardwareMon.app
+  APP_BUNDLE: hardwaremon_app/build/macos/Build/Products/Release/flutter_gui.app
   HAS_MACOS_CERT: ${{ secrets.MACOS_CERTIFICATE_BASE64 != '' && secrets.MACOS_CERTIFICATE_PASSWORD != '' && secrets.MACOS_KEYCHAIN_PASSWORD != '' }}
   HAS_MACOS_SIGNING: ${{ secrets.MACOS_SIGNING_IDENTITY != '' }}
   HAS_MACOS_NOTARIZATION: ${{ secrets.APPLE_ID != '' && secrets.APPLE_APP_SPECIFIC_PASSWORD != '' && secrets.APPLE_TEAM_ID != '' }}
@@ -94,7 +94,7 @@ jobs:
       - name: Create DMG staging folder
         run: |
           mkdir -p dist/dmg
-          cp -R "${{ env.APP_BUNDLE }}" dist/dmg/
+          cp -R "${{ env.APP_BUNDLE }}" "dist/dmg/${{ env.APP_NAME }}.app"
           ln -s /Applications dist/dmg/Applications
 
       - name: Create DMG
