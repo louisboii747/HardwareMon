@@ -1,0 +1,148 @@
+name: macOS Release DMG
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+env:
+  APP_NAME: HardwareMon
+  FLUTTER_VERSION: "stable"
+  APP_PATH: hardwaremon_app
+  APP_BUNDLE: hardwaremon_app/build/macos/Build/Products/Release/HardwareMon.app
+  HAS_MACOS_CERT: ${{ secrets.MACOS_CERTIFICATE_BASE64 != '' && secrets.MACOS_CERTIFICATE_PASSWORD != '' && secrets.MACOS_KEYCHAIN_PASSWORD != '' }}
+  HAS_MACOS_SIGNING: ${{ secrets.MACOS_SIGNING_IDENTITY != '' }}
+  HAS_MACOS_NOTARIZATION: ${{ secrets.APPLE_ID != '' && secrets.APPLE_APP_SPECIFIC_PASSWORD != '' && secrets.APPLE_TEAM_ID != '' }}
+
+jobs:
+  build-macos-dmg:
+    name: Build macOS DMG
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set release version
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="dev-${GITHUB_SHA::7}"
+          fi
+
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "DMG_NAME=HardwareMon-macOS-$VERSION.dmg" >> "$GITHUB_ENV"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Enable macOS desktop
+        run: flutter config --enable-macos-desktop
+
+      - name: Flutter pub get
+        working-directory: ${{ env.APP_PATH }}
+        run: flutter pub get
+
+      - name: Build macOS app
+        working-directory: ${{ env.APP_PATH }}
+        run: flutter build macos --release --build-name "${{ env.VERSION }}"
+
+      - name: Import signing certificate
+        if: env.HAS_MACOS_CERT == 'true'
+        env:
+          MACOS_CERTIFICATE_BASE64: ${{ secrets.MACOS_CERTIFICATE_BASE64 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
+        run: |
+          CERTIFICATE_PATH="$RUNNER_TEMP/developer_id_application.p12"
+          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
+
+          echo "$MACOS_CERTIFICATE_BASE64" | base64 --decode > "$CERTIFICATE_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          security import "$CERTIFICATE_PATH" \
+            -P "$MACOS_CERTIFICATE_PASSWORD" \
+            -A \
+            -t cert \
+            -f pkcs12 \
+            -k "$KEYCHAIN_PATH"
+
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+      - name: Code sign app bundle
+        if: env.HAS_MACOS_SIGNING == 'true'
+        run: |
+          codesign --force --deep --options runtime --timestamp \
+            --sign "${{ secrets.MACOS_SIGNING_IDENTITY }}" \
+            "${{ env.APP_BUNDLE }}"
+
+          codesign --verify --deep --strict --verbose=2 "${{ env.APP_BUNDLE }}"
+
+      - name: Create DMG staging folder
+        run: |
+          mkdir -p dist/dmg
+          cp -R "${{ env.APP_BUNDLE }}" dist/dmg/
+          ln -s /Applications dist/dmg/Applications
+
+      - name: Create DMG
+        run: |
+          hdiutil create \
+            -volname "${{ env.APP_NAME }}" \
+            -srcfolder dist/dmg \
+            -ov \
+            -format UDZO \
+            "dist/${{ env.DMG_NAME }}"
+
+      - name: Sign DMG
+        if: env.HAS_MACOS_SIGNING == 'true'
+        run: |
+          codesign --force --timestamp \
+            --sign "${{ secrets.MACOS_SIGNING_IDENTITY }}" \
+            "dist/${{ env.DMG_NAME }}"
+
+          codesign --verify --verbose=2 "dist/${{ env.DMG_NAME }}"
+
+      - name: Notarize DMG
+        if: env.HAS_MACOS_NOTARIZATION == 'true'
+        run: |
+          xcrun notarytool submit "dist/${{ env.DMG_NAME }}" \
+            --apple-id "${{ secrets.APPLE_ID }}" \
+            --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
+            --team-id "${{ secrets.APPLE_TEAM_ID }}" \
+            --wait
+
+          xcrun stapler staple "dist/${{ env.DMG_NAME }}"
+
+      - name: Generate checksum
+        run: |
+          cd dist
+          shasum -a 256 "${{ env.DMG_NAME }}" > "${{ env.DMG_NAME }}.sha256"
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: HardwareMon-macOS-DMG
+          path: |
+            dist/*.dmg
+            dist/*.sha256
+
+      - name: Upload DMG to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.dmg
+            dist/*.sha256
