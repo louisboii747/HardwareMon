@@ -98,7 +98,18 @@ String getBackendExecutable() {
     return '$exeDir/backend.exe';
   }
 
+  if (Platform.isMacOS) {
+    final macBackend = '$exeDir/../Resources/backend/backend';
+
+    logBackend('macOS executable dir: $exeDir');
+    logBackend('macOS backend path: $macBackend');
+    logBackend('macOS backend exists: ${File(macBackend).existsSync()}');
+
+    return macBackend;
+  }
+
   final bundledLinuxBackend = '$exeDir/backend/backend';
+
   if (Platform.isLinux && File(bundledLinuxBackend).existsSync()) {
     return bundledLinuxBackend;
   }

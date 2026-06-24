@@ -56,6 +56,29 @@ jobs:
         working-directory: ${{ env.APP_PATH }}
         run: flutter build macos --release --build-name "${{ env.VERSION }}"
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install backend dependencies
+        working-directory: ${{ env.APP_PATH }}/backend_fastapi
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build macOS backend
+        working-directory: ${{ env.APP_PATH }}/backend_fastapi
+        run: |
+          pyinstaller backend.spec
+
+      - name: Bundle backend into macOS app
+        run: |
+          mkdir -p "${{ env.APP_BUNDLE }}/Contents/Resources/backend"
+          cp -R "${{ env.APP_PATH }}/backend_fastapi/dist/backend/"* "${{ env.APP_BUNDLE }}/Contents/Resources/backend/"
+          chmod +x "${{ env.APP_BUNDLE }}/Contents/Resources/backend/backend"
+
       - name: Import signing certificate
         if: env.HAS_MACOS_CERT == 'true'
         env:
