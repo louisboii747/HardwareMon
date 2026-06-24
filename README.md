@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <b>Modern cross-platform system monitoring for Linux and Windows.</b>
+  <b>Modern cross-platform system monitoring for Linux, macOS and Windows.</b>
 </p>
 
 <p align="center">
@@ -32,6 +32,7 @@
 
 <img src="https://img.shields.io/badge/APT-supported-red?logo=debian" alt="APT">
 <img src="https://img.shields.io/badge/DNF-supported-294172?logo=fedora" alt="DNF">
+<img src="https://img.shields.io/badge/macOS-supported-black?logo=apple" alt="macOS">
 <img src="https://img.shields.io/badge/AUR-supported-1793D1?logo=arch-linux" alt="AUR">
 <img src="https://img.shields.io/badge/WinGet-supported-0078D4?logo=windows" alt="WinGet">
 
@@ -80,7 +81,7 @@
 
 ## What is HardwareMon?
 
-HardwareMon is a modern cross-platform system monitor for Linux and Windows built with Flutter and FastAPI.
+HardwareMon is a modern cross-platform system monitor for Linux, macOS and Windows built with Flutter and FastAPI.
 
 It provides:
 
@@ -103,6 +104,7 @@ It provides:
 - [Installation](#installation)
 - [Windows](#windows)
 - [Linux APT and DNF](#linux-installation)
+- [macOS](#macos-apple-silicon-only)
 - [Architecture](#modern-architecture)
 - [Updating HardwareMon](#updating)
 - [Development](#development)
@@ -120,6 +122,15 @@ winget install LouisHinchliffe.HardwareMon
 ### Linux
 
 ➡️ [Jump to Linux Installation](#linux-installation)
+
+
+
+### macOS
+
+Download the latest DMG from GitHub Releases.
+
+➡️ [Learn more about HardwareMon on macOS](#macos-apple-silicon-only)
+
 
 ---
 
@@ -201,7 +212,7 @@ HardwareMon now uses a unified Flutter frontend architecture across Linux and Wi
 | Fedora          | ✅ Supported | DNF                |
 | Flatpak         | ⚠️ Experimental | Flatpak         |
 | Arch Linux      | 🚧 Planned | AUR                  |
-| macOS           | 🚧 Planned  | Future              |
+| macOS           | ✅ macOS (Apple Silicon only)  | DMG from Github Releases              |
 
 ---
 
@@ -299,7 +310,20 @@ Launch HardwareMon:
 flatpak run com.hardwaremon.HardwareMon
 ```
 
+# macOS (Apple Silicon Only)
 
+HardwareMon offers a DMG file downloadable from Github Releases. This DMG does not currently support x64 based macs, as the build process targets ARM based M1+ systems only.
+There are plans to port the app over to the App Store on macOS. x64 versions for Intel macs will arrive soon.
+
+| Architecture | Support |
+|--------------|---------|
+| Apple Silicon (M1) | ✅ |
+| Apple Silicon (M2) | ✅ |
+| Apple Silicon (M3) | ✅ |
+| Apple Silicon (M4) | ✅ |
+| Intel (x86_64) | ❌ |
+
+> Tested on Apple Silicon hardware. Intel Mac support is planned for a future release.
 
 # Updating
 
