@@ -408,6 +408,9 @@ jobs:
             --delete
 
       - name: Upload DNF repository to R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
         run: |
           aws s3 cp repo/yum \
             s3://hardwaremon-packages/yum \
