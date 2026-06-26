@@ -24,6 +24,7 @@ import 'pages/processes_page.dart';
 import 'pages/network_page.dart';
 import 'pages/storage_page.dart';
 import 'pages/optimization_page.dart';
+import 'pages/reliability_page.dart';
 import 'pages/customization_page.dart';
 import 'pages/settings_page.dart';
 import '../services/telemetry_service.dart';
@@ -122,7 +123,7 @@ class _ShellScreenState extends State<ShellScreen> {
         break;
       case DesktopCommand.settings:
         Navigator.of(context).popUntil((route) => route.isFirst);
-        _selectPage(7);
+        _selectPage(8);
         break;
     }
   }
@@ -196,7 +197,7 @@ Disk: ${telemetry.diskUsage}%
   Future<void> _showKeyboardShortcuts() {
     const shortcuts = [
       ('Command palette', 'Ctrl K'),
-      ('Navigate pages', 'Alt 1–8'),
+      ('Navigate pages', 'Alt 1–9'),
       ('Refresh telemetry', 'F5 / Ctrl R'),
       ('Pause or resume', 'Ctrl P'),
       ('Reset session statistics', 'Ctrl Shift R'),
@@ -325,13 +326,31 @@ Disk: ${telemetry.diskUsage}%
         run: () => _selectPage(5),
       ),
       CommandPaletteAction(
+        id: 'reliability',
+        title: 'Open Reliability',
+        description: 'Review stability score, active risks, and recovery steps',
+        section: 'Navigate',
+        shortcut: 'Alt 7',
+        icon: Icons.verified_rounded,
+        selected: selectedIndex == 6,
+        keywords: const [
+          'stability',
+          'health',
+          'incidents',
+          'risk',
+          'runbook',
+          'timeline',
+        ],
+        run: () => _selectPage(6),
+      ),
+      CommandPaletteAction(
         id: 'customization',
         title: 'Open Customization',
         description: 'Personalize layouts, themes, motion, and profiles',
         section: 'Navigate',
-        shortcut: 'Alt 7',
+        shortcut: 'Alt 8',
         icon: Icons.palette_rounded,
-        selected: selectedIndex == 6,
+        selected: selectedIndex == 7,
         keywords: const [
           'theme',
           'accent',
@@ -340,18 +359,18 @@ Disk: ${telemetry.diskUsage}%
           'profile',
           'widgets',
         ],
-        run: () => _selectPage(6),
+        run: () => _selectPage(7),
       ),
       CommandPaletteAction(
         id: 'settings',
         title: 'Open Settings',
         description: 'Configure monitoring and desktop behaviour',
         section: 'Navigate',
-        shortcut: 'Alt 8',
+        shortcut: 'Alt 9',
         icon: Icons.settings_rounded,
-        selected: selectedIndex == 7,
+        selected: selectedIndex == 8,
         keywords: const ['preferences', 'configure'],
-        run: () => _selectPage(7),
+        run: () => _selectPage(8),
       ),
       for (final workspace in DashboardWorkspace.values)
         CommandPaletteAction(
@@ -725,6 +744,15 @@ Disk: ${telemetry.diskUsage}%
         );
 
       case 6:
+        return ReliabilityPage(
+          telemetry: telemetry,
+          onOpenPerformance: () => _selectPage(2),
+          onOpenProcesses: () => _selectPage(1),
+          onOpenStorage: () => _selectPage(4),
+          onOpenNetwork: () => _selectPage(3),
+        );
+
+      case 7:
         return CustomizationPage(
           telemetry: telemetry,
           chartPreferences: chartPreferences,
@@ -732,7 +760,7 @@ Disk: ${telemetry.diskUsage}%
           customizationPreferences: customizationPreferences,
         );
 
-      case 7:
+      case 8:
         return SettingsPage(
           telemetry: telemetry,
           chartPreferences: chartPreferences,
@@ -871,6 +899,8 @@ Disk: ${telemetry.diskUsage}%
             _selectPage(6),
         const SingleActivator(LogicalKeyboardKey.digit8, alt: true): () =>
             _selectPage(7),
+        const SingleActivator(LogicalKeyboardKey.digit9, alt: true): () =>
+            _selectPage(8),
         const SingleActivator(LogicalKeyboardKey.keyK, control: true):
             _showCommandPalette,
         const SingleActivator(
@@ -899,7 +929,7 @@ Disk: ${telemetry.diskUsage}%
           shift: true,
         ): _copySystemSnapshot,
         const SingleActivator(LogicalKeyboardKey.comma, control: true): () =>
-            _selectPage(7),
+            _selectPage(8),
       },
       child: Focus(
         autofocus: true,
@@ -1073,8 +1103,8 @@ Disk: ${telemetry.diskUsage}%
                                         const SizedBox(height: 12),
 
                                         _DockItem(
-                                          icon: Icons.palette_rounded,
-                                          label: 'Customization',
+                                          icon: Icons.verified_rounded,
+                                          label: 'Reliability',
                                           shortcut: 'Alt+7',
                                           active: selectedIndex == 6,
                                           onTap: () => _selectPage(6),
@@ -1093,11 +1123,31 @@ Disk: ${telemetry.diskUsage}%
                                         const SizedBox(height: 12),
 
                                         _DockItem(
-                                          icon: Icons.settings_rounded,
-                                          label: 'Settings',
+                                          icon: Icons.palette_rounded,
+                                          label: 'Customization',
                                           shortcut: 'Alt+8',
                                           active: selectedIndex == 7,
                                           onTap: () => _selectPage(7),
+                                          showLabel:
+                                              customizationPreferences
+                                                  .showSidebarLabels ||
+                                              customizationPreferences
+                                                      .sidebarMode ==
+                                                  SidebarMode.expanded,
+                                          iconSize: customizationPreferences
+                                              .sidebarIconSize,
+                                          hoverEffects: customizationPreferences
+                                              .hoverEffects,
+                                        ),
+
+                                        const SizedBox(height: 12),
+
+                                        _DockItem(
+                                          icon: Icons.settings_rounded,
+                                          label: 'Settings',
+                                          shortcut: 'Alt+9',
+                                          active: selectedIndex == 8,
+                                          onTap: () => _selectPage(8),
                                           showLabel:
                                               customizationPreferences
                                                   .showSidebarLabels ||

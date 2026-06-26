@@ -91,6 +91,65 @@ _LINUX_SYSTEM_PROCESS_PREFIXES = (
     "watchdog",
 )
 
+_MACOS_SYSTEM_USERS = {
+    "_analyticsd",
+    "_appleevents",
+    "_appowner",
+    "_assetcache",
+    "_coreaudiod",
+    "_distnote",
+    "_iconservices",
+    "_installassistant",
+    "_locationd",
+    "_mdnsresponder",
+    "_netbios",
+    "_networkd",
+    "_nsurlsessiond",
+    "_securityagent",
+    "_softwareupdate",
+    "_spotlight",
+    "_timed",
+    "_trustd",
+    "_windowserver",
+    "daemon",
+    "nobody",
+    "root",
+}
+
+_MACOS_SYSTEM_PROCESS_NAMES = {
+    "airportd",
+    "configd",
+    "coreaudiod",
+    "diskarbitrationd",
+    "fseventsd",
+    "kernel_task",
+    "launchd",
+    "locationd",
+    "logd",
+    "mdnsresponder",
+    "notifyd",
+    "opendirectoryd",
+    "powerd",
+    "securityd",
+    "syslogd",
+    "systemstats",
+    "trustd",
+    "windowserver",
+}
+
+_MACOS_SYSTEM_PROCESS_PREFIXES = (
+    "com.apple.",
+    "mdworker",
+    "nsurlsessiond",
+)
+
+
+def _safe_process_value(proc: psutil.Process, method_name: str, default=None):
+    try:
+        return getattr(proc, method_name)()
+    except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+        return default
+
 
 def _is_system_process(proc: psutil.Process, name: str, username: str) -> bool:
     """Classify OS services and kernel processes without hiding desktop apps."""
@@ -123,6 +182,21 @@ def _is_system_process(proc: psutil.Process, name: str, username: str) -> bool:
             or normalized_name.startswith(_LINUX_SYSTEM_PROCESS_PREFIXES)
         )
 
+    if _OPERATING_SYSTEM == "Darwin":
+        try:
+            if proc.uids().real < 501:
+                return True
+        except (AttributeError, psutil.AccessDenied, psutil.NoSuchProcess):
+            if normalized_user == "root" or normalized_user.startswith("_"):
+                return True
+
+        return (
+            normalized_user in _MACOS_SYSTEM_USERS
+            or normalized_user.startswith("_")
+            or normalized_name in _MACOS_SYSTEM_PROCESS_NAMES
+            or normalized_name.startswith(_MACOS_SYSTEM_PROCESS_PREFIXES)
+        )
+
     return False
 
 
@@ -138,6 +212,8 @@ def get_processes():
 
             username = proc.username()
             ram_mb = info["memory_info"].rss / 1024 / 1024 if info["memory_info"] else 0
+            started_at = _safe_process_value(proc, "create_time")
+            thread_count = _safe_process_value(proc, "num_threads")
 
             processes.append(
                 {
@@ -145,6 +221,14 @@ def get_processes():
                     "name": info["name"],
                     "cpu": round(info["cpu_percent"] / psutil.cpu_count(), 1),
                     "ram": round(ram_mb, 1),
+                    "username": username,
+                    "status": _safe_process_value(proc, "status", "unknown"),
+                    "memory_percent": round(
+                        _safe_process_value(proc, "memory_percent", 0.0),
+                        2,
+                    ),
+                    "thread_count": thread_count,
+                    "started_at": started_at,
                     "is_system": _is_system_process(
                         proc,
                         info["name"] or "",

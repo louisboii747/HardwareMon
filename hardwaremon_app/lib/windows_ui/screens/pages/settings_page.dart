@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../models/app_settings.dart';
 import '../../models/chart_preferences.dart';
 import '../../models/dashboard_preferences.dart';
@@ -14,6 +15,14 @@ import '../../../services/alert_service.dart';
 import '../../../services/build_info_service.dart';
 import '../../../services/update_service.dart';
 import '../../../widgets/alert_settings_widgets.dart';
+
+String _formatSettingState(bool value) => value ? 'On' : 'Off';
+
+String _formatSettingNumber(double value) {
+  return value == value.roundToDouble()
+      ? value.round().toString()
+      : value.toStringAsFixed(1);
+}
 
 class SettingsPage extends StatefulWidget {
   final TelemetryService telemetry;
@@ -143,6 +152,49 @@ class _SettingsPageState extends State<SettingsPage> {
     AppThemeController.instance.setTheme(effectiveDefaults.theme);
     AlertService.instance.updateSettings(effectiveDefaults);
     desktopIntegration.applySettings(effectiveDefaults);
+  }
+
+  Future<void> _copySettingsSummary() async {
+    final updateState = UpdateService.instance.state;
+    final lines = [
+      'HardwareMon Settings Summary',
+      'Captured: ${DateTime.now().toIso8601String()}',
+      'Theme: ${settings.theme}',
+      'Refresh interval: ${settings.refreshInterval}',
+      'Historical monitoring: ${_formatSettingState(settings.historicalMonitoring)}',
+      '',
+      'Desktop integration:',
+      '- Launch on startup: ${_formatSettingState(settings.launchOnStartup)}',
+      '- Minimise to tray: ${_formatSettingState(settings.minimiseToTray)}',
+      '- Close to tray: ${_formatSettingState(settings.closeToTray)}',
+      '- Tray available: ${_formatSettingState(desktopIntegration.trayAvailable)}',
+      if (desktopIntegration.trayError != null)
+        '- Tray detail: ${desktopIntegration.trayError}',
+      '',
+      'Alerts:',
+      '- CPU usage: ${_formatSettingState(settings.cpuAlerts)} at ${_formatSettingNumber(settings.cpuUsageThreshold)}%',
+      '- Memory usage: ${_formatSettingState(settings.ramAlerts)} at ${_formatSettingNumber(settings.ramUsageThreshold)}%',
+      '- Temperature: ${_formatSettingState(settings.temperatureAlerts)} at CPU ${_formatSettingNumber(settings.cpuTemperatureThreshold)}°C / GPU ${_formatSettingNumber(settings.gpuTemperatureThreshold)}°C',
+      '- Disk usage: ${_formatSettingState(settings.diskAlerts)} at ${_formatSettingNumber(settings.diskUsageThreshold)}%',
+      '- Alert sounds: ${_formatSettingState(settings.alertSounds)}',
+      '',
+      'Updates:',
+      '- Auto update checks: ${_formatSettingState(settings.autoUpdateChecks)}',
+      '- Build channel: ${updateState.channel.label}',
+      '- Version: ${updateState.currentVersion}',
+      '- Build type: ${buildInfo?.buildType ?? 'Unavailable'}',
+      '- Platform: ${buildInfo?.platform ?? 'Unavailable'}',
+      '- Backend: ${buildInfo?.backendVersion ?? 'Unavailable'}',
+    ];
+
+    await Clipboard.setData(ClipboardData(text: lines.join('\n')));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Settings summary copied'),
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   Future<void> _showResetDialog() async {
@@ -503,6 +555,14 @@ class _SettingsPageState extends State<SettingsPage> {
                   }
                 },
                 child: const Text('Export'),
+              ),
+            ),
+
+            _settingRow(
+              'Copy Settings Summary',
+              ElevatedButton(
+                onPressed: _copySettingsSummary,
+                child: const Text('Copy'),
               ),
             ),
 

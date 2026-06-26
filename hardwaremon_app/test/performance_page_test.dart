@@ -53,6 +53,11 @@ void main() {
     await tester.pump();
 
     expect(find.text('Telemetry Studio'), findsOneWidget);
+    expect(find.text('Session intelligence'), findsOneWidget);
+    expect(find.text('Headroom'), findsOneWidget);
+    expect(find.text('Session age'), findsOneWidget);
+    expect(find.text('Copy report'), findsOneWidget);
+    expect(find.text('Live recommendations'), findsOneWidget);
     expect(find.text('Reset stats'), findsOneWidget);
     expect(find.text('Smooth curves'), findsOneWidget);
     expect(find.text('5m'), findsOneWidget);

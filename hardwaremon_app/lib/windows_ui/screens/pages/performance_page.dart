@@ -4,6 +4,7 @@ import 'package:flutter_gui/windows_ui/services/telemetry_service.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../models/chart_preferences.dart';
+import '../../models/telemetry_insights.dart';
 import '../../utils/telemetry_chart.dart';
 import '../../widgets/metric_card.dart';
 import '../../widgets/metric_alert_action.dart';
@@ -21,6 +22,25 @@ class PerformancePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final sessionAge = DateTime.now().difference(
+      telemetry.sessionStatisticsStartedAt,
+    );
+    final sessionSummary = buildTelemetrySessionSummary(
+      cpuUsage: telemetry.cpuUsage,
+      ramUsage: telemetry.ramUsage,
+      gpuUsage: telemetry.gpuUsage,
+      cpuTemperature: telemetry.cpuTemp,
+      gpuTemperature: telemetry.gpuTemp,
+      cpuHistory: telemetry.cpuHistory,
+      ramHistory: telemetry.ramHistory,
+      gpuHistory: telemetry.gpuUsageHistory,
+      cpuTemperatureHistory: telemetry.cpuTempHistory,
+      gpuTemperatureHistory: telemetry.gpuTempHistory,
+      since: telemetry.sessionStatisticsStartedAt,
+      paused: telemetry.isPaused,
+      lastError: telemetry.lastError,
+    );
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -42,6 +62,14 @@ class PerformancePage extends StatelessWidget {
           _PerformanceControls(
             telemetry: telemetry,
             chartPreferences: chartPreferences,
+          ),
+          const SizedBox(height: 16),
+          _SessionIntelligencePanel(
+            summary: sessionSummary,
+            sessionAge: sessionAge,
+            telemetry: telemetry,
+            onCopyReport: () =>
+                _copySessionReport(context, sessionSummary, sessionAge),
           ),
           const SizedBox(height: 24),
           TelemetryStudio(
@@ -243,6 +271,498 @@ class PerformancePage extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _copySessionReport(
+    BuildContext context,
+    TelemetrySessionSummary summary,
+    Duration sessionAge,
+  ) async {
+    final lines = [
+      'HardwareMon Performance Session',
+      'Captured: ${DateTime.now().toIso8601String()}',
+      'Score: ${summary.score}/100 · ${summary.headline}',
+      'Detail: ${summary.detail}',
+      '',
+      'CPU: current ${telemetry.cpuUsage}%, avg ${summary.cpuAverage.toStringAsFixed(1)}%, peak ${summary.cpuPeak.toStringAsFixed(1)}%',
+      'Memory: current ${telemetry.ramUsage}%, avg ${summary.ramAverage.toStringAsFixed(1)}%, peak ${summary.ramPeak.toStringAsFixed(1)}%',
+      'GPU: current ${telemetry.gpuUsage}%, avg ${summary.gpuAverage.toStringAsFixed(1)}%, peak ${summary.gpuPeak.toStringAsFixed(1)}%',
+      'Thermals: CPU peak ${summary.cpuTemperaturePeak.toStringAsFixed(0)}°C, GPU peak ${summary.gpuTemperaturePeak.toStringAsFixed(0)}°C',
+      'Headroom: memory ${_formatHeadroomPercent(summary.memoryHeadroom)}, thermal ${_formatHeadroomTemperature(summary.thermalHeadroom)}',
+      'Session age: ${_formatSessionAge(sessionAge)}',
+      'Samples: ${summary.sampleCount}',
+      '',
+      'Insights:',
+      for (final insight in summary.insights)
+        '- ${insight.title}: ${insight.detail}',
+    ];
+
+    await Clipboard.setData(ClipboardData(text: lines.join('\n')));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Performance session report copied'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+}
+
+class _SessionIntelligencePanel extends StatelessWidget {
+  final TelemetrySessionSummary summary;
+  final Duration sessionAge;
+  final TelemetryService telemetry;
+  final VoidCallback onCopyReport;
+
+  const _SessionIntelligencePanel({
+    required this.summary,
+    required this.sessionAge,
+    required this.telemetry,
+    required this.onCopyReport,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scoreColor = _scoreColor(summary.score);
+    return Semantics(
+      container: true,
+      label:
+          'Session intelligence. Score ${summary.score} out of 100. ${summary.headline}. Memory headroom ${_formatHeadroomPercent(summary.memoryHeadroom)}. Thermal headroom ${_formatHeadroomTemperature(summary.thermalHeadroom)}.',
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: AppColors.surface(context),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.border(context)),
+          boxShadow: [
+            BoxShadow(
+              color: scoreColor.withValues(alpha: 0.055),
+              blurRadius: 28,
+            ),
+          ],
+        ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final compact = constraints.maxWidth < 860;
+            final score = _SessionScore(
+              score: summary.score,
+              label: summary.headline,
+              detail: summary.detail,
+              color: scoreColor,
+            );
+            final metrics = _SessionMetricGrid(
+              summary: summary,
+              sessionAge: sessionAge,
+            );
+            final insights = _SessionInsightList(insights: summary.insights);
+
+            if (compact) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  score,
+                  const SizedBox(height: 16),
+                  metrics,
+                  const SizedBox(height: 16),
+                  insights,
+                  const SizedBox(height: 14),
+                  _SessionActions(
+                    telemetry: telemetry,
+                    onCopyReport: onCopyReport,
+                  ),
+                ],
+              );
+            }
+
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(width: 235, child: score),
+                Container(
+                  width: 1,
+                  height: 185,
+                  margin: const EdgeInsets.symmetric(horizontal: 18),
+                  color: AppColors.border(context),
+                ),
+                Expanded(
+                  flex: 5,
+                  child: Column(
+                    children: [
+                      metrics,
+                      const SizedBox(height: 14),
+                      _SessionActions(
+                        telemetry: telemetry,
+                        onCopyReport: onCopyReport,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 18),
+                Expanded(flex: 4, child: insights),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _SessionScore extends StatelessWidget {
+  final int score;
+  final String label;
+  final String detail;
+  final Color color;
+
+  const _SessionScore({
+    required this.score,
+    required this.label,
+    required this.detail,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0, end: score / 100),
+          duration: const Duration(milliseconds: 850),
+          curve: Curves.easeOutCubic,
+          builder: (context, value, _) => SizedBox.square(
+            dimension: 86,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                CircularProgressIndicator(
+                  value: value,
+                  strokeWidth: 8,
+                  strokeCap: StrokeCap.round,
+                  color: color,
+                  backgroundColor: AppColors.overlay(context, 0.06),
+                ),
+                Text(
+                  '${(value * 100).round()}',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Session intelligence',
+                style: TextStyle(
+                  color: AppColors.textMuted(context),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                detail,
+                style: TextStyle(
+                  color: AppColors.textSecondary(context),
+                  fontSize: 11,
+                  height: 1.35,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SessionMetricGrid extends StatelessWidget {
+  final TelemetrySessionSummary summary;
+  final Duration sessionAge;
+
+  const _SessionMetricGrid({required this.summary, required this.sessionAge});
+
+  @override
+  Widget build(BuildContext context) {
+    final metrics = [
+      _SessionMetric(
+        label: 'CPU avg / peak',
+        value:
+            '${summary.cpuAverage.toStringAsFixed(0)}% / ${summary.cpuPeak.toStringAsFixed(0)}%',
+        icon: Icons.memory_rounded,
+        color: Colors.cyanAccent,
+      ),
+      _SessionMetric(
+        label: 'RAM avg / peak',
+        value:
+            '${summary.ramAverage.toStringAsFixed(0)}% / ${summary.ramPeak.toStringAsFixed(0)}%',
+        icon: Icons.storage_rounded,
+        color: Colors.purpleAccent,
+      ),
+      _SessionMetric(
+        label: 'Thermal peak',
+        value:
+            '${summary.cpuTemperaturePeak.toStringAsFixed(0)}° / ${summary.gpuTemperaturePeak.toStringAsFixed(0)}°',
+        icon: Icons.device_thermostat_rounded,
+        color: Colors.orangeAccent,
+      ),
+      _SessionMetric(
+        label: 'Headroom',
+        value:
+            '${_formatHeadroomPercent(summary.memoryHeadroom)} / ${_formatHeadroomTemperature(summary.thermalHeadroom)}',
+        icon: Icons.health_and_safety_rounded,
+        color: Colors.greenAccent,
+      ),
+      _SessionMetric(
+        label: 'Samples',
+        value: summary.sampleCount.toString(),
+        icon: Icons.timeline_rounded,
+        color: Colors.lightGreenAccent,
+      ),
+      _SessionMetric(
+        label: 'Session age',
+        value: _formatSessionAge(sessionAge),
+        icon: Icons.timer_rounded,
+        color: Colors.lightBlueAccent,
+      ),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 620 ? 4 : 2;
+        final width = (constraints.maxWidth - ((columns - 1) * 10)) / columns;
+        return Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            for (final metric in metrics)
+              SizedBox(
+                width: width,
+                child: _SessionMetricCard(metric: metric),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _SessionMetric {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  const _SessionMetric({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+}
+
+class _SessionMetricCard extends StatelessWidget {
+  final _SessionMetric metric;
+
+  const _SessionMetricCard({required this.metric});
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: '${metric.label}: ${metric.value}',
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: metric.color.withValues(alpha: 0.055),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: metric.color.withValues(alpha: 0.15)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(metric.icon, color: metric.color, size: 17),
+            const SizedBox(height: 9),
+            Text(
+              metric.value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              metric.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: AppColors.textMuted(context),
+                fontSize: 9,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SessionInsightList extends StatelessWidget {
+  final List<TelemetryInsight> insights;
+
+  const _SessionInsightList({required this.insights});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.auto_awesome_rounded, size: 18),
+            const SizedBox(width: 8),
+            const Text(
+              'Live recommendations',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+            ),
+            const Spacer(),
+            Text(
+              '${insights.length}',
+              style: TextStyle(
+                color: AppColors.textMuted(context),
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        for (var index = 0; index < insights.length; index++) ...[
+          _SessionInsightTile(insight: insights[index]),
+          if (index != insights.length - 1) const SizedBox(height: 8),
+        ],
+      ],
+    );
+  }
+}
+
+class _SessionInsightTile extends StatelessWidget {
+  final TelemetryInsight insight;
+
+  const _SessionInsightTile({required this.insight});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _insightColor(insight.severity);
+    final icon = switch (insight.severity) {
+      TelemetryInsightSeverity.healthy => Icons.check_circle_outline_rounded,
+      TelemetryInsightSeverity.info => Icons.info_outline_rounded,
+      TelemetryInsightSeverity.warning => Icons.warning_amber_rounded,
+      TelemetryInsightSeverity.critical => Icons.report_gmailerrorred_rounded,
+    };
+
+    return Semantics(
+      label: '${insight.title}. ${insight.detail}',
+      child: Container(
+        padding: const EdgeInsets.all(11),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.055),
+          borderRadius: BorderRadius.circular(13),
+          border: Border.all(color: color.withValues(alpha: 0.15)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: color, size: 18),
+            const SizedBox(width: 9),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    insight.title,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    insight.detail,
+                    style: TextStyle(
+                      color: AppColors.textMuted(context),
+                      fontSize: 9,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SessionActions extends StatelessWidget {
+  final TelemetryService telemetry;
+  final VoidCallback onCopyReport;
+
+  const _SessionActions({required this.telemetry, required this.onCopyReport});
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 10,
+      runSpacing: 8,
+      children: [
+        OutlinedButton.icon(
+          onPressed: onCopyReport,
+          icon: const Icon(Icons.content_copy_rounded, size: 16),
+          label: const Text('Copy report'),
+        ),
+        OutlinedButton.icon(
+          onPressed: telemetry.isRefreshing
+              ? null
+              : () => telemetry.refreshNow(includeHistory: true),
+          icon: telemetry.isRefreshing
+              ? const SizedBox.square(
+                  dimension: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.refresh_rounded, size: 16),
+          label: const Text('Refresh now'),
+        ),
+        OutlinedButton.icon(
+          onPressed: telemetry.togglePaused,
+          icon: Icon(
+            telemetry.isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+            size: 16,
+          ),
+          label: Text(telemetry.isPaused ? 'Resume' : 'Pause'),
+        ),
+        OutlinedButton.icon(
+          onPressed: telemetry.resetSessionStatistics,
+          icon: const Icon(Icons.restart_alt_rounded, size: 16),
+          label: const Text('Reset session'),
+        ),
+      ],
     );
   }
 }
@@ -613,4 +1133,42 @@ class _ResponsiveMetricGrid extends StatelessWidget {
       },
     );
   }
+}
+
+Color _scoreColor(int score) {
+  if (score >= 86) return Colors.greenAccent;
+  if (score >= 68) return Colors.cyanAccent;
+  if (score >= 48) return Colors.orangeAccent;
+  return Colors.redAccent;
+}
+
+Color _insightColor(TelemetryInsightSeverity severity) {
+  return switch (severity) {
+    TelemetryInsightSeverity.healthy => Colors.greenAccent,
+    TelemetryInsightSeverity.info => Colors.cyanAccent,
+    TelemetryInsightSeverity.warning => Colors.orangeAccent,
+    TelemetryInsightSeverity.critical => Colors.redAccent,
+  };
+}
+
+String _formatHeadroomPercent(double value) {
+  if (!value.isFinite) return 'Unavailable';
+  return '${value.clamp(0, 100).round()}%';
+}
+
+String _formatHeadroomTemperature(double value) {
+  if (!value.isFinite) return 'Unavailable';
+  return '${value.clamp(0, 95).round()}°C';
+}
+
+String _formatSessionAge(Duration duration) {
+  if (duration.inHours >= 1) {
+    final minutes = duration.inMinutes.remainder(60);
+    return '${duration.inHours}h ${minutes}m';
+  }
+  if (duration.inMinutes >= 1) {
+    final seconds = duration.inSeconds.remainder(60);
+    return '${duration.inMinutes}m ${seconds}s';
+  }
+  return '${duration.inSeconds.clamp(0, 59)}s';
 }
