@@ -292,7 +292,25 @@ jobs:
           cat > ~/.rpmmacros <<EOF
           %_signature gpg
           %_gpg_name ${{ secrets.GPG_KEY_ID }}
+          %__gpg /usr/bin/gpg
+          %_gpg_sign_cmd_extra_args --batch --yes --pinentry-mode loopback --passphrase ${{ secrets.GPG_PASSPHRASE }}
           EOF
+
+      - name: Verify rpmsign
+        run: |
+          which rpmsign
+          rpmsign --version
+
+      - name: Sign RPM package
+        run: |
+          set -euxo pipefail
+
+          rpmsign --addsign dist/hardwaremon.rpm
+
+          echo "===== RPM signature check ====="
+          rpm -Kv dist/hardwaremon.rpm | tee rpm-verify.txt
+
+          grep -E "RSA|PGP|signature" rpm-verify.txt
 
       - name: Install AWS CLI
         run: |
