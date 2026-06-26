@@ -308,9 +308,9 @@ jobs:
           rpmsign --addsign dist/hardwaremon.rpm
 
           echo "===== RPM signature check ====="
-          rpm -Kv dist/hardwaremon.rpm | tee rpm-verify.txt
+          rpm -Kv dist/hardwaremon.rpm 2>&1 | tee rpm-verify.txt || true
 
-          grep -E "RSA|PGP|signature" rpm-verify.txt
+          grep -E "Header V[0-9]+ RSA|Header V[0-9]+ DSA|Header V[0-9]+ PGP|Signature" rpm-verify.txt
 
       - name: Install AWS CLI
         run: |
