@@ -361,7 +361,7 @@ The Android companion includes:
 * Material 3 interface
 * Dark mode
 
-* # Remote Monitoring
+# Remote Monitoring
 
 HardwareMon uses a local-first architecture.
 
