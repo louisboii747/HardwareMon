@@ -36,6 +36,34 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 Open the `android/` directory itself if you later use Android Studio. It is a
 standalone Gradle project and does not depend on the Flutter desktop project.
 
+## GitHub release workflow
+
+The `Android Companion Release` workflow builds the app without Android Studio,
+runs the debug unit tests, and uploads the resulting APK to a GitHub Release.
+
+For a tag release, create and push a semantic version tag:
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+Tags matching `v*.*.*` trigger the workflow automatically. The uploaded asset
+is named `HardwareMon-Companion-Android-debug-v0.1.0.apk` for that example.
+
+To run it manually:
+
+1. Open the repository's **Actions** tab on GitHub.
+2. Select **Android Companion Release**.
+3. Choose **Run workflow** and enter an existing release tag such as `v0.1.0`.
+
+Companion v0 uploads a debug APK for testing. It is not production/release
+signed; Gradle may apply its standard debug key so the APK can be installed on
+test devices. No signing secrets or Android Studio installation are required.
+
+TODO: add keystore-backed signing through GitHub Actions secrets and publish a
+signed release APK and/or Android App Bundle (`.aab`) for production delivery.
+
 ## Test against a desktop
 
 1. Start the HardwareMon backend and make it listen on a LAN-accessible address,
