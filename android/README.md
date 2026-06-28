@@ -1,117 +1,122 @@
-# HardwareMon Companion (Android)
+# HardwareMon for Android
 
-Native Android companion v0 for a HardwareMon desktop backend. It uses Kotlin,
-Jetpack Compose, Material 3, Retrofit/Moshi, DataStore Preferences, and a small
-MVVM-style state layer.
+HardwareMon for Android is a standalone, native device monitor. It reads the
+phone or tablet it is running on and does not connect to the HardwareMon
+desktop app, FastAPI backend, another computer, or any remote telemetry stream.
+No configuration is required: launch the app and its dashboard starts collecting
+local telemetry.
 
-## Prerequisites
+## Dashboard
+
+The Jetpack Compose dashboard reports:
+
+- device-wide CPU usage when Android permits `/proc/stat` access;
+- RAM usage, used/available memory, and total memory;
+- internal data-storage usage, used space, available space, and total space;
+- battery percentage, charging state, temperature, voltage, and reported health;
+- device name, model, manufacturer, Android release, SDK level, ABIs, and uptime;
+- active network transport, local IP address, and Wi-Fi link speed when exposed;
+- Android thermal pressure status on Android 10 (API 29) and newer.
+
+Values refresh every three seconds while the app is in the foreground. The
+monitor stops refreshing when the app is backgrounded. A manual refresh button
+is also available in the dashboard header.
+
+## Architecture
+
+This is a standalone Gradle project under `android/`, written in Kotlin with a
+state-driven Jetpack Compose UI. Platform reads are separated into collectors:
+
+```text
+app/src/main/java/com/hardwaremon/android/
+├── data/
+│   ├── TelemetryRepository.kt
+│   └── collectors/
+│       ├── CpuStatsCollector.kt
+│       ├── MemoryStatsCollector.kt
+│       ├── StorageStatsCollector.kt
+│       ├── BatteryStatsCollector.kt
+│       ├── NetworkStatsCollector.kt
+│       ├── ThermalStatsCollector.kt
+│       └── DeviceInfoCollector.kt
+├── model/TelemetryModels.kt
+├── ui/
+└── viewmodel/DashboardViewModel.kt
+```
+
+`DashboardViewModel` owns the foreground refresh loop and exposes immutable UI
+state. `TelemetryRepository` coordinates collectors off the main thread. The
+app requests only network-state and Wi-Fi-state access; it does not request the
+`INTERNET` permission and contains no HTTP client.
+
+## Build and run
+
+Requirements:
 
 - JDK 17 or newer
-- Android SDK with platform 36 and build tools installed
-- `ANDROID_HOME` or `ANDROID_SDK_ROOT` configured (Android Studio is optional)
-- A phone/emulator on the same network as the HardwareMon desktop
+- Android SDK platform 36 and its build tools
+- `ANDROID_HOME` or `ANDROID_SDK_ROOT` configured
 
-## Build from a terminal
+Open the `android/` directory as its own project in Android Studio, or build it
+from a terminal.
 
-From this `android/` directory:
-
-```sh
-./gradlew assembleDebug
-```
-
-On Windows PowerShell:
+Windows PowerShell:
 
 ```powershell
-.\gradlew.bat assembleDebug
+cd android
+.\gradlew.bat testDebugUnitTest lintDebug assembleDebug
 ```
 
-The APK is written to `app/build/outputs/apk/debug/app-debug.apk`.
+macOS/Linux:
 
-To install it on a connected device with Android platform tools:
+```sh
+cd android
+./gradlew testDebugUnitTest lintDebug assembleDebug
+```
+
+The debug APK is written to:
+
+```text
+android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+Install it on a connected device or emulator with:
 
 ```sh
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Open the `android/` directory itself if you later use Android Studio. It is a
-standalone Gradle project and does not depend on the Flutter desktop project.
+The repository's `Android Release` GitHub Actions workflow runs unit tests and
+release lint, injects the tag-derived version, builds and signs a release APK,
+verifies its certificate, and publishes both
+`HardwareMon-Android-<tag>.apk` and its SHA-256 checksum. Maintainers configure
+the signing material through `ANDROID_SIGNING_KEY_BASE64`,
+`ANDROID_KEY_ALIAS`, `ANDROID_KEYSTORE_PASSWORD`, and `ANDROID_KEY_PASSWORD`
+repository secrets.
 
-## GitHub release workflow
+## Android API limitations
 
-The `Android Companion Release` workflow builds the app without Android Studio,
-runs the debug unit tests, and uploads the resulting APK to a GitHub Release.
+HardwareMon reports only values the OS actually exposes. It shows
+**Unavailable** instead of estimating or inventing restricted metrics.
 
-For a tag release, create and push a semantic version tag:
+- Android has no public, universal API for whole-device CPU utilization.
+  HardwareMon samples Linux `/proc/stat` where readable. Some recent devices or
+  vendor builds restrict that file, so CPU usage may remain unavailable without
+  root. The app does not request root or substitute its own process usage.
+- Public thermal APIs expose a throttling/pressure category, not CPU, GPU, or
+  SoC sensor temperatures. Thermal status is unavailable before API 29. Battery
+  temperature is a separate value supplied by the battery service.
+- RAM "free" is Android's available memory (`ActivityManager.availMem`), which
+  includes memory the OS can reclaim. Android deliberately uses free RAM for
+  caches, so this is more useful than a raw unused-page count.
+- Storage figures describe the internal data filesystem visible to the app.
+  Adoptable storage, removable media, reserved blocks, and manufacturer system
+  partitions can make Settings report a different aggregate capacity.
+- Wi-Fi link speed is the negotiated link value reported by Android, not an
+  internet speed test. It and the local IP can be absent on some devices,
+  transports, VPNs, restricted profiles, or vendor implementations.
+- Battery health, voltage, and temperature depend on data supplied by the
+  device's battery driver and may be unavailable or coarsely reported.
 
-```sh
-git tag v0.1.0
-git push origin v0.1.0
-```
-
-Tags matching `v*.*.*` trigger the workflow automatically. The uploaded asset
-is named `HardwareMon-Companion-Android-debug-v0.1.0.apk` for that example.
-
-To run it manually:
-
-1. Open the repository's **Actions** tab on GitHub.
-2. Select **Android Companion Release**.
-3. Choose **Run workflow** and enter an existing release tag such as `v0.1.0`.
-
-Companion v0 uploads a debug APK for testing. It is not production/release
-signed; Gradle may apply its standard debug key so the APK can be installed on
-test devices. No signing secrets or Android Studio installation are required.
-
-TODO: add keystore-backed signing through GitHub Actions secrets and publish a
-signed release APK and/or Android App Bundle (`.aab`) for production delivery.
-
-## Test against a desktop
-
-1. Start the HardwareMon backend and make it listen on a LAN-accessible address,
-   not only `127.0.0.1`.
-2. Allow its port through the desktop firewall for private/local networks.
-3. Put the phone and desktop on the same network.
-4. Enter the full base URL, for example `http://192.168.1.249:8384`.
-5. Tap **Connect**. The app tests `GET /device/self`, then loads `GET /stats`.
-
-The example IP is UI placeholder text only. It is not used as a default or sent
-unless the user enters it.
-
-## Expected backend responses
-
-The identity endpoint should return at least one usable name. The preferred
-shape is:
-
-```json
-{ "name": "Gaming PC" }
-```
-
-For compatibility, the app also accepts `device_name` or `hostname`, with
-optional `platform`, `os`, and `version` fields. Unknown JSON fields are ignored.
-
-The current desktop `/stats` contract is expected to resemble:
-
-```json
-{
-  "cpu": 23,
-  "cpu_temp": 61,
-  "cpu_name": "Example CPU",
-  "ram": 48,
-  "ram_used": 15.3,
-  "ram_total": 31.8,
-  "gpu_usage": 37,
-  "gpu_temp": 58,
-  "gpu_name": "Example GPU"
-}
-```
-
-All telemetry fields are nullable in the Android model. Optional Windows/Linux
-sensor differences therefore do not fail the whole response. Missing or zero
-temperature sensors and an unknown GPU are omitted from the dashboard.
-
-## Local HTTP note
-
-Companion v0 permits cleartext HTTP because local HardwareMon backends commonly
-use a direct LAN URL. `INTERNET` permission and an explicit network security
-configuration are included. This is appropriate for local development, but a
-future authenticated or remote-access version should use HTTPS and revisit the
-cleartext policy.
+These limitations are intentional: the app stays permission-light, does not
+require root, and never claims access to metrics Android withheld.

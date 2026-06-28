@@ -7,15 +7,20 @@ plugins {
 }
 
 android {
-    namespace = "com.hardwaremon.companion"
+    namespace = "com.hardwaremon.android"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.hardwaremon.companion"
+        applicationId = "com.hardwaremon.android"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = providers.gradleProperty("hardwaremonVersionCode")
+            .orElse("1")
+            .get()
+            .toInt()
+        versionName = providers.gradleProperty("hardwaremonVersionName")
+            .orElse("0.1.0")
+            .get()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -72,12 +77,6 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
-
-    implementation("androidx.datastore:datastore-preferences:1.1.7")
-    implementation("com.squareup.retrofit2:retrofit:2.11.0")
-    implementation("com.squareup.retrofit2:converter-moshi:2.11.0")
-    implementation("com.squareup.moshi:moshi-kotlin:1.15.2")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")

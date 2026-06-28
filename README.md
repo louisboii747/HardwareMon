@@ -5,12 +5,12 @@
 </p>
 
 <p align="center">
-  <b>Modern cross-platform system monitoring for Linux, macOS and Windows.</b>
+  <b>Modern system monitoring for Android, Linux, macOS and Windows.</b>
 </p>
 
 <p align="center">
-  Real-time hardware analytics, historical analytics via SQLite, cinematic Flutter UI, native Linux packaging,
-  Windows installers, automated repositories, and bundled backend architecture.
+  Real-time hardware analytics, a native Android dashboard, historical analytics via SQLite, cinematic desktop UI,
+  native Linux packaging, Windows installers, automated repositories, and bundled desktop telemetry architecture.
 </p>
 
 <p align="center">
@@ -26,6 +26,7 @@
 
 <img src="https://img.shields.io/badge/Linux-supported-2bbc8a?logo=linux" alt="Linux">
 <img src="https://img.shields.io/badge/Windows-supported-0078D6?logo=windows" alt="Windows">
+<img src="https://img.shields.io/badge/Android-supported-3DDC84?logo=android&amp;logoColor=white" alt="Android">
 
 <img src="https://img.shields.io/badge/Flutter-desktop-02569B?logo=flutter" alt="Flutter">
 <img src="https://img.shields.io/badge/FastAPI-backend-009688?logo=fastapi" alt="FastAPI">
@@ -81,11 +82,12 @@
 
 ## What is HardwareMon?
 
-HardwareMon is a modern cross-platform system monitor for Linux, macOS and Windows built with Flutter and FastAPI.
+HardwareMon is a modern system monitor for Android, Linux, macOS and Windows. The desktop application uses Flutter and FastAPI, while Android has a native Kotlin and Jetpack Compose application that monitors the phone or tablet directly.
 
 It provides:
 
 - Real-time hardware telemetry
+- Native on-device Android telemetry
 - Historical analytics
 - Process monitoring and management
 - Native APT, DNF and WinGet distribution
@@ -105,9 +107,7 @@ It provides:
 - [Windows](#windows)
 - [Linux APT and DNF](#linux-installation)
 - [macOS](#macos-apple-silicon-only)
-- [Android Companion](#android-companion)
-- [Android Features](#android-features)
-- [Remote Monitoring](#remote-monitoring)
+- [Android](#android)
 - [Architecture](#modern-architecture)
 - [Updating HardwareMon](#updating)
 - [Development](#development)
@@ -136,11 +136,11 @@ Download the latest DMG from GitHub Releases.
 
 ### Android
 
-Download the latest HardwareMon Companion APK from GitHub Releases.
+Download the latest signed HardwareMon Android APK from GitHub Releases and install it on your phone or tablet.
 
-Pair it with your desktop over your local network to monitor your PC in real time.
+HardwareMon immediately displays telemetry for the Android device itself. No account, server, or setup flow is required.
 
-➡️ Learn more about the Android Companion below.
+➡️ [Learn more about HardwareMon for Android](#android).
 
 ---
 
@@ -169,6 +169,7 @@ Pair it with your desktop over your local network to monitor your PC in real tim
 * DNF repository support
 * Windows installer support
 * WinGet support
+* Signed Android APKs with SHA-256 checksums
 * GitHub Releases automation
 
 ---
@@ -223,7 +224,7 @@ HardwareMon now uses a unified Flutter frontend architecture across Linux and Wi
 | Flatpak         | ⚠️ Experimental | Flatpak         |
 | Arch Linux      | 🚧 Planned | AUR                  |
 | macOS           | ✅ Apple Silicon only  | DMG from Github Releases              |
-| Android      | 🚧 In Development | APK                  |
+| Android         | ✅ Supported | Signed APK from GitHub Releases |
 
 ---
 
@@ -336,45 +337,24 @@ There are plans to port the app over to the App Store on macOS. x64 versions for
 
 > Tested on Apple Silicon hardware. Intel Mac support is planned for a future release.
 
-# Android Companion
+# Android
 
-HardwareMon includes an Android companion application that connects to your desktop over your local network.
+HardwareMon for Android is a native, standalone monitor for the phone or tablet it runs on. It starts collecting local telemetry as soon as it opens and does not require an account, server, or root access.
 
-The companion provides live telemetry without requiring cloud services or external accounts.
+The dark Jetpack Compose dashboard provides:
 
-Simply pair your Android device with your desktop and monitor your system from anywhere on your home network.
+* Live CPU usage when the device exposes it
+* RAM usage with used, available, and total memory
+* Internal storage usage with used, available, and total capacity
+* Battery percentage, charging state, temperature, voltage, and health
+* Wi-Fi or mobile connection state, local IP, and Wi-Fi link speed when available
+* Android thermal-pressure status on supported versions
+* Model, manufacturer, Android version, SDK level, device name, ABIs, and uptime
+* Foreground-only live refreshes with clear unavailable states for restricted metrics
 
-# Android Features
+Android limits access to some low-level hardware information. HardwareMon reports only values exposed by public platform APIs or readable system interfaces; it does not estimate hidden sensor values. CPU utilization, thermal details, Wi-Fi information, and some battery fields can therefore be unavailable on particular Android versions or manufacturer builds.
 
-The Android companion includes:
-
-* Live CPU usage
-* Live RAM usage
-* GPU monitoring
-* CPU temperatures
-* Disk usage
-* Network activity
-* Device information
-* Real-time graphs
-* Secure local pairing
-* Automatic desktop discovery
-* Material 3 interface
-* Dark mode
-
-# Remote Monitoring
-
-HardwareMon uses a local-first architecture.
-
-The Android app communicates directly with your desktop over your LAN.
-
-Features include:
-
-* Automatic desktop discovery
-* Persistent trusted devices
-* Low-latency updates
-* No cloud account required
-* Private local communication
-* Future remote access support
+See [android/README.md](android/README.md) for architecture, build instructions, and a detailed API-limitations guide.
 
 
 # Updating
@@ -442,13 +422,13 @@ The backend is bundled directly with release builds and automatically launched b
 
 Built with modern Android technologies:
 
-* Native Android application
-* Material Design 3
-* Local device discovery
-* Persistent pairing
-* Real-time telemetry
-* WebSocket communication
-* Responsive tablet support
+* Kotlin and Jetpack Compose
+* Material 3-inspired HardwareMon dashboard
+* State-driven ViewModel architecture
+* Dedicated CPU, memory, storage, battery, network, thermal, and device collectors
+* Foreground-aware refresh scheduling
+* Permission-light, root-free local monitoring
+* Responsive phone and tablet layouts
 
 ---
 
@@ -473,6 +453,7 @@ HardwareMon uses automated GitHub Actions pipelines for:
 * Linux RPM packaging
 * Windows installer generation
 * WinGet publishing
+* Signed Android APK packaging and verification
 * GitHub Releases
 * Cloudflare Pages deployment
 * Repository metadata generation
@@ -532,12 +513,24 @@ uvicorn main:app --reload
 
 ---
 
+# Android Development
+
+Open the `android/` directory as a standalone project in Android Studio, or use JDK 17 and an Android SDK from the command line:
+
+```powershell
+cd android
+.\gradlew.bat testDebugUnitTest lintDebug assembleDebug
+```
+
+The APK is produced at `android/app/build/outputs/apk/debug/app-debug.apk` from the repository root. Full Android architecture and API-limit documentation lives in [android/README.md](android/README.md).
+
+---
+
 # Roadmap
 
 Planned future improvements include:
 
 
-* Remote monitoring support
 * System tray integration
 * Custom dashboard layouts
 * Plugin architecture
@@ -550,12 +543,11 @@ Planned improvements include:
 
 * Home screen widgets
 * Material You theming
-* Push notifications
-* Multiple desktop support
+* Configurable on-device alerts
 * Historical analytics
 * Wear OS support
 * Quick Settings tile
-* Background monitoring
+* Battery-conscious background sampling
 
 ---
 
@@ -567,6 +559,7 @@ The project is evolving into a modern cross-platform monitoring platform focused
 
 * performance
 * desktop experience
+* native Android monitoring
 * packaging automation
 * scalable architecture
 * cinematic UI design

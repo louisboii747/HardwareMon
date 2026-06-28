@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "HardwareMonCompanion"
+rootProject.name = "HardwareMonAndroid"
 include(":app")
