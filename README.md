@@ -105,6 +105,9 @@ It provides:
 - [Windows](#windows)
 - [Linux APT and DNF](#linux-installation)
 - [macOS](#macos-apple-silicon-only)
+- [Android Companion](#android-companion)
+- [Android Features](#android-features)
+- [Remote Monitoring](#remote-monitoring)
 - [Architecture](#modern-architecture)
 - [Updating HardwareMon](#updating)
 - [Development](#development)
@@ -131,6 +134,13 @@ Download the latest DMG from GitHub Releases.
 
 ➡️ [Learn more about HardwareMon on macOS](#macos-apple-silicon-only)
 
+### Android
+
+Download the latest HardwareMon Companion APK from GitHub Releases.
+
+Pair it with your desktop over your local network to monitor your PC in real time.
+
+➡️ Learn more about the Android Companion below.
 
 ---
 
@@ -212,7 +222,8 @@ HardwareMon now uses a unified Flutter frontend architecture across Linux and Wi
 | Fedora          | ✅ Supported | DNF                |
 | Flatpak         | ⚠️ Experimental | Flatpak         |
 | Arch Linux      | 🚧 Planned | AUR                  |
-| macOS           | ✅ macOS (Apple Silicon only)  | DMG from Github Releases              |
+| macOS           | ✅ Apple Silicon only  | DMG from Github Releases              |
+| Android      | 🚧 In Development | APK                  |
 
 ---
 
@@ -325,6 +336,47 @@ There are plans to port the app over to the App Store on macOS. x64 versions for
 
 > Tested on Apple Silicon hardware. Intel Mac support is planned for a future release.
 
+# Android Companion
+
+HardwareMon includes an Android companion application that connects to your desktop over your local network.
+
+The companion provides live telemetry without requiring cloud services or external accounts.
+
+Simply pair your Android device with your desktop and monitor your system from anywhere on your home network.
+
+# Android Features
+
+The Android companion includes:
+
+* Live CPU usage
+* Live RAM usage
+* GPU monitoring
+* CPU temperatures
+* Disk usage
+* Network activity
+* Device information
+* Real-time graphs
+* Secure local pairing
+* Automatic desktop discovery
+* Material 3 interface
+* Dark mode
+
+* # Remote Monitoring
+
+HardwareMon uses a local-first architecture.
+
+The Android app communicates directly with your desktop over your LAN.
+
+Features include:
+
+* Automatic desktop discovery
+* Persistent trusted devices
+* Low-latency updates
+* No cloud account required
+* Private local communication
+* Future remote access support
+
+
 # Updating
 
 ## Windows
@@ -385,6 +437,18 @@ Built using FastAPI and Python telemetry services:
 * JSON-based telemetry endpoints
 
 The backend is bundled directly with release builds and automatically launched by the Flutter application.
+
+## Android Layer
+
+Built with modern Android technologies:
+
+* Native Android application
+* Material Design 3
+* Local device discovery
+* Persistent pairing
+* Real-time telemetry
+* WebSocket communication
+* Responsive tablet support
 
 ---
 
@@ -479,6 +543,19 @@ Planned future improvements include:
 * Plugin architecture
 * Detachable analytics windows
 * Native macOS exploration
+
+## Android
+
+Planned improvements include:
+
+* Home screen widgets
+* Material You theming
+* Push notifications
+* Multiple desktop support
+* Historical analytics
+* Wear OS support
+* Quick Settings tile
+* Background monitoring
 
 ---
 
