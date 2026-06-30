@@ -84,6 +84,9 @@
 
 HardwareMon is a modern system monitor for Android, Linux, macOS and Windows. The desktop application uses Flutter and FastAPI, while Android has a native Kotlin and Jetpack Compose application that monitors the phone or tablet directly.
 
+HardwareMon processes monitoring and benchmark information locally. See the
+[Privacy Policy](PRIVACY.md) for details.
+
 It provides:
 
 - Real-time hardware telemetry
@@ -158,6 +161,31 @@ HardwareMon immediately displays telemetry for the Android device itself. No acc
 * Real-time metric history
 * Expandable monitoring cards
 * Immersive focus-mode analytics views
+
+---
+
+## Benchmark Mode
+
+HardwareMon includes a lightweight local benchmark for CPU single-thread and
+multi-thread performance, memory throughput, and temporary-file disk read/write
+performance. Runs happen in the background, can be cancelled, require no
+administrator or root privileges, and save comparison-ready results locally.
+
+Scores are HardwareMon benchmark scores and are not comparable with Geekbench,
+Cinebench, or other benchmark suites. Compare runs using the same benchmark
+version and similar conditions; thermals, power mode, battery state, and
+background activity can all affect results.
+
+Completed runs include an offline comparison view with percentile, matching
+hardware averages, ranking statistics, performance insights, and score charts.
+Comparisons can be filtered by identical CPU, CPU + GPU, CPU family, platform,
+or all version-compatible results stored locally.
+
+Online comparison is designed as an optional provider and is not connected in
+this release. HardwareMon never uploads a result automatically; after a run it
+asks for explicit anonymous-submission consent, and the application continues
+to work fully offline. The future cloud request/response and privacy contract is
+documented in [docs/benchmark-cloud-api.md](docs/benchmark-cloud-api.md).
 
 ---
 

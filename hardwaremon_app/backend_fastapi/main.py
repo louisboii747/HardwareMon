@@ -13,6 +13,7 @@ from lhm_launcher import start_lhm
 from database.logging_service import start_logging
 from routes.history import router as history_router
 from routes.optimization import router as optimization_router
+from routes.benchmark import router as benchmark_router
 
 
 BACKEND_VERSION = "1.1.0"
@@ -45,6 +46,7 @@ app.include_router(storage_router)
 app.include_router(processes_router)
 app.include_router(history_router)
 app.include_router(optimization_router)
+app.include_router(benchmark_router)
 
 
 @app.get("/")

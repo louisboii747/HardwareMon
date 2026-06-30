@@ -41,9 +41,11 @@ fun HardwareMonApp() {
     }
 
     HardwareMonTheme {
-        DashboardScreen(
-            state = state,
-            onRefresh = dashboardViewModel::refreshNow,
-        )
+        PrivacyNoticeHost {
+            DashboardScreen(
+                state = state,
+                onRefresh = dashboardViewModel::refreshNow,
+            )
+        }
     }
 }

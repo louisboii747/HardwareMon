@@ -19,12 +19,14 @@ import '../widgets/command_palette.dart';
 import '../widgets/system_pulse_background.dart';
 import '../widgets/telemetry_strip.dart';
 import '../widgets/telemetry_studio.dart';
+import '../widgets/startup_privacy_notice.dart';
 import 'pages/performance_page.dart';
 import 'pages/processes_page.dart';
 import 'pages/network_page.dart';
 import 'pages/storage_page.dart';
 import 'pages/optimization_page.dart';
 import 'pages/reliability_page.dart';
+import 'pages/benchmark_page.dart';
 import 'pages/customization_page.dart';
 import 'pages/settings_page.dart';
 import '../services/telemetry_service.dart';
@@ -86,6 +88,7 @@ class _ShellScreenState extends State<ShellScreen> {
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      StartupPrivacyNotice.show(context);
       final updateState = UpdateService.instance.state;
       if (updateState.stage == UpdateStage.complete ||
           updateState.stage == UpdateStage.failed) {
@@ -123,7 +126,7 @@ class _ShellScreenState extends State<ShellScreen> {
         break;
       case DesktopCommand.settings:
         Navigator.of(context).popUntil((route) => route.isFirst);
-        _selectPage(8);
+        _selectPage(9);
         break;
     }
   }
@@ -198,6 +201,7 @@ Disk: ${telemetry.diskUsage}%
     const shortcuts = [
       ('Command palette', 'Ctrl K'),
       ('Navigate pages', 'Alt 1–9'),
+      ('Open Benchmark', 'Alt B'),
       ('Refresh telemetry', 'F5 / Ctrl R'),
       ('Pause or resume', 'Ctrl P'),
       ('Reset session statistics', 'Ctrl Shift R'),
@@ -344,13 +348,31 @@ Disk: ${telemetry.diskUsage}%
         run: () => _selectPage(6),
       ),
       CommandPaletteAction(
+        id: 'benchmark',
+        title: 'Open Benchmark',
+        description: 'Run safe local CPU, memory, and disk performance tests',
+        section: 'Navigate',
+        shortcut: 'Alt B',
+        icon: Icons.speed_rounded,
+        selected: selectedIndex == 7,
+        keywords: const [
+          'score',
+          'performance',
+          'cpu',
+          'memory',
+          'disk',
+          'test',
+        ],
+        run: () => _selectPage(7),
+      ),
+      CommandPaletteAction(
         id: 'customization',
         title: 'Open Customization',
         description: 'Personalize layouts, themes, motion, and profiles',
         section: 'Navigate',
         shortcut: 'Alt 8',
         icon: Icons.palette_rounded,
-        selected: selectedIndex == 7,
+        selected: selectedIndex == 8,
         keywords: const [
           'theme',
           'accent',
@@ -359,7 +381,7 @@ Disk: ${telemetry.diskUsage}%
           'profile',
           'widgets',
         ],
-        run: () => _selectPage(7),
+        run: () => _selectPage(8),
       ),
       CommandPaletteAction(
         id: 'settings',
@@ -368,9 +390,9 @@ Disk: ${telemetry.diskUsage}%
         section: 'Navigate',
         shortcut: 'Alt 9',
         icon: Icons.settings_rounded,
-        selected: selectedIndex == 8,
+        selected: selectedIndex == 9,
         keywords: const ['preferences', 'configure'],
-        run: () => _selectPage(8),
+        run: () => _selectPage(9),
       ),
       for (final workspace in DashboardWorkspace.values)
         CommandPaletteAction(
@@ -753,6 +775,9 @@ Disk: ${telemetry.diskUsage}%
         );
 
       case 7:
+        return const BenchmarkPage();
+
+      case 8:
         return CustomizationPage(
           telemetry: telemetry,
           chartPreferences: chartPreferences,
@@ -760,7 +785,7 @@ Disk: ${telemetry.diskUsage}%
           customizationPreferences: customizationPreferences,
         );
 
-      case 8:
+      case 9:
         return SettingsPage(
           telemetry: telemetry,
           chartPreferences: chartPreferences,
@@ -898,9 +923,11 @@ Disk: ${telemetry.diskUsage}%
         const SingleActivator(LogicalKeyboardKey.digit7, alt: true): () =>
             _selectPage(6),
         const SingleActivator(LogicalKeyboardKey.digit8, alt: true): () =>
-            _selectPage(7),
-        const SingleActivator(LogicalKeyboardKey.digit9, alt: true): () =>
             _selectPage(8),
+        const SingleActivator(LogicalKeyboardKey.digit9, alt: true): () =>
+            _selectPage(9),
+        const SingleActivator(LogicalKeyboardKey.keyB, alt: true): () =>
+            _selectPage(7),
         const SingleActivator(LogicalKeyboardKey.keyK, control: true):
             _showCommandPalette,
         const SingleActivator(
@@ -929,7 +956,7 @@ Disk: ${telemetry.diskUsage}%
           shift: true,
         ): _copySystemSnapshot,
         const SingleActivator(LogicalKeyboardKey.comma, control: true): () =>
-            _selectPage(8),
+            _selectPage(9),
       },
       child: Focus(
         autofocus: true,
@@ -1123,11 +1150,31 @@ Disk: ${telemetry.diskUsage}%
                                         const SizedBox(height: 12),
 
                                         _DockItem(
+                                          icon: Icons.speed_rounded,
+                                          label: 'Benchmark',
+                                          shortcut: 'Alt+B',
+                                          active: selectedIndex == 7,
+                                          onTap: () => _selectPage(7),
+                                          showLabel:
+                                              customizationPreferences
+                                                  .showSidebarLabels ||
+                                              customizationPreferences
+                                                      .sidebarMode ==
+                                                  SidebarMode.expanded,
+                                          iconSize: customizationPreferences
+                                              .sidebarIconSize,
+                                          hoverEffects: customizationPreferences
+                                              .hoverEffects,
+                                        ),
+
+                                        const SizedBox(height: 12),
+
+                                        _DockItem(
                                           icon: Icons.palette_rounded,
                                           label: 'Customization',
                                           shortcut: 'Alt+8',
-                                          active: selectedIndex == 7,
-                                          onTap: () => _selectPage(7),
+                                          active: selectedIndex == 8,
+                                          onTap: () => _selectPage(8),
                                           showLabel:
                                               customizationPreferences
                                                   .showSidebarLabels ||
@@ -1146,8 +1193,8 @@ Disk: ${telemetry.diskUsage}%
                                           icon: Icons.settings_rounded,
                                           label: 'Settings',
                                           shortcut: 'Alt+9',
-                                          active: selectedIndex == 8,
-                                          onTap: () => _selectPage(8),
+                                          active: selectedIndex == 9,
+                                          onTap: () => _selectPage(9),
                                           showLabel:
                                               customizationPreferences
                                                   .showSidebarLabels ||

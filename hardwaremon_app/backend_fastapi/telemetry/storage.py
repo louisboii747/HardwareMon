@@ -115,6 +115,7 @@ $physical = Get-PhysicalDisk -ErrorAction SilentlyContinue | ForEach-Object {
     model = $_.FriendlyName
     health_status = [string]$_.HealthStatus
     interface_type = [string]$_.BusType
+    media_type = [string]$_.MediaType
     temperature = $counter.Temperature
   }
 }
@@ -150,6 +151,7 @@ $physical = Get-PhysicalDisk -ErrorAction SilentlyContinue | ForEach-Object {
         item["interface_type"] = (
             physical.get("interface_type") or item.get("interface_type")
         )
+        item["media_type"] = physical.get("media_type")
         item["model"] = physical.get("model") or item.get("model")
         item["serial"] = physical.get("serial") or item.get("serial")
         result[os.path.normcase(mount)] = item
@@ -162,7 +164,7 @@ def _flatten_lsblk(nodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
     def visit(node: dict[str, Any], parent: dict[str, Any] | None = None) -> None:
         merged = dict(node)
         if parent is not None:
-            for key in ("model", "serial", "tran", "path", "kname"):
+            for key in ("model", "serial", "tran", "path", "kname", "rota"):
                 if not merged.get(key):
                     merged[key] = parent.get(key)
             merged["_physical_kname"] = (
@@ -215,7 +217,7 @@ def _linux_metadata() -> dict[str, dict[str, Any]]:
                 "-J",
                 "-b",
                 "-o",
-                "NAME,KNAME,PATH,PKNAME,MOUNTPOINTS,FSTYPE,LABEL,MODEL,SERIAL,TRAN,TYPE,SIZE",
+                "NAME,KNAME,PATH,PKNAME,MOUNTPOINTS,FSTYPE,LABEL,MODEL,SERIAL,TRAN,ROTA,TYPE,SIZE",
             ],
             timeout=8,
         )
@@ -245,6 +247,7 @@ def _linux_metadata() -> dict[str, dict[str, Any]]:
                 "model": smart.get("model") or item.get("model"),
                 "serial": smart.get("serial") or item.get("serial"),
                 "interface_type": smart.get("interface_type") or item.get("tran"),
+                "rotational": item.get("rota"),
                 "io_key": item.get("_physical_kname") or item.get("kname"),
                 "health_status": smart.get("smart_status"),
                 "smart_status": smart.get("smart_status"),
@@ -427,6 +430,10 @@ def collect_storage_stats() -> dict[str, Any]:
                 "interface_type": (
                     str(details.get("interface_type") or "").strip() or "Unavailable"
                 ),
+                "media_type": (
+                    str(details.get("media_type") or "").strip() or None
+                ),
+                "rotational": details.get("rotational"),
                 "total_bytes": int(usage.total),
                 "used_bytes": int(usage.used),
                 "free_bytes": int(usage.free),
