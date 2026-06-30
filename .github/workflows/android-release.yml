@@ -38,7 +38,7 @@ jobs:
           java-version: "17"
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v5
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Validate release tag
         shell: bash
@@ -100,7 +100,7 @@ jobs:
           rm -f "$KEYSTORE_PATH"
 
       - name: Upload packaged APK to workflow run
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: HardwareMon-Android-${{ env.RELEASE_TAG }}
           path: |

@@ -57,7 +57,7 @@ jobs:
         run: flutter build macos --release --build-name "${{ env.VERSION }}"
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
@@ -155,7 +155,7 @@ jobs:
           shasum -a 256 "${{ env.DMG_NAME }}" > "${{ env.DMG_NAME }}.sha256"
 
       - name: Upload workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: HardwareMon-macOS-DMG
           path: |
@@ -164,7 +164,7 @@ jobs:
 
       - name: Upload DMG to GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             dist/*.dmg
