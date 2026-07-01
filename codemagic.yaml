@@ -22,7 +22,6 @@ workflows:
     # policy used by the other release pipelines.
     environment:
       groups:
-        - macos_credentials
         - github_credentials
       vars:
         APP_NAME: HardwareMon
