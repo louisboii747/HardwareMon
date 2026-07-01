@@ -77,39 +77,18 @@ jobs:
           [[ "$HAS_APPLE_PASSWORD" == "true" ]] || missing+=(APPLE_APP_SPECIFIC_PASSWORD)
           [[ "$HAS_APPLE_TEAM_ID" == "true" ]] || missing+=(APPLE_TEAM_ID)
 
-          if [[ "$TAG_BUILD" == "true" && ${#missing[@]} -ne 0 ]]; then
-            echo "Public macOS tag releases must be Developer ID signed and notarized." >&2
-            echo "Configure these missing GitHub Actions secrets:" >&2
-            printf '  - %s\n' "${missing[@]}" >&2
-            echo "Use workflow_dispatch for an ad-hoc developer build without Apple credentials." >&2
-            exit 1
-          fi
-
-          if [[ "$HAS_CERTIFICATE" == "true" \
-                && "$HAS_CERTIFICATE_PASSWORD" == "true" \
-                && "$HAS_KEYCHAIN_PASSWORD" == "true" \
-                && "$HAS_SIGNING_IDENTITY" == "true" ]]; then
+          if [[ ${#missing[@]} -eq 0 ]]; then
             SIGNED_MODE=true
-            RELEASE_MODE=developer-id
-          else
-            SIGNED_MODE=false
-            RELEASE_MODE=unsigned-developer
-            echo "::warning::Complete Developer ID secrets are not configured; this manual build will use an ad-hoc signature."
-          fi
-
-          if [[ "$SIGNED_MODE" == "true" \
-                && "$HAS_APPLE_ID" == "true" \
-                && "$HAS_APPLE_PASSWORD" == "true" \
-                && "$HAS_APPLE_TEAM_ID" == "true" ]]; then
             NOTARIZE_MODE=true
             RELEASE_MODE=developer-id-notarized
+            echo "Complete Apple credentials detected; enabling Developer ID signing and notarization."
           else
+            SIGNED_MODE=false
             NOTARIZE_MODE=false
-            if [[ "$HAS_APPLE_ID" == "true" \
-                  || "$HAS_APPLE_PASSWORD" == "true" \
-                  || "$HAS_APPLE_TEAM_ID" == "true" ]]; then
-              echo "::warning::Notarization credentials are incomplete or Developer ID signing is unavailable; notarization will be skipped."
-            fi
+            RELEASE_MODE=unsigned-developer
+            echo "::warning::Apple Developer credentials are not fully configured. Continuing with an ad-hoc-signed macOS build."
+            echo "::warning::Configure these secrets to enable trusted signing and notarization:"
+            printf '::warning::  - %s\n' "${missing[@]}"
           fi
 
           {

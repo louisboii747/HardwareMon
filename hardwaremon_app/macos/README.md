@@ -64,20 +64,20 @@ Or on Windows PowerShell:
 ) | Set-Clipboard
 ```
 
-## Tag releases versus manual builds
+## Signed and unsigned release modes
 
-Public tag builds are strict. A `v*.*.*` tag fails near the start of the job if
-any required signing or notarization secret is missing, and the log lists the
-missing secret names. A public DMG is therefore never accidentally published
-with an ad-hoc signature or without notarization.
+Tag and manual builds automatically select one of two modes:
 
-Manual `workflow_dispatch` builds are more flexible:
+- When all seven Apple secrets are configured, the app and DMG receive
+  Developer ID signatures, notarization, and stapled tickets.
+- Until an Apple Developer certificate is available, the workflow continues
+  with ad-hoc signing. The backend is embedded before signing and the bundle
+  still passes strict code-seal validation, but it does not establish a trusted
+  developer identity.
 
-- With all Developer ID secrets, the app and DMG are Developer ID signed.
-- With all Apple credentials as well, the app and DMG are notarized and stapled.
-- Without complete signing secrets, the bundle is re-signed ad hoc after the
-  backend is embedded. It still passes strict code-seal validation, but it does
-  not establish a trusted developer identity and is intended only for testing.
+Unsigned tag builds are still uploaded to the matching GitHub Release and are
+clearly named `HardwareMon-macOS-unsigned-developer` in Actions artifacts. The
+DMG also contains `UNSIGNED-DEVELOPER-BUILD.md` explaining the limitation.
 
 An internet-downloaded ad-hoc build will not satisfy Gatekeeper. After checking
 its workflow origin and SHA-256 checksum, a developer may remove quarantine for
@@ -87,14 +87,16 @@ local testing:
 xattr -dr com.apple.quarantine /Applications/HardwareMon.app
 ```
 
-Normal users should only receive the signed and notarized tag release.
+Once the Apple secrets are added, no workflow edit is needed: future builds
+automatically switch to signed and notarized release mode.
 
 ## Testing the next release
 
 1. Run the workflow manually first. Download the DMG artifact and confirm it
    mounts, shows the HardwareMon icon, launches on Apple Silicon, and connects
    to its bundled telemetry backend.
-2. Confirm all seven secrets above are present.
+2. If testing trusted distribution, confirm all seven secrets above are present.
+   Otherwise expect the workflow warning and unsigned artifact label.
 3. Create and push the next semantic version tag:
 
    ```bash

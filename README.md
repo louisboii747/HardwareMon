@@ -477,9 +477,10 @@ Any remaining issues, references, or deprecated code related to these legacy sys
 
 HardwareMon uses a dedicated GitHub Actions workflow for macOS release builds.
 Tags matching `v*.*.*` build the Flutter app and bundled FastAPI helper on a
-GitHub-hosted Mac, validate nested signatures, notarize and staple the release,
-create and verify the DMG, and upload it to the matching GitHub Release. The
-same workflow can be run manually with ad-hoc signing for testing. See the
+GitHub-hosted Mac, validate nested signatures, create and verify the DMG, and
+upload it to the matching GitHub Release. Builds automatically use Developer ID
+signing and notarization when all Apple secrets exist, or clearly labeled
+ad-hoc signing until a certificate is available. See the
 [macOS release guide](hardwaremon_app/macos/README.md) for credential setup and
 unsigned-build behavior.
 
