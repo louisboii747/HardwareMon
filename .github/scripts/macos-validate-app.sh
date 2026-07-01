@@ -65,7 +65,9 @@ while IFS= read -r -d '' candidate; do
         @*|/System/*|/usr/lib/*) ;;
         *) fail "$candidate links to non-system absolute path $dependency" ;;
       esac
-    done < <(otool -L "$candidate" | sed '1d' | awk '{print $1}')
+    # Universal Mach-O output contains one non-indented header per architecture.
+    # Only indented rows are linked-library entries.
+    done < <(otool -L "$candidate" | awk '/^[[:space:]]/ {print $1}')
   fi
 done < <(find "$APP_BUNDLE/Contents" -type f -print0)
 
