@@ -51,39 +51,25 @@ jobs:
           echo "BUILD_NUMBER=$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
           echo "DMG_NAME=HardwareMon-macOS-$VERSION.dmg" >> "$GITHUB_ENV"
 
-      - name: Validate release credential mode
+      - name: Select release credential mode
         shell: bash
         run: |
           set -euo pipefail
 
-          if [[ "$HAS_ANY_MACOS_SIGNING" == "true" && "$HAS_MACOS_SIGNING" != "true" ]]; then
-            echo "The macOS signing secrets are only partially configured." >&2
-            exit 1
-          fi
-          if [[ "$HAS_ANY_MACOS_NOTARIZATION" == "true" && "$HAS_MACOS_NOTARIZATION" != "true" ]]; then
-            echo "The macOS notarization secrets are only partially configured." >&2
-            exit 1
-          fi
-          if [[ "$HAS_MACOS_SIGNING" == "true" && "$HAS_MACOS_NOTARIZATION" != "true" ]]; then
-            echo "A signed release also requires complete notarization credentials." >&2
-            exit 1
-          fi
-          if [[ "$HAS_MACOS_NOTARIZATION" == "true" && "$HAS_MACOS_SIGNING" != "true" ]]; then
-            echo "Notarization requires a complete Developer ID signing configuration." >&2
-            exit 1
-          fi
-          if [[ "${GITHUB_REF}" == refs/tags/* && "$HAS_MACOS_SIGNING" != "true" ]]; then
-            echo "Refusing to publish an unsigned macOS tag release." >&2
-            exit 1
-          fi
-
-          if [[ "$HAS_MACOS_SIGNING" == "true" ]]; then
+          if [[ "$HAS_MACOS_SIGNING" == "true" && "$HAS_MACOS_NOTARIZATION" == "true" ]]; then
             echo "RELEASE_MODE=signed" >> "$GITHUB_ENV"
             echo "SIGNED_MODE=true" >> "$GITHUB_ENV"
           else
             echo "RELEASE_MODE=unsigned-developer" >> "$GITHUB_ENV"
             echo "SIGNED_MODE=false" >> "$GITHUB_ENV"
-            echo "This manual run will produce an ad-hoc signed developer artifact."
+            echo "::warning::Apple Developer ID signing/notarization is not fully configured. Continuing with an ad-hoc-signed macOS build."
+
+            if [[ "$HAS_ANY_MACOS_SIGNING" == "true" && "$HAS_MACOS_SIGNING" != "true" ]]; then
+              echo "::warning::Some macOS signing secrets are present, but the set is incomplete; paid signing will be skipped."
+            fi
+            if [[ "$HAS_ANY_MACOS_NOTARIZATION" == "true" && "$HAS_MACOS_NOTARIZATION" != "true" ]]; then
+              echo "::warning::Some macOS notarization secrets are present, but the set is incomplete; notarization will be skipped."
+            fi
           fi
 
       - name: Setup Flutter
@@ -135,7 +121,7 @@ jobs:
           chmod 755 "$BACKEND_DESTINATION/Contents/MacOS/backend"
 
       - name: Import Developer ID certificate
-        if: env.HAS_MACOS_SIGNING == 'true'
+        if: env.SIGNED_MODE == 'true'
         env:
           MACOS_CERTIFICATE_BASE64: ${{ secrets.MACOS_CERTIFICATE_BASE64 }}
           MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
@@ -184,7 +170,7 @@ jobs:
             "$SIGNED_MODE"
 
       - name: Notarize and staple app bundle
-        if: env.HAS_MACOS_NOTARIZATION == 'true'
+        if: env.SIGNED_MODE == 'true'
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
@@ -256,7 +242,7 @@ jobs:
             "dist/${{ env.DMG_NAME }}"
 
       - name: Sign DMG
-        if: env.HAS_MACOS_SIGNING == 'true'
+        if: env.SIGNED_MODE == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -266,7 +252,7 @@ jobs:
           codesign --verify --strict --verbose=4 "dist/${{ env.DMG_NAME }}"
 
       - name: Notarize and staple DMG
-        if: env.HAS_MACOS_NOTARIZATION == 'true'
+        if: env.SIGNED_MODE == 'true'
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
@@ -303,7 +289,7 @@ jobs:
             dist/*.sha256
 
       - name: Upload DMG to GitHub Release
-        if: startsWith(github.ref, 'refs/tags/') && env.HAS_MACOS_SIGNING == 'true' && env.HAS_MACOS_NOTARIZATION == 'true'
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v3
         with:
           files: |
@@ -311,6 +297,6 @@ jobs:
             dist/*.sha256
 
       - name: Remove temporary signing keychain
-        if: always() && env.HAS_MACOS_SIGNING == 'true'
+        if: always() && env.SIGNED_MODE == 'true'
         shell: bash
         run: security delete-keychain "$RUNNER_TEMP/app-signing.keychain-db" || true
