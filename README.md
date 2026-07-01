@@ -475,14 +475,22 @@ Any remaining issues, references, or deprecated code related to these legacy sys
 
 # CI/CD Infrastructure
 
-HardwareMon uses automated GitHub Actions pipelines for:
+HardwareMon uses Codemagic exclusively for macOS release builds. Tag pushes
+matching `v*` build the Flutter app and bundled FastAPI helper on Apple Silicon,
+validate nested signatures, optionally notarize and staple the release, create
+and verify the DMG, and upload it to the matching GitHub Release. The same
+workflow can be run manually without publishing. See the
+[macOS release guide](hardwaremon_app/macos/README.md) for credential setup and
+unsigned-build behavior.
+
+The existing GitHub Actions pipelines continue to handle:
 
 * Linux DEB packaging
 * Linux RPM packaging
 * Windows installer generation
 * WinGet publishing
 * Signed Android APK packaging and verification
-* GitHub Releases
+* Non-macOS GitHub Release assets
 * Cloudflare Pages deployment
 * Repository metadata generation
 
@@ -492,6 +500,7 @@ Technologies used include:
 * FastAPI
 * PyInstaller
 * GitHub Actions
+* Codemagic
 * nfpm
 * Cloudflare Pages
 
