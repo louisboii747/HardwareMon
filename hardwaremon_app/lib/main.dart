@@ -99,8 +99,7 @@ String getBackendExecutable() {
   }
 
   if (Platform.isMacOS) {
-    final macBackend =
-        '$exeDir/../Helpers/HardwareMonBackend.app/Contents/MacOS/backend';
+    final macBackend = '$exeDir/../Helpers/backend';
 
     logBackend('macOS executable dir: $exeDir');
     logBackend('macOS backend path: $macBackend');

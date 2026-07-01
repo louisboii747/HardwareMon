@@ -475,11 +475,11 @@ Any remaining issues, references, or deprecated code related to these legacy sys
 
 # CI/CD Infrastructure
 
-HardwareMon uses Codemagic exclusively for macOS release builds. Tag pushes
-matching `v*` build the Flutter app and bundled FastAPI helper on Apple Silicon,
-validate nested signatures, optionally notarize and staple the release, create
-and verify the DMG, and upload it to the matching GitHub Release. The same
-workflow can be run manually without publishing. See the
+HardwareMon uses a dedicated GitHub Actions workflow for macOS release builds.
+Tags matching `v*.*.*` build the Flutter app and bundled FastAPI helper on a
+GitHub-hosted Mac, validate nested signatures, notarize and staple the release,
+create and verify the DMG, and upload it to the matching GitHub Release. The
+same workflow can be run manually with ad-hoc signing for testing. See the
 [macOS release guide](hardwaremon_app/macos/README.md) for credential setup and
 unsigned-build behavior.
 
@@ -500,7 +500,6 @@ Technologies used include:
 * FastAPI
 * PyInstaller
 * GitHub Actions
-* Codemagic
 * nfpm
 * Cloudflare Pages
 

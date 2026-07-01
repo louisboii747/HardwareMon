@@ -2,8 +2,8 @@
 
 set -euo pipefail
 
-DMG_PATH=${1:?Usage: macos-validate-dmg.sh DMG_PATH SIGNED_MODE}
-SIGNED_MODE=${2:?SIGNED_MODE must be true or false}
+DMG_PATH=${1:?Usage: macos-validate-dmg.sh DMG_PATH GATEKEEPER_REQUIRED}
+GATEKEEPER_REQUIRED=${2:?GATEKEEPER_REQUIRED must be true or false}
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 MOUNT_POINT=$(mktemp -d)
 
@@ -15,7 +15,7 @@ trap cleanup EXIT
 
 hdiutil verify "$DMG_PATH"
 
-if [[ "$SIGNED_MODE" == "true" ]]; then
+if [[ "$GATEKEEPER_REQUIRED" == "true" ]]; then
   codesign --verify --strict --verbose=4 "$DMG_PATH"
   spctl --assess --type open --context context:primary-signature \
     --verbose=4 "$DMG_PATH"
@@ -33,5 +33,4 @@ hdiutil attach "$DMG_PATH" -readonly -nobrowse -mountpoint "$MOUNT_POINT"
 
 "$SCRIPT_DIR/macos-validate-app.sh" \
   "$MOUNT_POINT/HardwareMon.app" \
-  "$SIGNED_MODE"
-
+  "$GATEKEEPER_REQUIRED"
