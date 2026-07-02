@@ -9,7 +9,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.hardwaremon.android.ui.screens.DashboardScreen
+import com.hardwaremon.android.ui.screens.HardwareMonHome
 import com.hardwaremon.android.ui.theme.HardwareMonTheme
 import com.hardwaremon.android.viewmodel.DashboardViewModel
 
@@ -42,9 +42,15 @@ fun HardwareMonApp() {
 
     HardwareMonTheme {
         PrivacyNoticeHost {
-            DashboardScreen(
+            HardwareMonHome(
                 state = state,
                 onRefresh = dashboardViewModel::refreshNow,
+                onPausedChange = dashboardViewModel::setPaused,
+                onLensChange = dashboardViewModel::setMonitoringLens,
+                onCaptureSession = dashboardViewModel::captureSession,
+                onRemoveSession = dashboardViewModel::removeSession,
+                onWatchSettingsChange = dashboardViewModel::updateWatchSettings,
+                onClearWatchEvents = dashboardViewModel::clearWatchEvents,
             )
         }
     }

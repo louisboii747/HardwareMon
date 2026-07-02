@@ -12,6 +12,7 @@ import '../utils/time_axis.dart';
 import 'glass_panel.dart';
 import 'metric_alert_action.dart';
 import 'smooth_telemetry_series.dart';
+import 'rolling_metric_text.dart';
 
 class MetricCard extends StatefulWidget {
   final String title;
@@ -220,6 +221,8 @@ class _MetricCardState extends State<MetricCard> {
                           tag: widget.title,
                           child: GlassPanel(
                             padding: EdgeInsets.all(panelPadding),
+                            glowColor: widget.accent,
+                            interactive: widget.hoverEffects,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -460,8 +463,8 @@ class _MetricCardState extends State<MetricCard> {
 
                                 SizedBox(height: compact ? 2 : 4),
 
-                                Text(
-                                  widget.value,
+                                RollingMetricText(
+                                  value: widget.value,
                                   style: TextStyle(
                                     fontSize: valueSize,
                                     fontWeight: FontWeight.w700,

@@ -70,7 +70,7 @@ fun DashboardScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .safeDrawingPadding(),
-            contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 14.dp, bottom = 32.dp),
+            contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 14.dp, bottom = 118.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             item { DashboardHeader(state, onRefresh) }

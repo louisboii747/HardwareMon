@@ -8,11 +8,15 @@ import '../models/chart_preferences.dart';
 import '../models/dashboard_preferences.dart';
 import '../models/customization_preferences.dart';
 import '../models/telemetry_sample.dart';
+import '../models/telemetry_insights.dart';
+import '../models/monitoring_lens.dart';
+import '../models/session_journal.dart';
 import '../../services/update_prompt_service.dart';
 import '../../services/update_service.dart';
 import '../utils/telemetry_chart.dart';
 import '../services/desktop_integration_service.dart';
 import '../widgets/glass_panel.dart';
+import '../widgets/hardware_skeleton.dart';
 import '../widgets/metric_card.dart';
 import '../widgets/metric_alert_action.dart';
 import '../widgets/command_palette.dart';
@@ -20,6 +24,8 @@ import '../widgets/system_pulse_background.dart';
 import '../widgets/telemetry_strip.dart';
 import '../widgets/telemetry_studio.dart';
 import '../widgets/startup_privacy_notice.dart';
+import '../widgets/system_intelligence_hero.dart';
+import '../widgets/session_journal_dialog.dart';
 import 'pages/performance_page.dart';
 import 'pages/processes_page.dart';
 import 'pages/network_page.dart';
@@ -31,6 +37,7 @@ import 'pages/customization_page.dart';
 import 'pages/settings_page.dart';
 import '../services/telemetry_service.dart';
 import '../core/theme/app_colors.dart';
+import '../core/theme/hardware_palette.dart';
 
 class ShellScreen extends StatefulWidget {
   const ShellScreen({super.key});
@@ -44,6 +51,8 @@ class _ShellScreenState extends State<ShellScreen> {
   late ChartPreferences chartPreferences;
   late DashboardPreferences dashboardPreferences;
   late CustomizationPreferences customizationPreferences;
+  late MonitoringLensPreferences monitoringLensPreferences;
+  late SessionJournal sessionJournal;
   StreamSubscription<DesktopCommand>? _desktopCommandSubscription;
 
   int selectedIndex = 0;
@@ -57,11 +66,15 @@ class _ShellScreenState extends State<ShellScreen> {
     chartPreferences = ChartPreferences();
     dashboardPreferences = DashboardPreferences();
     customizationPreferences = CustomizationPreferences();
+    monitoringLensPreferences = MonitoringLensPreferences();
+    sessionJournal = SessionJournal();
 
     telemetry.start();
     chartPreferences.load();
     dashboardPreferences.load();
     customizationPreferences.load();
+    monitoringLensPreferences.load();
+    sessionJournal.load();
     DesktopIntegrationService.instance.attachTelemetry(telemetry);
     _desktopCommandSubscription = DesktopIntegrationService.instance.commands
         .listen(_handleDesktopCommand);
@@ -86,6 +99,12 @@ class _ShellScreenState extends State<ShellScreen> {
         setState(() {});
       }
     });
+    monitoringLensPreferences.addListener(() {
+      if (mounted) setState(() {});
+    });
+    sessionJournal.addListener(() {
+      if (mounted) setState(() {});
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       StartupPrivacyNotice.show(context);
@@ -107,6 +126,8 @@ class _ShellScreenState extends State<ShellScreen> {
     chartPreferences.dispose();
     dashboardPreferences.dispose();
     customizationPreferences.dispose();
+    monitoringLensPreferences.dispose();
+    sessionJournal.dispose();
     super.dispose();
   }
 
@@ -195,6 +216,65 @@ Disk: ${telemetry.diskUsage}%
         duration: Duration(seconds: 2),
       ),
     );
+  }
+
+  Future<void> _captureSessionSnapshot(SystemHealthProfile profile) async {
+    await sessionJournal.capture(
+      profile: profile,
+      lens: monitoringLensPreferences.lens,
+      cpuUsage: telemetry.cpuUsage,
+      ramUsage: telemetry.ramUsage,
+      gpuUsage: telemetry.gpuUsage,
+      cpuTemperature: telemetry.cpuTemp,
+      gpuTemperature: telemetry.gpuTemp,
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Session saved · ${profile.overallScore}/100 · ${monitoringLensPreferences.lens.label}',
+        ),
+        action: SnackBarAction(
+          label: 'Open journal',
+          onPressed: () => showSessionJournalDialog(
+            context: context,
+            journal: sessionJournal,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _captureCurrentSessionSnapshot() {
+    final summary = buildTelemetrySessionSummary(
+      cpuUsage: telemetry.cpuUsage,
+      ramUsage: telemetry.ramUsage,
+      gpuUsage: telemetry.gpuUsage,
+      cpuTemperature: telemetry.cpuTemp,
+      gpuTemperature: telemetry.gpuTemp,
+      cpuHistory: telemetry.cpuHistory,
+      ramHistory: telemetry.ramHistory,
+      gpuHistory: telemetry.gpuUsageHistory,
+      cpuTemperatureHistory: telemetry.cpuTempHistory,
+      gpuTemperatureHistory: telemetry.gpuTempHistory,
+      since: telemetry.sessionStatisticsStartedAt,
+      paused: telemetry.isPaused,
+      lastError: telemetry.lastError,
+    );
+    final profile = buildSystemHealthProfile(
+      summary: summary,
+      cpuUsage: telemetry.cpuUsage,
+      ramUsage: telemetry.ramUsage,
+      gpuUsage: telemetry.gpuUsage,
+      cpuTemperature: telemetry.cpuTemp,
+      gpuTemperature: telemetry.gpuTemp,
+      cpuPower: telemetry.cpuPower,
+      gpuPower: telemetry.gpuPower,
+      lens: monitoringLensPreferences.lens,
+      paused: telemetry.isPaused,
+      hasError: telemetry.lastError != null,
+    );
+    return _captureSessionSnapshot(profile);
   }
 
   Future<void> _showKeyboardShortcuts() {
@@ -413,6 +493,17 @@ Disk: ${telemetry.diskUsage}%
             return _applyDashboardWorkspace(workspace);
           },
         ),
+      for (final lens in MonitoringLens.values)
+        CommandPaletteAction(
+          id: 'monitoring-lens-${lens.name}',
+          title: 'Use ${lens.label} Monitoring Lens',
+          description: lens.description,
+          section: 'Monitoring lens',
+          icon: Icons.filter_center_focus_rounded,
+          selected: monitoringLensPreferences.lens == lens,
+          keywords: const ['health', 'score', 'focus', 'interpretation'],
+          run: () => monitoringLensPreferences.setLens(lens),
+        ),
       CommandPaletteAction(
         id: 'studio',
         title: 'Launch Telemetry Studio',
@@ -466,6 +557,25 @@ Disk: ${telemetry.diskUsage}%
         icon: Icons.content_copy_rounded,
         keywords: const ['clipboard', 'share', 'diagnostic'],
         run: _copySystemSnapshot,
+      ),
+      CommandPaletteAction(
+        id: 'save-session-snapshot',
+        title: 'Save Session Snapshot',
+        description: 'Capture the current health score and metrics locally',
+        section: 'Quick actions',
+        icon: Icons.bookmark_add_rounded,
+        keywords: const ['journal', 'bookmark', 'baseline', 'capture'],
+        run: _captureCurrentSessionSnapshot,
+      ),
+      CommandPaletteAction(
+        id: 'open-session-journal',
+        title: 'Open Session Journal',
+        description: '${sessionJournal.entries.length} private snapshots saved',
+        section: 'Quick actions',
+        icon: Icons.bookmarks_rounded,
+        keywords: const ['history', 'snapshots', 'baseline', 'compare'],
+        run: () =>
+            showSessionJournalDialog(context: context, journal: sessionJournal),
       ),
       CommandPaletteAction(
         id: 'ambient',
@@ -540,56 +650,100 @@ Disk: ${telemetry.diskUsage}%
 
   Widget buildDashboard() {
     final metrics = _dashboardMetrics(dashboardPreferences.workspace);
+    final sessionSummary = buildTelemetrySessionSummary(
+      cpuUsage: telemetry.cpuUsage,
+      ramUsage: telemetry.ramUsage,
+      gpuUsage: telemetry.gpuUsage,
+      cpuTemperature: telemetry.cpuTemp,
+      gpuTemperature: telemetry.gpuTemp,
+      cpuHistory: telemetry.cpuHistory,
+      ramHistory: telemetry.ramHistory,
+      gpuHistory: telemetry.gpuUsageHistory,
+      cpuTemperatureHistory: telemetry.cpuTempHistory,
+      gpuTemperatureHistory: telemetry.gpuTempHistory,
+      since: telemetry.sessionStatisticsStartedAt,
+      paused: telemetry.isPaused,
+      lastError: telemetry.lastError,
+    );
+    final healthProfile = buildSystemHealthProfile(
+      summary: sessionSummary,
+      cpuUsage: telemetry.cpuUsage,
+      ramUsage: telemetry.ramUsage,
+      gpuUsage: telemetry.gpuUsage,
+      cpuTemperature: telemetry.cpuTemp,
+      gpuTemperature: telemetry.gpuTemp,
+      cpuPower: telemetry.cpuPower,
+      gpuPower: telemetry.gpuPower,
+      lens: monitoringLensPreferences.lens,
+      paused: telemetry.isPaused,
+      hasError: telemetry.lastError != null,
+    );
+    final connecting =
+        telemetry.lastUpdated == null && telemetry.lastError == null;
     final cards = [
       for (var index = 0; index < metrics.length; index++)
-        _buildDashboardMetricCard(metrics[index], index),
+        connecting
+            ? HardwareSkeletonCard(key: ValueKey('dashboard-skeleton-$index'))
+            : _buildDashboardMetricCard(metrics[index], index),
     ];
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        return Column(
-          children: [
-            _DashboardWorkspaceSelector(
-              selected: dashboardPreferences.workspace,
-              onSelected: _applyDashboardWorkspace,
+        final columns = constraints.maxWidth >= 1050
+            ? 3
+            : constraints.maxWidth >= 680
+            ? 2
+            : 1;
+        return CustomScrollView(
+          key: const PageStorageKey('hardwaremon-dashboard-scroll'),
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: SystemIntelligenceHero(
+                  profile: healthProfile,
+                  lens: monitoringLensPreferences.lens,
+                  onLensChanged: monitoringLensPreferences.setLens,
+                  onOpenPerformance: () => _selectPage(2),
+                  onOpenProcesses: () => _selectPage(1),
+                  onSaveSnapshot: () => _captureSessionSnapshot(healthProfile),
+                  onOpenJournal: () => showSessionJournalDialog(
+                    context: context,
+                    journal: sessionJournal,
+                  ),
+                ),
+              ),
             ),
-            const SizedBox(height: 14),
-            Expanded(
-              child: cards.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.visibility_off_rounded,
-                            size: 34,
-                            color: AppColors.textMuted(context),
-                          ),
-                          const SizedBox(height: 10),
-                          const Text('All cards in this workspace are hidden'),
-                          const SizedBox(height: 8),
-                          TextButton(
-                            onPressed: dashboardPreferences.resetDefaults,
-                            child: const Text('Restore dashboard cards'),
-                          ),
-                        ],
-                      ),
-                    )
-                  : GridView.builder(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: constraints.maxWidth >= 1050
-                            ? 3
-                            : constraints.maxWidth >= 680
-                            ? 2
-                            : 1,
-                        mainAxisExtent: dashboardPreferences.cardSize.height,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                      ),
-                      itemCount: cards.length,
-                      itemBuilder: (context, index) => cards[index],
-                    ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: _DashboardWorkspaceSelector(
+                  selected: dashboardPreferences.workspace,
+                  onSelected: _applyDashboardWorkspace,
+                ),
+              ),
             ),
+            if (cards.isEmpty)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: _DashboardEmptyState(
+                  onRestore: dashboardPreferences.resetDefaults,
+                ),
+              )
+            else
+              SliverGrid(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: columns,
+                  mainAxisExtent: dashboardPreferences.cardSize.height,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) => cards[index],
+                  childCount: cards.length,
+                ),
+              ),
+            const SliverToBoxAdapter(child: SizedBox(height: 8)),
           ],
         );
       },
@@ -654,7 +808,7 @@ Disk: ${telemetry.diskUsage}%
       value: '${telemetry.cpuUsage}%',
       subtitle: telemetry.cpuName,
       icon: Icons.memory_rounded,
-      accent: AppColors.accent,
+      accent: HardwareDomain.cpu.color,
       samples: telemetry.cpuHistory,
       alertKind: MetricAlertKind.cpuUsage,
       alertValue: telemetry.cpuUsage.toDouble(),
@@ -665,7 +819,7 @@ Disk: ${telemetry.diskUsage}%
       value: '${telemetry.ramUsage}%',
       subtitle: 'System memory usage',
       icon: Icons.storage_rounded,
-      accent: Colors.purple,
+      accent: HardwareDomain.memory.color,
       samples: telemetry.ramHistory,
       alertKind: MetricAlertKind.ramUsage,
       alertValue: telemetry.ramUsage.toDouble(),
@@ -676,7 +830,7 @@ Disk: ${telemetry.diskUsage}%
       value: '${telemetry.gpuUsage}%',
       subtitle: 'Graphics workload',
       icon: Icons.show_chart_rounded,
-      accent: Colors.lightBlueAccent,
+      accent: HardwareDomain.gpu.color,
       samples: telemetry.gpuUsageHistory,
     );
     final cpuTemperature = _DashboardMetric(
@@ -685,7 +839,7 @@ Disk: ${telemetry.diskUsage}%
       value: '${telemetry.cpuTemp}°',
       subtitle: 'Package temperature',
       icon: Icons.thermostat_rounded,
-      accent: Colors.redAccent,
+      accent: HardwareDomain.thermal.color,
       samples: telemetry.cpuTempHistory,
       metricKind: TelemetryMetricKind.temperature,
       alertKind: MetricAlertKind.cpuTemperature,
@@ -697,7 +851,7 @@ Disk: ${telemetry.diskUsage}%
       value: '${telemetry.gpuTemp}°',
       subtitle: 'Graphics temperature',
       icon: Icons.graphic_eq_rounded,
-      accent: Colors.orange,
+      accent: HardwareDomain.thermal.color,
       samples: telemetry.gpuTempHistory,
       metricKind: TelemetryMetricKind.temperature,
       alertKind: MetricAlertKind.gpuTemperature,
@@ -709,7 +863,7 @@ Disk: ${telemetry.diskUsage}%
       value: '${telemetry.cpuPower.toStringAsFixed(1)} W',
       subtitle: 'Package power draw',
       icon: Icons.bolt_rounded,
-      accent: Colors.amber,
+      accent: HardwareDomain.power.color,
       samples: telemetry.cpuPowerHistory,
       metricKind: TelemetryMetricKind.watts,
     );
@@ -719,7 +873,7 @@ Disk: ${telemetry.diskUsage}%
       value: '${telemetry.gpuPower.toStringAsFixed(1)} W',
       subtitle: 'Board power draw',
       icon: Icons.electric_bolt_rounded,
-      accent: Colors.lightGreenAccent,
+      accent: HardwareDomain.power.color,
       samples: telemetry.gpuPowerHistory,
       metricKind: TelemetryMetricKind.watts,
     );
@@ -992,6 +1146,7 @@ Disk: ${telemetry.diskUsage}%
 
                           child: GlassPanel(
                             padding: const EdgeInsets.symmetric(vertical: 20),
+                            interactive: false,
 
                             child: Column(
                               children: [
@@ -1348,6 +1503,65 @@ class _DashboardMetric {
     this.alertKind,
     this.alertValue,
   });
+}
+
+class _DashboardEmptyState extends StatelessWidget {
+  final VoidCallback onRestore;
+
+  const _DashboardEmptyState({required this.onRestore});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 430),
+        padding: const EdgeInsets.all(28),
+        decoration: BoxDecoration(
+          color: AppColors.surface(context),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.border(context)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: AppColors.accent.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Icon(
+                Icons.dashboard_customize_rounded,
+                color: AppColors.accent,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'This workspace is yours',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 7),
+            Text(
+              'Every metric card is currently hidden. Restore the curated layout, then refine it in Customization.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.textMuted(context),
+                fontSize: 11,
+                height: 1.45,
+              ),
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: onRestore,
+              icon: const Icon(Icons.auto_fix_high_rounded, size: 16),
+              label: const Text('Restore curated layout'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _DashboardWorkspaceSelector extends StatelessWidget {

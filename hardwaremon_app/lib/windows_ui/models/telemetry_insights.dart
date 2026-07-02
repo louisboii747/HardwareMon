@@ -2,6 +2,39 @@ import 'dart:math' as math;
 
 import 'telemetry_sample.dart';
 import 'telemetry_statistics.dart';
+import 'monitoring_lens.dart';
+
+enum SystemHealthDimension { performance, memory, thermal, efficiency }
+
+class SystemHealthSignal {
+  final SystemHealthDimension dimension;
+  final int score;
+  final String label;
+  final String detail;
+
+  const SystemHealthSignal({
+    required this.dimension,
+    required this.score,
+    required this.label,
+    required this.detail,
+  });
+}
+
+class SystemHealthProfile {
+  final int overallScore;
+  final String stateLabel;
+  final String observation;
+  final String bottleneck;
+  final List<SystemHealthSignal> signals;
+
+  const SystemHealthProfile({
+    required this.overallScore,
+    required this.stateLabel,
+    required this.observation,
+    required this.bottleneck,
+    required this.signals,
+  });
+}
 
 enum TelemetryInsightSeverity { healthy, info, warning, critical }
 
@@ -51,6 +84,193 @@ class TelemetrySessionSummary {
     required this.sampleCount,
     required this.insights,
   });
+}
+
+SystemHealthProfile buildSystemHealthProfile({
+  required TelemetrySessionSummary summary,
+  required int cpuUsage,
+  required int ramUsage,
+  required int gpuUsage,
+  required int cpuTemperature,
+  required int gpuTemperature,
+  required double cpuPower,
+  required double gpuPower,
+  MonitoringLens lens = MonitoringLens.balanced,
+  bool paused = false,
+  bool hasError = false,
+}) {
+  final busiest = math.max(cpuUsage, gpuUsage);
+  final hottest = math.max(cpuTemperature, gpuTemperature);
+  final totalPower = math.max(0.0, cpuPower) + math.max(0.0, gpuPower);
+
+  final performanceScore = _boundedScore(
+    100 - math.max(0, busiest - 62) * 1.15,
+  );
+  final memoryScore = _boundedScore(100 - math.max(0, ramUsage - 52) * 1.25);
+  final thermalScore = hottest <= 0
+      ? 88
+      : _boundedScore(100 - math.max(0, hottest - 55) * 1.55);
+  final efficiencyScore = totalPower <= 0
+      ? 86
+      : _boundedScore(
+          100 - math.max(0, totalPower - 75) * 0.28 - busiest * 0.08,
+        );
+
+  final reliabilityModifier = hasError
+      ? -22
+      : paused
+      ? -4
+      : 0;
+  final weights = _lensWeights(lens);
+  final overallScore = _boundedScore(
+    performanceScore * weights.performance +
+        memoryScore * weights.memory +
+        thermalScore * weights.thermal +
+        efficiencyScore * weights.efficiency +
+        reliabilityModifier,
+  );
+
+  final pressures = <String, double>{
+    'CPU': cpuUsage.toDouble(),
+    'Memory': ramUsage.toDouble(),
+    'GPU': gpuUsage.toDouble(),
+    if (hottest > 0) 'Thermals': (hottest / 95 * 100).clamp(0, 100),
+  };
+  final bottleneckEntry = pressures.entries.reduce(
+    (current, candidate) =>
+        candidate.value > current.value ? candidate : current,
+  );
+  final bottleneck = bottleneckEntry.value < 58
+      ? 'No active bottleneck'
+      : '${bottleneckEntry.key} is carrying the most pressure';
+
+  final observation = _systemObservation(
+    summary: summary,
+    cpuUsage: cpuUsage,
+    ramUsage: ramUsage,
+    gpuUsage: gpuUsage,
+    hottest: hottest,
+    paused: paused,
+    hasError: hasError,
+  );
+
+  return SystemHealthProfile(
+    overallScore: overallScore,
+    stateLabel: _healthStateLabel(overallScore),
+    observation: observation,
+    bottleneck: bottleneck,
+    signals: [
+      SystemHealthSignal(
+        dimension: SystemHealthDimension.performance,
+        score: performanceScore,
+        label: 'Performance',
+        detail: busiest < 65 ? 'Responsive headroom' : 'Active workload',
+      ),
+      SystemHealthSignal(
+        dimension: SystemHealthDimension.memory,
+        score: memoryScore,
+        label: 'Memory',
+        detail: '${math.max(0, 100 - ramUsage)}% headroom',
+      ),
+      SystemHealthSignal(
+        dimension: SystemHealthDimension.thermal,
+        score: thermalScore,
+        label: 'Thermals',
+        detail: hottest <= 0 ? 'Awaiting sensors' : '$hottest°C peak now',
+      ),
+      SystemHealthSignal(
+        dimension: SystemHealthDimension.efficiency,
+        score: efficiencyScore,
+        label: 'Efficiency',
+        detail: totalPower <= 0
+            ? 'Power baseline pending'
+            : '${totalPower.toStringAsFixed(0)} W package draw',
+      ),
+    ],
+  );
+}
+
+({double performance, double memory, double thermal, double efficiency})
+_lensWeights(MonitoringLens lens) {
+  return switch (lens) {
+    MonitoringLens.balanced => (
+      performance: 0.28,
+      memory: 0.24,
+      thermal: 0.30,
+      efficiency: 0.18,
+    ),
+    MonitoringLens.performance => (
+      performance: 0.44,
+      memory: 0.20,
+      thermal: 0.22,
+      efficiency: 0.14,
+    ),
+    MonitoringLens.quiet => (
+      performance: 0.14,
+      memory: 0.18,
+      thermal: 0.43,
+      efficiency: 0.25,
+    ),
+    MonitoringLens.efficiency => (
+      performance: 0.18,
+      memory: 0.17,
+      thermal: 0.24,
+      efficiency: 0.41,
+    ),
+    MonitoringLens.reliability => (
+      performance: 0.20,
+      memory: 0.29,
+      thermal: 0.35,
+      efficiency: 0.16,
+    ),
+  };
+}
+
+int _boundedScore(num value) => value.round().clamp(0, 100);
+
+String _healthStateLabel(int score) {
+  if (score >= 90) return 'Exceptional';
+  if (score >= 78) return 'Healthy';
+  if (score >= 62) return 'Watch';
+  if (score >= 42) return 'Stressed';
+  return 'Critical';
+}
+
+String _systemObservation({
+  required TelemetrySessionSummary summary,
+  required int cpuUsage,
+  required int ramUsage,
+  required int gpuUsage,
+  required int hottest,
+  required bool paused,
+  required bool hasError,
+}) {
+  if (hasError) {
+    return 'Live telemetry was interrupted. HardwareMon is preserving the last known session context.';
+  }
+  if (paused) {
+    return 'The session is paused, so scores and observations are frozen at the last sample.';
+  }
+  if (summary.sampleCount < 6) {
+    return 'HardwareMon is learning this session. Trend confidence improves as new samples arrive.';
+  }
+  if (hottest >= 88) {
+    return 'Thermal pressure is the clearest constraint right now. Cooling headroom deserves attention.';
+  }
+  if (ramUsage >= 88) {
+    return 'Memory headroom is narrow. Opening another heavy application may increase paging.';
+  }
+  if (cpuUsage >= 90 || gpuUsage >= 90) {
+    return 'A compute resource is close to saturation. Processes can identify the active workload.';
+  }
+  if (cpuUsage < 18 && gpuUsage < 18 && ramUsage < 65) {
+    return 'The system is coasting with generous compute headroom and no immediate pressure.';
+  }
+  if (summary.cpuPeak - summary.cpuAverage < 8 &&
+      summary.ramPeak - summary.ramAverage < 6) {
+    return 'Workload behaviour is stable across the current session with limited volatility.';
+  }
+  return 'The system is balancing the current workload without a critical resource constraint.';
 }
 
 TelemetrySessionSummary buildTelemetrySessionSummary({

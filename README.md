@@ -162,6 +162,16 @@ HardwareMon immediately displays telemetry for the Android device itself. No acc
 * Expandable monitoring cards
 * Immersive focus-mode analytics views
 
+## System Intelligence
+
+* Telemetry-derived health scoring with performance, memory, thermal, power,
+  battery, and storage signals where each platform exposes them
+* Balanced, Performance, Quiet, Efficiency, and Reliability monitoring lenses
+* Local session journals for capturing useful baselines and workload snapshots
+* Bottleneck detection, trend observations, and explicit unavailable states
+* Shareable or copyable session reports with no automatic upload
+* Configurable watch thresholds and de-duplicated event history
+
 ---
 
 ## Benchmark Mode
@@ -379,6 +389,11 @@ The dark Jetpack Compose dashboard provides:
 * Android thermal-pressure status on supported versions
 * Model, manufacturer, Android version, SDK level, device name, ABIs, and uptime
 * Foreground-only live refreshes with clear unavailable states for restricted metrics
+* Overview, Insights, and Watches areas with a persistent bottom navigation surface
+* Five monitoring lenses that change health-score weighting without changing OS settings
+* A rolling 60-sample session, session-drift analysis, and local snapshot journal
+* Configurable CPU, memory, storage, battery, and thermal-pressure watches
+* Native share-sheet export for live and saved session reports
 
 Android limits access to some low-level hardware information. HardwareMon reports only values exposed by public platform APIs or readable system interfaces; it does not estimate hidden sensor values. CPU utilization, thermal details, Wi-Fi information, and some battery fields can therefore be unavailable on particular Android versions or manufacturer builds.
 
@@ -580,8 +595,8 @@ Planned improvements include:
 
 * Home screen widgets
 * Material You theming
-* Configurable on-device alerts
-* Historical analytics
+* Optional notification delivery for foreground watch events
+* Longer-term historical analytics beyond the current foreground session
 * Wear OS support
 * Quick Settings tile
 * Battery-conscious background sampling

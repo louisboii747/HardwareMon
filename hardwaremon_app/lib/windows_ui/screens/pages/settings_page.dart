@@ -8,6 +8,7 @@ import '../../services/telemetry_service.dart';
 import '../../services/desktop_integration_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme_controller.dart';
+import '../../core/theme/hardware_palette.dart';
 import '../../widgets/update_center.dart';
 import '../../../services/log_service.dart';
 import '../../../services/diagnostics_service.dart';
@@ -22,6 +23,28 @@ String _formatSettingNumber(double value) {
   return value == value.roundToDouble()
       ? value.round().toString()
       : value.toStringAsFixed(1);
+}
+
+enum _SettingsCategory { all, experience, monitoring, alerts, system, updates }
+
+extension on _SettingsCategory {
+  String get label => switch (this) {
+    _SettingsCategory.all => 'All settings',
+    _SettingsCategory.experience => 'Experience',
+    _SettingsCategory.monitoring => 'Monitoring',
+    _SettingsCategory.alerts => 'Alerts',
+    _SettingsCategory.system => 'System',
+    _SettingsCategory.updates => 'Updates',
+  };
+
+  IconData get icon => switch (this) {
+    _SettingsCategory.all => Icons.tune_rounded,
+    _SettingsCategory.experience => Icons.auto_awesome_rounded,
+    _SettingsCategory.monitoring => Icons.monitor_heart_rounded,
+    _SettingsCategory.alerts => Icons.notifications_active_rounded,
+    _SettingsCategory.system => Icons.desktop_windows_rounded,
+    _SettingsCategory.updates => Icons.system_update_alt_rounded,
+  };
 }
 
 class SettingsPage extends StatefulWidget {
@@ -46,6 +69,9 @@ class _SettingsPageState extends State<SettingsPage> {
       DesktopIntegrationService.instance;
   AppSettings settings = const AppSettings();
   RuntimeBuildInfo? buildInfo;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  _SettingsCategory _category = _SettingsCategory.all;
 
   @override
   void initState() {
@@ -58,8 +84,55 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   void dispose() {
     desktopIntegration.removeListener(_onDesktopIntegrationChanged);
+    _searchController.dispose();
     super.dispose();
   }
+
+  bool _showSection(
+    String title,
+    _SettingsCategory category, [
+    List<String> keywords = const [],
+  ]) {
+    if (_category != _SettingsCategory.all && _category != category) {
+      return false;
+    }
+    final query = _searchQuery.trim().toLowerCase();
+    if (query.isEmpty) return true;
+    return <String>[
+      title,
+      category.label,
+      ...keywords,
+    ].join(' ').toLowerCase().contains(query);
+  }
+
+  bool get _hasVisibleSections =>
+      _showSection('General', _SettingsCategory.experience, const [
+        'theme startup tray',
+      ]) ||
+      _showSection('Experience', _SettingsCategory.experience, const [
+        'animation ambient chart command palette',
+      ]) ||
+      _showSection('Monitoring', _SettingsCategory.monitoring, const [
+        'refresh interval history telemetry',
+      ]) ||
+      _showSection('Notifications', _SettingsCategory.alerts, const [
+        'cpu ram temperature disk sound',
+      ]) ||
+      _showSection('Alert Thresholds', _SettingsCategory.alerts, const [
+        'limit warning cpu gpu memory temperature disk',
+      ]) ||
+      _showSection('Alert History', _SettingsCategory.alerts, const [
+        'events notification log',
+      ]) ||
+      _showSection('Updates', _SettingsCategory.updates, const [
+        'version channel auto check',
+      ]) ||
+      _showSection('Advanced', _SettingsCategory.system, const [
+        'logs diagnostics export reset summary',
+      ]) ||
+      _showSection('About HardwareMon', _SettingsCategory.system, const [
+        'version build platform backend flutter',
+      ]);
 
   void _onDesktopIntegrationChanged() {
     if (mounted) setState(() {});
@@ -236,356 +309,454 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 6),
 
-          _buildSection('General', [
-            _settingRow(
-              'Theme',
-              DropdownButton<String>(
-                value: settings.theme,
-                items: const [
-                  DropdownMenuItem(value: 'Dark', child: Text('Dark')),
-                  DropdownMenuItem(value: 'Light', child: Text('Light')),
-                  DropdownMenuItem(value: 'System', child: Text('System')),
-                ],
-                onChanged: (value) async {
-                  await _updateSettings(settings.copyWith(theme: value!));
-                },
-              ),
+          Text(
+            'Shape the experience, monitoring behaviour, alerts and desktop integration from one searchable control centre.',
+            style: TextStyle(
+              color: AppColors.textMuted(context),
+              fontSize: 11,
+              height: 1.4,
             ),
-
-            _settingRow(
-              'Launch on Startup',
-              Switch(
-                value: settings.launchOnStartup,
-                onChanged: desktopIntegration.startupStatus.supported
-                    ? _setLaunchOnStartup
-                    : null,
-              ),
-            ),
-
-            _settingRow(
-              'Minimise to Tray',
-              Switch(
-                value: settings.minimiseToTray,
-                onChanged: (value) => _setTraySetting(
-                  value: value,
-                  update: (enabled) =>
-                      settings.copyWith(minimiseToTray: enabled),
-                ),
-              ),
-            ),
-
-            _settingRow(
-              'Close to Tray',
-              Switch(
-                value: settings.closeToTray,
-                onChanged: (value) => _setTraySetting(
-                  value: value,
-                  update: (enabled) => settings.copyWith(closeToTray: enabled),
-                ),
-              ),
-            ),
-            _desktopIntegrationStatus(),
-          ]),
-
-          _buildSection('Experience', [
-            _settingRow(
-              'Ambient system pulse',
-              Tooltip(
-                message:
-                    'Subtle background light that responds to CPU, memory, and temperature',
-                child: Switch(
-                  value: widget.chartPreferences.ambientEffects,
-                  onChanged: (value) => widget.chartPreferences.setPreference(
-                    ChartPreference.ambientEffects,
-                    value,
-                  ),
-                ),
-              ),
-            ),
-            _settingRow(
-              'Live telemetry strip',
-              Tooltip(
-                message:
-                    'Keep a compact health summary visible above every page',
-                child: Switch(
-                  value: widget.chartPreferences.telemetryTicker,
-                  onChanged: (value) => widget.chartPreferences.setPreference(
-                    ChartPreference.telemetryTicker,
-                    value,
-                  ),
-                ),
-              ),
-            ),
-            _settingRow(
-              'Smooth chart updates',
-              Switch(
-                value: widget.chartPreferences.animations,
-                onChanged: (value) => widget.chartPreferences.setPreference(
-                  ChartPreference.animations,
-                  value,
-                ),
-              ),
-            ),
-            _settingRow(
-              'Command palette',
-              _KeyboardShortcut(keys: const ['Ctrl', 'K']),
-            ),
-          ]),
-
-          _buildSection('Monitoring', [
-            _settingRow(
-              'Refresh Interval',
-              DropdownButton<String>(
-                value: settings.refreshInterval,
-                items: const [
-                  DropdownMenuItem(value: '1s', child: Text('1 second')),
-                  DropdownMenuItem(value: '2s', child: Text('2 seconds')),
-                  DropdownMenuItem(value: '5s', child: Text('5 seconds')),
-                ],
-                onChanged: (value) async {
-                  await _updateSettings(
-                    settings.copyWith(refreshInterval: value!),
-                  );
-
-                  await widget.telemetry.restart();
-                },
-              ),
-            ),
-
-            _settingRow(
-              'Historical Monitoring',
-              Switch(
-                value: settings.historicalMonitoring,
-                onChanged: (value) async {
-                  await _updateSettings(
-                    settings.copyWith(historicalMonitoring: value),
-                  );
-                },
-              ),
-            ),
-          ]),
-
-          _buildSection('Notifications', [
-            _settingRow(
-              'CPU Alerts',
-              Switch(
-                value: settings.cpuAlerts,
-                onChanged: (value) async {
-                  await _updateSettings(settings.copyWith(cpuAlerts: value));
-                },
-              ),
-            ),
-
-            _settingRow(
-              'RAM Alerts',
-              Switch(
-                value: settings.ramAlerts,
-                onChanged: (value) async {
-                  await _updateSettings(settings.copyWith(ramAlerts: value));
-                },
-              ),
-            ),
-
-            _settingRow(
-              'Temperature Alerts',
-              Switch(
-                value: settings.temperatureAlerts,
-                onChanged: (value) async {
-                  await _updateSettings(
-                    settings.copyWith(temperatureAlerts: value),
-                  );
-                },
-              ),
-            ),
-
-            _settingRow(
-              'Disk Alerts',
-              Switch(
-                value: settings.diskAlerts,
-                onChanged: (value) async {
-                  await _updateSettings(settings.copyWith(diskAlerts: value));
-                },
-              ),
-            ),
-
-            _settingRow(
-              'Alert Sounds',
-              Switch(
-                value: settings.alertSounds,
-                onChanged: (value) async {
-                  await _updateSettings(settings.copyWith(alertSounds: value));
-                },
-              ),
-            ),
-          ]),
-
-          _buildSection('Alert Thresholds', [
-            AlertThresholdSlider(
-              label: 'CPU Usage',
-              value: settings.cpuUsageThreshold,
-              min: 0,
-              max: 100,
-              unit: '%',
-              enabled: settings.cpuAlerts,
-              enableMessage: 'Enable CPU Alerts to change this threshold.',
-              onChanged: (value) =>
-                  _updateSettings(settings.copyWith(cpuUsageThreshold: value)),
-            ),
-            AlertThresholdSlider(
-              label: 'RAM Usage',
-              value: settings.ramUsageThreshold,
-              min: 0,
-              max: 100,
-              unit: '%',
-              enabled: settings.ramAlerts,
-              enableMessage: 'Enable RAM Alerts to change this threshold.',
-              onChanged: (value) =>
-                  _updateSettings(settings.copyWith(ramUsageThreshold: value)),
-            ),
-            AlertThresholdSlider(
-              label: 'Disk Usage',
-              value: settings.diskUsageThreshold,
-              min: 0,
-              max: 100,
-              unit: '%',
-              enabled: settings.diskAlerts,
-              enableMessage: 'Enable Disk Alerts to change this threshold.',
-              onChanged: (value) =>
-                  _updateSettings(settings.copyWith(diskUsageThreshold: value)),
-            ),
-            AlertThresholdSlider(
-              label: 'CPU Temperature',
-              value: settings.cpuTemperatureThreshold,
-              min: 0,
-              max: 100,
-              unit: '°C',
-              enabled: settings.temperatureAlerts,
-              enableMessage:
-                  'Enable Temperature Alerts to change this threshold.',
-              onChanged: (value) => _updateSettings(
-                settings.copyWith(cpuTemperatureThreshold: value),
-              ),
-            ),
-            AlertThresholdSlider(
-              label: 'GPU Temperature',
-              value: settings.gpuTemperatureThreshold,
-              min: 0,
-              max: 100,
-              unit: '°C',
-              enabled: settings.temperatureAlerts,
-              enableMessage:
-                  'Enable Temperature Alerts to change this threshold.',
-              onChanged: (value) => _updateSettings(
-                settings.copyWith(gpuTemperatureThreshold: value),
-              ),
-            ),
-          ]),
-
-          _buildSection('Alert History', [
-            const AlertHistoryPanel(showHeader: false),
-          ]),
-
-          _buildSection('Updates', [
-            _settingRow(
-              'Auto Update Checks',
-              Switch(
-                value: settings.autoUpdateChecks,
-                onChanged: (value) async {
-                  await _updateSettings(
-                    settings.copyWith(autoUpdateChecks: value),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 8),
-            const UpdateSettingsPanel(),
-          ]),
-
-          _buildSection('Advanced', [
-            _settingRow(
-              'Open Logs Folder',
-              ElevatedButton(
-                onPressed: () async {
-                  try {
-                    await LogService.openLogsFolder();
-                  } catch (e) {
-                    if (!context.mounted) return;
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Failed to open logs folder: $e')),
-                    );
-                  }
-                },
-                child: const Text('Open'),
-              ),
-            ),
-
-            _settingRow(
-              'Export Diagnostics',
-              ElevatedButton(
-                onPressed: () async {
-                  try {
-                    final path = await DiagnosticsService.exportDiagnostics();
-
-                    if (!context.mounted) return;
-
-                    await showDialog(
-                      context: context,
-                      builder: (_) => AlertDialog(
-                        title: const Text('Diagnostics Exported'),
-                        content: Text('Diagnostics saved to:\n\n$path'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('OK'),
-                          ),
-                        ],
-                      ),
-                    );
-                  } catch (e) {
-                    if (!context.mounted) return;
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Failed to export diagnostics: $e'),
-                      ),
-                    );
-                  }
-                },
-                child: const Text('Export'),
-              ),
-            ),
-
-            _settingRow(
-              'Copy Settings Summary',
-              ElevatedButton(
-                onPressed: _copySettingsSummary,
-                child: const Text('Copy'),
-              ),
-            ),
-
-            _settingRow(
-              'Reset Settings',
-              ElevatedButton(
-                onPressed: _showResetDialog,
-                child: const Text('Reset'),
-              ),
-            ),
-          ]),
-
-          AnimatedBuilder(
-            animation: UpdateService.instance,
-            builder: (context, _) =>
-                _buildAboutSection(UpdateService.instance.state),
           ),
+
+          const SizedBox(height: 18),
+
+          _SettingsSearch(
+            controller: _searchController,
+            query: _searchQuery,
+            onChanged: (value) => setState(() => _searchQuery = value),
+            onClear: () {
+              _searchController.clear();
+              setState(() => _searchQuery = '');
+            },
+          ),
+
+          const SizedBox(height: 12),
+
+          _SettingsCategoryRail(
+            selected: _category,
+            onSelected: (value) => setState(() => _category = value),
+          ),
+
+          const SizedBox(height: 20),
+
+          if (_showSection('General', _SettingsCategory.experience, const [
+            'theme startup tray',
+          ]))
+            _buildSection('General', [
+              _settingRow(
+                'Theme',
+                DropdownButton<String>(
+                  value: settings.theme,
+                  items: const [
+                    DropdownMenuItem(value: 'Dark', child: Text('Dark')),
+                    DropdownMenuItem(value: 'Light', child: Text('Light')),
+                    DropdownMenuItem(value: 'System', child: Text('System')),
+                  ],
+                  onChanged: (value) async {
+                    await _updateSettings(settings.copyWith(theme: value!));
+                  },
+                ),
+              ),
+
+              _settingRow(
+                'Launch on Startup',
+                Switch(
+                  value: settings.launchOnStartup,
+                  onChanged: desktopIntegration.startupStatus.supported
+                      ? _setLaunchOnStartup
+                      : null,
+                ),
+              ),
+
+              _settingRow(
+                'Minimise to Tray',
+                Switch(
+                  value: settings.minimiseToTray,
+                  onChanged: (value) => _setTraySetting(
+                    value: value,
+                    update: (enabled) =>
+                        settings.copyWith(minimiseToTray: enabled),
+                  ),
+                ),
+              ),
+
+              _settingRow(
+                'Close to Tray',
+                Switch(
+                  value: settings.closeToTray,
+                  onChanged: (value) => _setTraySetting(
+                    value: value,
+                    update: (enabled) =>
+                        settings.copyWith(closeToTray: enabled),
+                  ),
+                ),
+              ),
+              _desktopIntegrationStatus(),
+            ]),
+
+          if (_showSection('Experience', _SettingsCategory.experience, const [
+            'animation ambient chart command palette',
+          ]))
+            _buildSection('Experience', [
+              _settingRow(
+                'Ambient system pulse',
+                Tooltip(
+                  message:
+                      'Subtle background light that responds to CPU, memory, and temperature',
+                  child: Switch(
+                    value: widget.chartPreferences.ambientEffects,
+                    onChanged: (value) => widget.chartPreferences.setPreference(
+                      ChartPreference.ambientEffects,
+                      value,
+                    ),
+                  ),
+                ),
+              ),
+              _settingRow(
+                'Live telemetry strip',
+                Tooltip(
+                  message:
+                      'Keep a compact health summary visible above every page',
+                  child: Switch(
+                    value: widget.chartPreferences.telemetryTicker,
+                    onChanged: (value) => widget.chartPreferences.setPreference(
+                      ChartPreference.telemetryTicker,
+                      value,
+                    ),
+                  ),
+                ),
+              ),
+              _settingRow(
+                'Smooth chart updates',
+                Switch(
+                  value: widget.chartPreferences.animations,
+                  onChanged: (value) => widget.chartPreferences.setPreference(
+                    ChartPreference.animations,
+                    value,
+                  ),
+                ),
+              ),
+              _settingRow(
+                'Command palette',
+                _KeyboardShortcut(keys: const ['Ctrl', 'K']),
+              ),
+            ]),
+
+          if (_showSection('Monitoring', _SettingsCategory.monitoring, const [
+            'refresh interval history telemetry',
+          ]))
+            _buildSection('Monitoring', [
+              _settingRow(
+                'Refresh Interval',
+                DropdownButton<String>(
+                  value: settings.refreshInterval,
+                  items: const [
+                    DropdownMenuItem(value: '1s', child: Text('1 second')),
+                    DropdownMenuItem(value: '2s', child: Text('2 seconds')),
+                    DropdownMenuItem(value: '5s', child: Text('5 seconds')),
+                  ],
+                  onChanged: (value) async {
+                    await _updateSettings(
+                      settings.copyWith(refreshInterval: value!),
+                    );
+
+                    await widget.telemetry.restart();
+                  },
+                ),
+              ),
+
+              _settingRow(
+                'Historical Monitoring',
+                Switch(
+                  value: settings.historicalMonitoring,
+                  onChanged: (value) async {
+                    await _updateSettings(
+                      settings.copyWith(historicalMonitoring: value),
+                    );
+                  },
+                ),
+              ),
+            ]),
+
+          if (_showSection('Notifications', _SettingsCategory.alerts, const [
+            'cpu ram temperature disk sound',
+          ]))
+            _buildSection('Notifications', [
+              _settingRow(
+                'CPU Alerts',
+                Switch(
+                  value: settings.cpuAlerts,
+                  onChanged: (value) async {
+                    await _updateSettings(settings.copyWith(cpuAlerts: value));
+                  },
+                ),
+              ),
+
+              _settingRow(
+                'RAM Alerts',
+                Switch(
+                  value: settings.ramAlerts,
+                  onChanged: (value) async {
+                    await _updateSettings(settings.copyWith(ramAlerts: value));
+                  },
+                ),
+              ),
+
+              _settingRow(
+                'Temperature Alerts',
+                Switch(
+                  value: settings.temperatureAlerts,
+                  onChanged: (value) async {
+                    await _updateSettings(
+                      settings.copyWith(temperatureAlerts: value),
+                    );
+                  },
+                ),
+              ),
+
+              _settingRow(
+                'Disk Alerts',
+                Switch(
+                  value: settings.diskAlerts,
+                  onChanged: (value) async {
+                    await _updateSettings(settings.copyWith(diskAlerts: value));
+                  },
+                ),
+              ),
+
+              _settingRow(
+                'Alert Sounds',
+                Switch(
+                  value: settings.alertSounds,
+                  onChanged: (value) async {
+                    await _updateSettings(
+                      settings.copyWith(alertSounds: value),
+                    );
+                  },
+                ),
+              ),
+            ]),
+
+          if (_showSection('Alert Thresholds', _SettingsCategory.alerts, const [
+            'limit warning cpu gpu memory temperature disk',
+          ]))
+            _buildSection('Alert Thresholds', [
+              AlertThresholdSlider(
+                label: 'CPU Usage',
+                value: settings.cpuUsageThreshold,
+                min: 0,
+                max: 100,
+                unit: '%',
+                enabled: settings.cpuAlerts,
+                enableMessage: 'Enable CPU Alerts to change this threshold.',
+                onChanged: (value) => _updateSettings(
+                  settings.copyWith(cpuUsageThreshold: value),
+                ),
+              ),
+              AlertThresholdSlider(
+                label: 'RAM Usage',
+                value: settings.ramUsageThreshold,
+                min: 0,
+                max: 100,
+                unit: '%',
+                enabled: settings.ramAlerts,
+                enableMessage: 'Enable RAM Alerts to change this threshold.',
+                onChanged: (value) => _updateSettings(
+                  settings.copyWith(ramUsageThreshold: value),
+                ),
+              ),
+              AlertThresholdSlider(
+                label: 'Disk Usage',
+                value: settings.diskUsageThreshold,
+                min: 0,
+                max: 100,
+                unit: '%',
+                enabled: settings.diskAlerts,
+                enableMessage: 'Enable Disk Alerts to change this threshold.',
+                onChanged: (value) => _updateSettings(
+                  settings.copyWith(diskUsageThreshold: value),
+                ),
+              ),
+              AlertThresholdSlider(
+                label: 'CPU Temperature',
+                value: settings.cpuTemperatureThreshold,
+                min: 0,
+                max: 100,
+                unit: '°C',
+                enabled: settings.temperatureAlerts,
+                enableMessage:
+                    'Enable Temperature Alerts to change this threshold.',
+                onChanged: (value) => _updateSettings(
+                  settings.copyWith(cpuTemperatureThreshold: value),
+                ),
+              ),
+              AlertThresholdSlider(
+                label: 'GPU Temperature',
+                value: settings.gpuTemperatureThreshold,
+                min: 0,
+                max: 100,
+                unit: '°C',
+                enabled: settings.temperatureAlerts,
+                enableMessage:
+                    'Enable Temperature Alerts to change this threshold.',
+                onChanged: (value) => _updateSettings(
+                  settings.copyWith(gpuTemperatureThreshold: value),
+                ),
+              ),
+            ]),
+
+          if (_showSection('Alert History', _SettingsCategory.alerts, const [
+            'events notification log',
+          ]))
+            _buildSection('Alert History', [
+              const AlertHistoryPanel(showHeader: false),
+            ]),
+
+          if (_showSection('Updates', _SettingsCategory.updates, const [
+            'version channel auto check',
+          ]))
+            _buildSection('Updates', [
+              _settingRow(
+                'Auto Update Checks',
+                Switch(
+                  value: settings.autoUpdateChecks,
+                  onChanged: (value) async {
+                    await _updateSettings(
+                      settings.copyWith(autoUpdateChecks: value),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+              const UpdateSettingsPanel(),
+            ]),
+
+          if (_showSection('Advanced', _SettingsCategory.system, const [
+            'logs diagnostics export reset summary',
+          ]))
+            _buildSection('Advanced', [
+              _settingRow(
+                'Open Logs Folder',
+                ElevatedButton(
+                  onPressed: () async {
+                    try {
+                      await LogService.openLogsFolder();
+                    } catch (e) {
+                      if (!context.mounted) return;
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to open logs folder: $e'),
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text('Open'),
+                ),
+              ),
+
+              _settingRow(
+                'Export Diagnostics',
+                ElevatedButton(
+                  onPressed: () async {
+                    try {
+                      final path = await DiagnosticsService.exportDiagnostics();
+
+                      if (!context.mounted) return;
+
+                      await showDialog(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                          title: const Text('Diagnostics Exported'),
+                          content: Text('Diagnostics saved to:\n\n$path'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('OK'),
+                            ),
+                          ],
+                        ),
+                      );
+                    } catch (e) {
+                      if (!context.mounted) return;
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to export diagnostics: $e'),
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text('Export'),
+                ),
+              ),
+
+              _settingRow(
+                'Copy Settings Summary',
+                ElevatedButton(
+                  onPressed: _copySettingsSummary,
+                  child: const Text('Copy'),
+                ),
+              ),
+
+              _settingRow(
+                'Reset Settings',
+                ElevatedButton(
+                  onPressed: _showResetDialog,
+                  child: const Text('Reset'),
+                ),
+              ),
+            ]),
+
+          if (_showSection(
+            'About HardwareMon',
+            _SettingsCategory.system,
+            const ['version build platform backend flutter'],
+          ))
+            AnimatedBuilder(
+              animation: UpdateService.instance,
+              builder: (context, _) =>
+                  _buildAboutSection(UpdateService.instance.state),
+            ),
+
+          if (!_hasVisibleSections)
+            _SettingsEmptySearch(
+              query: _searchQuery,
+              onReset: () {
+                _searchController.clear();
+                setState(() {
+                  _searchQuery = '';
+                  _category = _SettingsCategory.all;
+                });
+              },
+            ),
         ],
       ),
     );
   }
 
   Widget _buildSection(String title, List<Widget> children) {
+    final (icon, color) = switch (title) {
+      'General' => (Icons.tune_rounded, HardwareDomain.cpu.color),
+      'Experience' => (Icons.auto_awesome_rounded, HardwareDomain.memory.color),
+      'Monitoring' => (
+        Icons.monitor_heart_rounded,
+        HardwareDomain.network.color,
+      ),
+      'Notifications' => (
+        Icons.notifications_active_rounded,
+        HardwareDomain.thermal.color,
+      ),
+      'Alert Thresholds' => (Icons.speed_rounded, HardwareDomain.power.color),
+      'Alert History' => (Icons.history_rounded, HardwareDomain.storage.color),
+      'Updates' => (
+        Icons.system_update_alt_rounded,
+        HardwareDomain.network.color,
+      ),
+      _ => (Icons.settings_suggest_rounded, AppColors.accent),
+    };
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(20),
@@ -597,9 +768,28 @@ class _SettingsPageState extends State<SettingsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: color.withValues(alpha: 0.15)),
+                ),
+                child: Icon(icon, color: color, size: 18),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.4,
+                ),
+              ),
+            ],
           ),
 
           const SizedBox(height: 16),
@@ -781,6 +971,229 @@ class _SettingsPageState extends State<SettingsPage> {
                   : Colors.amber,
               fontSize: 11,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsSearch extends StatelessWidget {
+  final TextEditingController controller;
+  final String query;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
+
+  const _SettingsSearch({
+    required this.controller,
+    required this.query,
+    required this.onChanged,
+    required this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 48,
+      decoration: BoxDecoration(
+        color: AppColors.surface(context),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(
+          color: query.isEmpty
+              ? AppColors.border(context)
+              : AppColors.accent.withValues(alpha: 0.32),
+        ),
+        boxShadow: query.isEmpty
+            ? null
+            : [
+                BoxShadow(
+                  color: AppColors.accent.withValues(alpha: 0.07),
+                  blurRadius: 22,
+                ),
+              ],
+      ),
+      child: TextField(
+        controller: controller,
+        onChanged: onChanged,
+        textInputAction: TextInputAction.search,
+        decoration: InputDecoration(
+          hintText: 'Search settings, alerts, updates or desktop controls…',
+          hintStyle: TextStyle(
+            color: AppColors.textMuted(context),
+            fontSize: 12,
+          ),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            size: 19,
+            color: query.isEmpty
+                ? AppColors.textMuted(context)
+                : AppColors.accent,
+          ),
+          suffixIcon: query.isEmpty
+              ? null
+              : IconButton(
+                  tooltip: 'Clear settings search',
+                  onPressed: onClear,
+                  icon: const Icon(Icons.close_rounded, size: 17),
+                ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(vertical: 14),
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsCategoryRail extends StatelessWidget {
+  final _SettingsCategory selected;
+  final ValueChanged<_SettingsCategory> onSelected;
+
+  const _SettingsCategoryRail({
+    required this.selected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (
+            var index = 0;
+            index < _SettingsCategory.values.length;
+            index++
+          ) ...[
+            _SettingsCategoryButton(
+              category: _SettingsCategory.values[index],
+              selected: selected == _SettingsCategory.values[index],
+              onTap: () => onSelected(_SettingsCategory.values[index]),
+            ),
+            if (index != _SettingsCategory.values.length - 1)
+              const SizedBox(width: 8),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsCategoryButton extends StatefulWidget {
+  final _SettingsCategory category;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _SettingsCategoryButton({
+    required this.category,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  State<_SettingsCategoryButton> createState() =>
+      _SettingsCategoryButtonState();
+}
+
+class _SettingsCategoryButtonState extends State<_SettingsCategoryButton> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final active = widget.selected || _hovered;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          decoration: BoxDecoration(
+            color: active
+                ? AppColors.accent.withValues(
+                    alpha: widget.selected ? 0.14 : 0.07,
+                  )
+                : AppColors.overlay(context, 0.025),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: widget.selected
+                  ? AppColors.accent.withValues(alpha: 0.34)
+                  : AppColors.border(context),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                widget.category.icon,
+                size: 15,
+                color: widget.selected
+                    ? AppColors.accent
+                    : AppColors.textMuted(context),
+              ),
+              const SizedBox(width: 7),
+              Text(
+                widget.category.label,
+                style: TextStyle(
+                  color: widget.selected
+                      ? AppColors.textPrimary(context)
+                      : AppColors.textSecondary(context),
+                  fontSize: 10,
+                  fontWeight: widget.selected
+                      ? FontWeight.w700
+                      : FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsEmptySearch extends StatelessWidget {
+  final String query;
+  final VoidCallback onReset;
+
+  const _SettingsEmptySearch({required this.query, required this.onReset});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(30),
+      decoration: BoxDecoration(
+        color: AppColors.surface(context),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border(context)),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.manage_search_rounded,
+            size: 36,
+            color: AppColors.textMuted(context),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            query.trim().isEmpty
+                ? 'No settings in this category'
+                : 'No settings match “${query.trim()}”',
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Try a broader term or return to the complete settings view.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.textMuted(context), fontSize: 10),
+          ),
+          const SizedBox(height: 14),
+          TextButton.icon(
+            onPressed: onReset,
+            icon: const Icon(Icons.restart_alt_rounded, size: 16),
+            label: const Text('Show all settings'),
           ),
         ],
       ),

@@ -58,4 +58,75 @@ void main() {
       contains('Resource ceiling reached'),
     );
   });
+
+  test('health profile identifies the dominant live constraint', () {
+    final summary = buildTelemetrySessionSummary(
+      cpuUsage: 43,
+      ramUsage: 91,
+      gpuUsage: 18,
+      cpuTemperature: 58,
+      gpuTemperature: 50,
+      cpuHistory: samples([38, 40, 42, 44, 43, 43]),
+      ramHistory: samples([82, 84, 86, 88, 90, 91]),
+      gpuHistory: samples([12, 14, 15, 17, 18, 18]),
+      cpuTemperatureHistory: samples([54, 55, 56, 57, 58, 58]),
+      gpuTemperatureHistory: samples([46, 47, 48, 49, 50, 50]),
+    );
+
+    final profile = buildSystemHealthProfile(
+      summary: summary,
+      cpuUsage: 43,
+      ramUsage: 91,
+      gpuUsage: 18,
+      cpuTemperature: 58,
+      gpuTemperature: 50,
+      cpuPower: 52,
+      gpuPower: 18,
+    );
+
+    expect(profile.bottleneck, contains('Memory'));
+    expect(profile.observation, contains('Memory headroom'));
+    expect(profile.signals, hasLength(4));
+    expect(
+      profile.signals
+          .singleWhere(
+            (signal) => signal.dimension == SystemHealthDimension.memory,
+          )
+          .score,
+      lessThan(60),
+    );
+  });
+
+  test(
+    'health profile explains baseline calibration without fake certainty',
+    () {
+      final summary = buildTelemetrySessionSummary(
+        cpuUsage: 0,
+        ramUsage: 0,
+        gpuUsage: 0,
+        cpuTemperature: 0,
+        gpuTemperature: 0,
+        cpuHistory: const [],
+        ramHistory: const [],
+        gpuHistory: const [],
+        cpuTemperatureHistory: const [],
+        gpuTemperatureHistory: const [],
+      );
+
+      final profile = buildSystemHealthProfile(
+        summary: summary,
+        cpuUsage: 0,
+        ramUsage: 0,
+        gpuUsage: 0,
+        cpuTemperature: 0,
+        gpuTemperature: 0,
+        cpuPower: 0,
+        gpuPower: 0,
+      );
+
+      expect(profile.observation, contains('learning this session'));
+      expect(profile.bottleneck, 'No active bottleneck');
+      expect(profile.signals.last.detail, 'Power baseline pending');
+    },
+  );
 }

@@ -22,6 +22,27 @@ Values refresh every three seconds while the app is in the foreground. The
 monitor stops refreshing when the app is backgrounded. A manual refresh button
 is also available in the dashboard header.
 
+## Insights and watches
+
+The Android app includes three first-class areas:
+
+- **Overview** keeps the live device dashboard and hardware details.
+- **Insights** calculates an on-device health score, identifies the resource
+  carrying the most pressure, retains a 60-sample foreground session, shows
+  session drift, and creates shareable private snapshots.
+- **Watches** evaluates configurable CPU, memory, storage, battery, and Android
+  thermal-pressure thresholds while monitoring is active. Events are created
+  only when a metric enters a watched zone, avoiding repeated noise.
+
+The monitoring lens can be changed between Balanced, Performance, Quiet,
+Efficiency, and Reliability. A lens changes score weighting and interpretation;
+it does not secretly change Android power, thermal, or scheduler settings.
+
+Session journal entries, watch settings, and recent watch events are stored in
+the app's private local preferences. Sharing a session uses Android's standard
+share sheet and happens only after an explicit user action. Watches are
+foreground, in-app watches rather than a hidden background service.
+
 ## Architecture
 
 This is a standalone Gradle project under `android/`, written in Kotlin with a
@@ -31,6 +52,7 @@ state-driven Jetpack Compose UI. Platform reads are separated into collectors:
 app/src/main/java/com/hardwaremon/android/
 ├── data/
 │   ├── TelemetryRepository.kt
+│   ├── UserPreferencesRepository.kt
 │   └── collectors/
 │       ├── CpuStatsCollector.kt
 │       ├── MemoryStatsCollector.kt
@@ -39,7 +61,9 @@ app/src/main/java/com/hardwaremon/android/
 │       ├── NetworkStatsCollector.kt
 │       ├── ThermalStatsCollector.kt
 │       └── DeviceInfoCollector.kt
-├── model/TelemetryModels.kt
+├── model/
+│   ├── TelemetryModels.kt
+│   └── IntelligenceModels.kt
 ├── ui/
 └── viewmodel/DashboardViewModel.kt
 ```
