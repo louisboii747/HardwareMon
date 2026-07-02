@@ -18,8 +18,8 @@ It performs these operations in order:
 3. Removes extended-attribute detritus, then applies one consistent ad-hoc
    signature to the entire app with `codesign --force --deep --sign -`.
 4. Immediately runs strict deep signature verification. Validation also checks
-   every embedded Mach-O object and bundle, including
-   `local_notifier.framework`.
+   every embedded Mach-O object and code-bearing bundle, including
+   `local_notifier.framework`, while allowing unsigned resource-only bundles.
 5. Smoke-launches the signed application.
 6. Copies the already-signed app into the staging directory and verifies that
    copy before creating the DMG.

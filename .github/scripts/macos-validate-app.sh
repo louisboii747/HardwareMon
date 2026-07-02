@@ -89,7 +89,30 @@ while IFS= read -r -d '' nested_bundle; do
 done < <(
   find "$APP_BUNDLE/Contents" -depth -type d \
     \( -name '*.framework' -o -name '*.app' -o -name '*.xpc' \
-       -o -name '*.appex' -o -name '*.bundle' \) -print0
+       -o -name '*.appex' \) -print0
+)
+
+# Flutter packages also embed resource-only `.bundle` directories. They contain
+# assets rather than executable code and are intentionally not signed as
+# independent code objects. Still require a valid bundle signature whenever a
+# `.bundle` contains Mach-O code.
+bundle_contains_macho() {
+  while IFS= read -r -d '' candidate; do
+    if file -b "$candidate" | grep -q 'Mach-O'; then
+      return 0
+    fi
+  done < <(find "$1" -type f -print0)
+  return 1
+}
+
+while IFS= read -r -d '' nested_bundle; do
+  if bundle_contains_macho "$nested_bundle"; then
+    codesign --verify --strict --verbose=2 "$nested_bundle"
+  else
+    echo "Skipping independent signature check for resource-only bundle: $nested_bundle"
+  fi
+done < <(
+  find "$APP_BUNDLE/Contents" -depth -type d -name '*.bundle' -print0
 )
 
 echo "Linked libraries for the application executable"
