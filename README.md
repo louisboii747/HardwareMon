@@ -365,6 +365,10 @@ flatpak run com.hardwaremon.HardwareMon
 HardwareMon offers a DMG file downloadable from Github Releases. This DMG does not currently support x64 based macs, as the build process targets ARM based M1+ systems only.
 There are plans to port the app over to the App Store on macOS. x64 versions for Intel macs will arrive soon.
 
+> Current macOS CI builds are consistently ad-hoc signed and are not yet
+> Developer ID signed or notarized. After downloading, macOS may require
+> **Right-click → Open** and confirmation on first launch.
+
 | Architecture | Support |
 |--------------|---------|
 | Apple Silicon (M1) | ✅ |
@@ -492,12 +496,11 @@ Any remaining issues, references, or deprecated code related to these legacy sys
 
 HardwareMon uses a dedicated GitHub Actions workflow for macOS release builds.
 Tags matching `v*.*.*` build the Flutter app and bundled FastAPI helper on a
-GitHub-hosted Mac, validate nested signatures, create and verify the DMG, and
-upload it to the matching GitHub Release. Builds automatically use Developer ID
-signing and notarization when all Apple secrets exist, or clearly labeled
-ad-hoc signing until a certificate is available. See the
-[macOS release guide](hardwaremon_app/macos/README.md) for credential setup and
-unsigned-build behavior.
+GitHub-hosted Mac, apply a final deep ad-hoc signature to the completed app,
+validate all embedded frameworks, create and verify the DMG, and upload it to
+the matching GitHub Release. Developer ID signing and notarization are deferred
+until a real Apple Developer certificate is available. See the
+[macOS release guide](hardwaremon_app/macos/README.md) for current behavior.
 
 The existing GitHub Actions pipelines continue to handle:
 

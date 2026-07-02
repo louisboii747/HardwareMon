@@ -3,8 +3,8 @@
 <plist version="1.0">
 <dict>
 	<!--
-	  HardwareMon launches its bundled telemetry helper. This Developer ID build
-	  is distributed outside the Mac App Store, so App Sandbox is deliberately
+	  HardwareMon launches its bundled telemetry helper. This release build is
+	  distributed outside the Mac App Store, so App Sandbox is deliberately
 	  disabled; a sandboxed parent cannot launch this standalone PyInstaller
 	  helper with the access it needs to collect system telemetry.
 	-->

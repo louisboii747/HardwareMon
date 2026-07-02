@@ -16,19 +16,9 @@ env:
   APP_BUNDLE: hardwaremon_app/build/macos/Build/Products/Release/HardwareMon.app
   EXPECTED_BUNDLE_ID: com.hardwaremon.HardwareMon
 
-  # Keep presence checks separate so a failed tag build identifies every
-  # missing secret without exposing secret values to logs.
-  HAS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE_BASE64 != '' }}
-  HAS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD != '' }}
-  HAS_KEYCHAIN_PASSWORD: ${{ secrets.MACOS_KEYCHAIN_PASSWORD != '' }}
-  HAS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY != '' }}
-  HAS_APPLE_ID: ${{ secrets.APPLE_ID != '' }}
-  HAS_APPLE_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD != '' }}
-  HAS_APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID != '' }}
-
 jobs:
   build-macos-dmg:
-    name: Build, sign, notarize, and verify macOS DMG
+    name: Build, ad-hoc sign, and verify macOS DMG
     runs-on: macos-15
     timeout-minutes: 90
 
@@ -63,40 +53,6 @@ jobs:
             echo "DMG_NAME=HardwareMon-macOS-$VERSION.dmg"
           } >> "$GITHUB_ENV"
 
-      - name: Select signing and notarization mode
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          missing=()
-          [[ "$HAS_CERTIFICATE" == "true" ]] || missing+=(MACOS_CERTIFICATE_BASE64)
-          [[ "$HAS_CERTIFICATE_PASSWORD" == "true" ]] || missing+=(MACOS_CERTIFICATE_PASSWORD)
-          [[ "$HAS_KEYCHAIN_PASSWORD" == "true" ]] || missing+=(MACOS_KEYCHAIN_PASSWORD)
-          [[ "$HAS_SIGNING_IDENTITY" == "true" ]] || missing+=(MACOS_SIGNING_IDENTITY)
-          [[ "$HAS_APPLE_ID" == "true" ]] || missing+=(APPLE_ID)
-          [[ "$HAS_APPLE_PASSWORD" == "true" ]] || missing+=(APPLE_APP_SPECIFIC_PASSWORD)
-          [[ "$HAS_APPLE_TEAM_ID" == "true" ]] || missing+=(APPLE_TEAM_ID)
-
-          if [[ ${#missing[@]} -eq 0 ]]; then
-            SIGNED_MODE=true
-            NOTARIZE_MODE=true
-            RELEASE_MODE=developer-id-notarized
-            echo "Complete Apple credentials detected; enabling Developer ID signing and notarization."
-          else
-            SIGNED_MODE=false
-            NOTARIZE_MODE=false
-            RELEASE_MODE=unsigned-developer
-            echo "::warning::Apple Developer credentials are not fully configured. Continuing with an ad-hoc-signed macOS build."
-            echo "::warning::Configure these secrets to enable trusted signing and notarization:"
-            printf '::warning::  - %s\n' "${missing[@]}"
-          fi
-
-          {
-            echo "SIGNED_MODE=$SIGNED_MODE"
-            echo "NOTARIZE_MODE=$NOTARIZE_MODE"
-            echo "RELEASE_MODE=$RELEASE_MODE"
-          } >> "$GITHUB_ENV"
-
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -116,6 +72,20 @@ jobs:
           flutter build macos --release
           --build-name "${{ env.BUILD_NAME }}"
           --build-number "${{ env.BUILD_NUMBER }}"
+
+      - name: Locate built macOS application
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PREFERRED_APP_BUNDLE="$APP_PATH/build/macos/Build/Products/Release/$APP_NAME.app"
+          echo "Expecting the Flutter release app at: $PREFERRED_APP_BUNDLE"
+          if [[ ! -d "$PREFERRED_APP_BUNDLE" ]]; then
+            echo "::error::Flutter macOS build completed without creating the expected app bundle: $PREFERRED_APP_BUNDLE" >&2
+            exit 1
+          fi
+
+          echo "Found macOS application bundle: $PREFERRED_APP_BUNDLE"
 
       - name: Setup Python
         uses: actions/setup-python@v6
@@ -153,84 +123,32 @@ jobs:
             "$HELPERS_DIRECTORY/backend"
           chmod +x "$APP_BUNDLE/Contents/Helpers/backend"
 
-      - name: Import Developer ID certificate into temporary keychain
-        if: env.SIGNED_MODE == 'true'
-        env:
-          MACOS_CERTIFICATE_BASE64: ${{ secrets.MACOS_CERTIFICATE_BASE64 }}
-          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
-          MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
-          KEYCHAIN_PASSWORD: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
+      - name: Ad-hoc sign complete application bundle
         shell: bash
         run: |
           set -euo pipefail
 
-          CERTIFICATE_PATH="$RUNNER_TEMP/developer-id-application.p12"
-          KEYCHAIN_PATH="$RUNNER_TEMP/hardwaremon-signing.keychain-db"
-          printf '%s' "$MACOS_CERTIFICATE_BASE64" | base64 -D > "$CERTIFICATE_PATH"
-
-          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security import "$CERTIFICATE_PATH" \
-            -P "$MACOS_CERTIFICATE_PASSWORD" \
-            -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
-          security list-keychains -d user -s "$KEYCHAIN_PATH"
-          security set-key-partition-list \
-            -S apple-tool:,apple: \
-            -s -k "$KEYCHAIN_PASSWORD" \
-            "$KEYCHAIN_PATH"
-          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
-          security find-identity -v -p codesigning "$KEYCHAIN_PATH" \
-            | grep -F -- "\"$MACOS_SIGNING_IDENTITY\""
-
-      - name: Sign nested code then outer app
-        env:
-          DEVELOPER_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          chmod +x .github/scripts/macos-*.sh
-          if [[ "$SIGNED_MODE" == "true" ]]; then
-            SIGNING_IDENTITY="$DEVELOPER_IDENTITY"
-          else
-            SIGNING_IDENTITY="-"
+          PREFERRED_APP_BUNDLE="$APP_PATH/build/macos/Build/Products/Release/$APP_NAME.app"
+          if [[ ! -d "$PREFERRED_APP_BUNDLE" ]]; then
+            echo "::error::Cannot sign missing app bundle: $PREFERRED_APP_BUNDLE" >&2
+            exit 1
           fi
 
-          .github/scripts/macos-sign-app.sh \
-            "$APP_BUNDLE" \
-            "$SIGNING_IDENTITY" \
-            "$APP_PATH/macos/Runner/Release.entitlements"
+          chmod +x .github/scripts/macos-*.sh
+          xattr -cr "$PREFERRED_APP_BUNDLE"
+
+          echo "Ad-hoc signing the complete app bundle, including embedded frameworks and helpers:"
+          echo "  $PREFERRED_APP_BUNDLE"
+          codesign --force --deep --sign - "$PREFERRED_APP_BUNDLE"
+
+          echo "Strictly verifying the final ad-hoc signature before DMG creation:"
+          codesign --verify --deep --strict --verbose=2 "$PREFERRED_APP_BUNDLE"
 
       - name: Verify final application bundle
         shell: bash
         run: |
           set -euo pipefail
-          # Strict codesign checks run now. Gatekeeper becomes mandatory after
-          # the notarization ticket is stapled in the following step.
           .github/scripts/macos-validate-app.sh "$APP_BUNDLE" false
-
-      - name: Notarize and staple application
-        if: env.NOTARIZE_MODE == 'true'
-        env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          APP_ZIP="$RUNNER_TEMP/HardwareMon-notarization.zip"
-          ditto -c -k --keepParent "$APP_BUNDLE" "$APP_ZIP"
-          xcrun notarytool submit "$APP_ZIP" \
-            --apple-id "$APPLE_ID" \
-            --password "$APPLE_APP_SPECIFIC_PASSWORD" \
-            --team-id "$APPLE_TEAM_ID" \
-            --wait
-          xcrun stapler staple "$APP_BUNDLE"
-          xcrun stapler validate "$APP_BUNDLE"
-          codesign --verify --deep --strict --verbose=4 "$APP_BUNDLE"
-          spctl --assess --type execute --verbose=4 "$APP_BUNDLE"
 
       - name: Smoke launch application
         shell: bash
@@ -268,14 +186,12 @@ jobs:
           ditto "$APP_BUNDLE" "dist/dmg/$APP_NAME.app"
           ln -s /Applications dist/dmg/Applications
 
-          if [[ "$SIGNED_MODE" != "true" ]]; then
-            cp "$APP_PATH/macos/README.md" dist/dmg/UNSIGNED-DEVELOPER-BUILD.md
-          fi
+          cp "$APP_PATH/macos/README.md" dist/dmg/AD-HOC-SIGNED-BUILD.md
 
           # Re-verify the copied app. No files inside it are changed after this.
           .github/scripts/macos-validate-app.sh \
             "dist/dmg/$APP_NAME.app" \
-            "$NOTARIZE_MODE"
+            false
 
       - name: Create compressed DMG
         shell: bash
@@ -288,36 +204,11 @@ jobs:
             -format UDZO \
             "dist/$DMG_NAME"
 
-      - name: Sign DMG
-        if: env.SIGNED_MODE == 'true'
-        run: |
-          codesign --force --timestamp \
-            --sign "${{ secrets.MACOS_SIGNING_IDENTITY }}" \
-            "dist/$DMG_NAME"
-          codesign --verify --strict --verbose=4 "dist/$DMG_NAME"
-
-      - name: Notarize and staple DMG
-        if: env.NOTARIZE_MODE == 'true'
-        env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          xcrun notarytool submit "dist/$DMG_NAME" \
-            --apple-id "$APPLE_ID" \
-            --password "$APPLE_APP_SPECIFIC_PASSWORD" \
-            --team-id "$APPLE_TEAM_ID" \
-            --wait
-          xcrun stapler staple "dist/$DMG_NAME"
-          xcrun stapler validate "dist/$DMG_NAME"
-
       - name: Verify final DMG and mounted app
         shell: bash
         run: |
           set -euo pipefail
-          .github/scripts/macos-validate-dmg.sh "dist/$DMG_NAME" "$NOTARIZE_MODE"
+          .github/scripts/macos-validate-dmg.sh "dist/$DMG_NAME" false
 
       - name: Generate SHA-256 checksum
         working-directory: dist
@@ -326,7 +217,7 @@ jobs:
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: HardwareMon-macOS-${{ env.RELEASE_MODE }}
+          name: HardwareMon-macOS-ad-hoc-signed
           path: |
             dist/${{ env.DMG_NAME }}
             dist/${{ env.DMG_NAME }}.sha256
@@ -350,8 +241,3 @@ jobs:
             "dist/$DMG_NAME" \
             "dist/$DMG_NAME.sha256" \
             --clobber
-
-      - name: Remove temporary signing keychain
-        if: always() && env.SIGNED_MODE == 'true'
-        shell: bash
-        run: security delete-keychain "$RUNNER_TEMP/hardwaremon-signing.keychain-db" || true

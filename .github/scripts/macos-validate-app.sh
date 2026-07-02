@@ -15,6 +15,9 @@ fail() {
 [[ -d "$APP_BUNDLE/Contents/MacOS" ]] || fail "missing Contents/MacOS"
 [[ -d "$APP_BUNDLE/Contents/Frameworks" ]] || fail "missing Contents/Frameworks"
 [[ -f "$APP_BUNDLE/Contents/Info.plist" ]] || fail "missing Info.plist"
+LOCAL_NOTIFIER_FRAMEWORK="$APP_BUNDLE/Contents/Frameworks/local_notifier.framework"
+[[ -d "$LOCAL_NOTIFIER_FRAMEWORK" ]] || \
+  fail "embedded local_notifier.framework is missing"
 
 plutil -lint "$APP_BUNDLE/Contents/Info.plist"
 
@@ -63,6 +66,9 @@ file -b "$BACKEND_EXECUTABLE" | grep -q 'Mach-O' || \
 codesign --verify --deep --strict --verbose=4 "$APP_BUNDLE"
 codesign -dv --verbose=4 "$APP_BUNDLE"
 
+echo "Verifying the embedded local_notifier framework signature"
+codesign --verify --strict --verbose=2 "$LOCAL_NOTIFIER_FRAMEWORK"
+
 echo "Verifying every embedded Mach-O object and code bundle"
 while IFS= read -r -d '' candidate; do
   if file -b "$candidate" | grep -q 'Mach-O'; then
@@ -97,6 +103,6 @@ xattr -lr "$APP_BUNDLE" || true
 if [[ "$GATEKEEPER_REQUIRED" == "true" ]]; then
   spctl --assess --type execute --verbose=4 "$APP_BUNDLE"
 else
-  echo "Gatekeeper assessment is diagnostic until notarization is complete."
+  echo "Gatekeeper assessment is diagnostic for the current ad-hoc-signed build."
   spctl --assess --type execute --verbose=4 "$APP_BUNDLE" || true
 fi
