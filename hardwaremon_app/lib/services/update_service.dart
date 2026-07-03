@@ -18,9 +18,16 @@ const _compiledAppVersion = String.fromEnvironment(
 
 enum UpdateBuildChannel { stable, development, localDebug }
 
-enum UpdatePlatform { windows, linux, unsupported }
+enum UpdatePlatform { windows, linux, macos, unsupported }
 
-enum UpdatePackageType { windowsInstaller, deb, rpm, manual, unsupported }
+enum UpdatePackageType {
+  windowsInstaller,
+  deb,
+  rpm,
+  macosDmg,
+  manual,
+  unsupported,
+}
 
 enum UpdateStage {
   idle,
@@ -53,6 +60,7 @@ extension UpdatePackageTypeLabel on UpdatePackageType {
     UpdatePackageType.windowsInstaller => 'Windows installer',
     UpdatePackageType.deb => 'DEB / APT',
     UpdatePackageType.rpm => 'RPM / DNF',
+    UpdatePackageType.macosDmg => 'macOS disk image',
     UpdatePackageType.manual => 'Manual installation',
     UpdatePackageType.unsupported => 'Unsupported platform',
   };
@@ -62,6 +70,7 @@ extension UpdatePlatformLabel on UpdatePlatform {
   String get label => switch (this) {
     UpdatePlatform.windows => 'Windows',
     UpdatePlatform.linux => 'Linux',
+    UpdatePlatform.macos => 'macOS',
     UpdatePlatform.unsupported => 'Unsupported',
   };
 }
@@ -251,6 +260,8 @@ class UpdateRuntime {
           ? UpdatePlatform.windows
           : Platform.isLinux
           ? UpdatePlatform.linux
+          : Platform.isMacOS
+          ? UpdatePlatform.macos
           : UpdatePlatform.unsupported,
       isDebug: kDebugMode,
       environment: Platform.environment,
@@ -342,6 +353,8 @@ class UpdateService extends ChangeNotifier {
           platform: _runtime.platform,
           packageType: _runtime.platform == UpdatePlatform.windows
               ? UpdatePackageType.windowsInstaller
+              : _runtime.platform == UpdatePlatform.macos
+              ? UpdatePackageType.macosDmg
               : UpdatePackageType.manual,
           channel: _runtime.isDebug
               ? UpdateBuildChannel.localDebug
@@ -660,6 +673,19 @@ class UpdateService extends ChangeNotifier {
         marker.path,
         _state.latestVersion,
       ], ProcessStartMode.detached);
+    } else if (_state.packageType == UpdatePackageType.macosDmg) {
+      final helper = await _writeMacosHelper(
+        packageFile: packageFile,
+        marker: marker,
+      );
+      await _processStarter('/bin/sh', [
+        helper.path,
+        packageFile.path,
+        _macosAppBundlePath(_runtime.executablePath),
+        '${_runtime.processId}',
+        marker.path,
+        _state.latestVersion,
+      ], ProcessStartMode.detached);
     } else {
       final helper = await _writeLinuxHelper(
         packageFile: packageFile,
@@ -699,6 +725,8 @@ class UpdateService extends ChangeNotifier {
         await _processRunner('explorer.exe', [url]);
       } else if (_runtime.platform == UpdatePlatform.linux) {
         await _processRunner('xdg-open', [url]);
+      } else if (_runtime.platform == UpdatePlatform.macos) {
+        await _processRunner('open', [url]);
       } else {
         throw UnsupportedError('This platform cannot open release links.');
       }
@@ -715,6 +743,7 @@ class UpdateService extends ChangeNotifier {
       UpdatePackageType.windowsInstaller => '.exe',
       UpdatePackageType.deb => '.deb',
       UpdatePackageType.rpm => '.rpm',
+      UpdatePackageType.macosDmg => '.dmg',
       _ => null,
     };
     if (extension == null) return null;
@@ -781,6 +810,8 @@ class UpdateService extends ChangeNotifier {
 
     if (_runtime.platform == UpdatePlatform.windows) {
       packageType = UpdatePackageType.windowsInstaller;
+    } else if (_runtime.platform == UpdatePlatform.macos) {
+      packageType = UpdatePackageType.macosDmg;
     } else if (_runtime.platform == UpdatePlatform.linux) {
       final linuxPackage = await _detectLinuxPackage();
       packageType = linuxPackage.type;
@@ -1031,6 +1062,105 @@ else
 fi
 
 rm -f -- "$PACKAGE_PATH"
+''');
+    return helper;
+  }
+
+  Future<File> _writeMacosHelper({
+    required File packageFile,
+    required File marker,
+  }) async {
+    final helper = File(
+      _joinPath(packageFile.parent.path, 'install-update-macos.sh'),
+    );
+    await helper.writeAsString(r'''#!/bin/sh
+PACKAGE_PATH="$1"
+TARGET_APP="$2"
+APP_PID="$3"
+MARKER_PATH="$4"
+VERSION="$5"
+LOG_PATH="$(dirname "$MARKER_PATH")/updater-helper.log"
+WORK_PATH="$(dirname "$PACKAGE_PATH")/macos-install"
+MOUNT_PATH="$WORK_PATH/mount"
+STAGED_APP="$WORK_PATH/HardwareMon.app"
+PRIVILEGED_HELPER="$WORK_PATH/replace-app.sh"
+
+log_update() {
+  mkdir -p "$(dirname "$LOG_PATH")"
+  printf '%s %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$1" >> "$LOG_PATH"
+}
+
+write_result() {
+  mkdir -p "$(dirname "$MARKER_PATH")"
+  TEMP_MARKER="$MARKER_PATH.tmp"
+  printf '%s\n%s\n%s\n' "$1" "$VERSION" "$2" > "$TEMP_MARKER"
+  mv -f "$TEMP_MARKER" "$MARKER_PATH"
+  log_update "$2"
+}
+
+log_update "Helper started for version $VERSION; waiting for PID $APP_PID."
+WAIT_COUNT=0
+while kill -0 "$APP_PID" 2>/dev/null && [ "$WAIT_COUNT" -lt 360 ]; do
+  sleep 0.25
+  WAIT_COUNT=$((WAIT_COUNT + 1))
+done
+
+if kill -0 "$APP_PID" 2>/dev/null; then
+  write_result failed "HardwareMon did not exit within 90 seconds."
+  exit 1
+fi
+
+rm -rf "$WORK_PATH"
+mkdir -p "$MOUNT_PATH"
+if ! hdiutil attach "$PACKAGE_PATH" -nobrowse -readonly -mountpoint "$MOUNT_PATH" >/dev/null; then
+  write_result failed "The macOS disk image could not be mounted."
+  exit 1
+fi
+
+SOURCE_APP="$(find "$MOUNT_PATH" -maxdepth 2 -type d -name 'HardwareMon.app' -print -quit)"
+if [ -z "$SOURCE_APP" ]; then
+  hdiutil detach "$MOUNT_PATH" -force >/dev/null 2>&1
+  write_result failed "HardwareMon.app was not found in the disk image."
+  exit 1
+fi
+
+if ! ditto "$SOURCE_APP" "$STAGED_APP"; then
+  hdiutil detach "$MOUNT_PATH" -force >/dev/null 2>&1
+  write_result failed "HardwareMon.app could not be copied from the disk image."
+  exit 1
+fi
+hdiutil detach "$MOUNT_PATH" >/dev/null 2>&1 || hdiutil detach "$MOUNT_PATH" -force >/dev/null 2>&1
+
+cat > "$PRIVILEGED_HELPER" <<'INSTALL_SCRIPT'
+#!/bin/sh
+set -e
+SOURCE_APP="$1"
+TARGET_APP="$2"
+TARGET_PARENT="$(dirname "$TARGET_APP")"
+mkdir -p "$TARGET_PARENT"
+rm -rf "$TARGET_APP"
+ditto "$SOURCE_APP" "$TARGET_APP"
+INSTALL_SCRIPT
+chmod 700 "$PRIVILEGED_HELPER"
+
+if ! /usr/bin/osascript - "$PRIVILEGED_HELPER" "$STAGED_APP" "$TARGET_APP" <<'APPLESCRIPT'
+on run argv
+  set helperPath to item 1 of argv
+  set sourcePath to item 2 of argv
+  set targetPath to item 3 of argv
+  do shell script quoted form of helperPath & " " & quoted form of sourcePath & " " & quoted form of targetPath with administrator privileges
+end run
+APPLESCRIPT
+then
+  write_result failed "The macOS installation was cancelled or failed."
+  exit 1
+fi
+
+write_result success "HardwareMon was updated successfully."
+log_update "Restarting HardwareMon from $TARGET_APP."
+open "$TARGET_APP"
+rm -f -- "$PACKAGE_PATH"
+rm -rf "$WORK_PATH"
 ''');
     return helper;
   }
@@ -1305,4 +1435,13 @@ String normalizePackageVersion(String value, UpdatePackageType packageType) {
     r'^(\d+\.\d+\.\d+)-\d+(?:[.+~].*)?$',
   ).firstMatch(normalized);
   return stableWithDebianRevision?.group(1) ?? normalized;
+}
+
+String _macosAppBundlePath(String executablePath) {
+  const suffix = '.app/';
+  final boundary = executablePath.indexOf(suffix);
+  if (boundary < 0) {
+    throw StateError('HardwareMon is not running from a macOS app bundle.');
+  }
+  return executablePath.substring(0, boundary + '.app'.length);
 }

@@ -51,6 +51,7 @@ void main() {
       _asset('HardwareMon-v18.2.4.exe'),
       _asset('hardwaremon.deb'),
       _asset('hardwaremon.rpm'),
+      _asset('HardwareMon-macOS-18.2.4.dmg'),
     ];
 
     expect(
@@ -72,6 +73,10 @@ void main() {
       UpdateService.matchingAssetFor(assets, UpdatePackageType.manual),
       isNull,
     );
+    expect(
+      UpdateService.matchingAssetFor(assets, UpdatePackageType.macosDmg)?.name,
+      endsWith('.dmg'),
+    );
   });
 
   test('stable Windows build finds its installer update', () async {
@@ -87,6 +92,21 @@ void main() {
     expect(state.packageType, UpdatePackageType.windowsInstaller);
     expect(state.updateAvailable, isTrue);
     expect(state.asset?.name, 'HardwareMon-v18.2.4.exe');
+    expect(state.canInstallAutomatically, isTrue);
+  });
+
+  test('stable macOS build finds its disk image update', () async {
+    final fixture = await _fixture(
+      version: '18.2.3',
+      platform: UpdatePlatform.macos,
+    );
+    addTearDown(fixture.dispose);
+
+    final state = await fixture.service.checkForUpdates();
+
+    expect(state.platform, UpdatePlatform.macos);
+    expect(state.packageType, UpdatePackageType.macosDmg);
+    expect(state.asset?.name, 'HardwareMon-macOS-18.2.4.dmg');
     expect(state.canInstallAutomatically, isTrue);
   });
 
@@ -328,6 +348,42 @@ void main() {
       expect(starts.single.arguments.last, UpdatePackageType.deb.name);
     },
   );
+
+  test(
+    'macOS install helper mounts, replaces, and relaunches the app',
+    () async {
+      final starts = <({String executable, List<String> arguments})>[];
+      var closed = false;
+      final fixture = await _fixture(
+        version: '18.2.3',
+        platform: UpdatePlatform.macos,
+        processStarter: (executable, arguments, mode) async {
+          starts.add((executable: executable, arguments: arguments));
+        },
+      );
+      addTearDown(fixture.dispose);
+
+      await fixture.service.checkForUpdates();
+      await fixture.service.performUpdate(
+        closeApplication: () async => closed = true,
+      );
+
+      expect(starts.single.executable, '/bin/sh');
+      expect(starts.single.arguments[2], '/Applications/HardwareMon.app');
+      final helper = await File(starts.single.arguments.first).readAsString();
+      expect(helper, contains('hdiutil attach'));
+      expect(helper, contains('with administrator privileges'));
+      expect(helper, contains('ditto "\$SOURCE_APP" "\$STAGED_APP"'));
+      expect(helper, contains('open "\$TARGET_APP"'));
+      final syntaxCheck = await Process.run('/bin/sh', [
+        '-n',
+        starts.single.arguments.first,
+      ]);
+      expect(syntaxCheck.exitCode, 0, reason: syntaxCheck.stderr.toString());
+      expect(fixture.service.state.stage, UpdateStage.restarting);
+      expect(closed, isTrue);
+    },
+  );
 }
 
 UpdateAsset _asset(String name) {
@@ -372,6 +428,12 @@ Future<_UpdateFixture> _fixture({
         'browser_download_url': 'https://example.test/hardwaremon.rpm',
         'size': bytes.length,
       },
+      {
+        'name': 'HardwareMon-macOS-18.2.4.dmg',
+        'browser_download_url':
+            'https://example.test/HardwareMon-macOS-18.2.4.dmg',
+        'size': bytes.length,
+      },
     ],
   };
   final client = MockClient((request) async {
@@ -398,6 +460,8 @@ Future<_UpdateFixture> _fixture({
       environment: const {},
       executablePath: platform == UpdatePlatform.windows
           ? r'C:\Program Files\HardwareMon\flutter_gui.exe'
+          : platform == UpdatePlatform.macos
+          ? '/Applications/HardwareMon.app/Contents/MacOS/HardwareMon'
           : '/usr/lib/hardwaremon/hardwaremon-bin',
       processId: 42,
     ),
