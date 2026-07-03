@@ -48,14 +48,55 @@ def read_cpu_name():
     return platform.processor() or "Unknown CPU"
 
 
-def collect_capabilities():
+def read_battery_stats():
+    try:
+        battery = psutil.sensors_battery()
+    except (AttributeError, OSError, RuntimeError):
+        battery = None
+
+    if battery is None:
+        return {
+            "battery_percent": None,
+            "battery_plugged": None,
+            "battery_seconds_left": None,
+            "battery_status": None,
+        }
+
+    seconds_left = battery.secsleft
+    unknown_times = {
+        getattr(psutil, "POWER_TIME_UNKNOWN", -2),
+        getattr(psutil, "POWER_TIME_UNLIMITED", -1),
+    }
+    if seconds_left in unknown_times:
+        seconds_left = None
+    status = "Charging" if battery.power_plugged else "On battery"
+    if battery.power_plugged and battery.percent >= 99.5:
+        status = "Fully charged"
+    return {
+        "battery_percent": round(float(battery.percent), 1),
+        "battery_plugged": bool(battery.power_plugged),
+        "battery_seconds_left": seconds_left,
+        "battery_status": status,
+    }
+
+
+def collect_capabilities(battery_available=None):
+    if battery_available is None:
+        battery_available = read_battery_stats()["battery_percent"] is not None
+
     if IS_MACOS:
         return {
+            "supports_cpu_usage": True,
+            "supports_memory": True,
+            "supports_disk": True,
+            "supports_network": True,
+            "supports_battery": battery_available,
             "supports_process_list": True,
             "supports_process_kill": False,
             "supports_cpu_temperature": False,
             "supports_gpu_temperature": False,
             "supports_fan_control": False,
+            "supports_fan_metrics": False,
             "supports_power_metrics": False,
             "supports_cpu_frequency": False,
             "supports_gpu_usage": False,
@@ -65,11 +106,17 @@ def collect_capabilities():
         }
 
     return {
+        "supports_cpu_usage": True,
+        "supports_memory": True,
+        "supports_disk": True,
+        "supports_network": True,
+        "supports_battery": battery_available,
         "supports_process_list": True,
         "supports_process_kill": True,
         "supports_cpu_temperature": True,
         "supports_gpu_temperature": True,
         "supports_fan_control": False,
+        "supports_fan_metrics": False,
         "supports_power_metrics": True,
         "supports_cpu_frequency": True,
         "supports_gpu_usage": True,
@@ -102,8 +149,9 @@ def collect_platform_info():
 
 
 def attach_system_metadata(stats, unavailable_metrics=None):
+    battery_available = stats.get("battery_percent") is not None
     stats["platform"] = collect_platform_info()
-    stats["capabilities"] = collect_capabilities()
+    stats["capabilities"] = collect_capabilities(battery_available)
     stats["unavailable_metrics"] = unavailable_metrics or {}
     return stats
 
@@ -112,7 +160,7 @@ def collect_basic_stats():
     memory = psutil.virtual_memory()
     cpu_freq = psutil.cpu_freq()
 
-    return {
+    stats = {
         "cpu": int(psutil.cpu_percent(interval=0.1)),
         "cpu_temp": 0,
         "cpu_power": 0,
@@ -129,6 +177,8 @@ def collect_basic_stats():
         "gpu_power": 0,
         "gpu_vram_used": 0,
     }
+    stats.update(read_battery_stats())
+    return stats
 
 
 def default_stats():
@@ -375,6 +425,10 @@ def collect_macos_stats():
         "gpu_vram_used": "Apple unified memory is not reported as dedicated VRAM by macOS.",
         "fan_rpm": "Fan telemetry is not exposed by the current unprivileged macOS integration.",
     }
+    if stats.get("battery_percent") is None:
+        unavailable["battery"] = (
+            "No system battery was reported; this is expected on desktop Macs."
+        )
     stats.update(
         cpu_name=hardware["cpu_name"],
         gpu_name=(

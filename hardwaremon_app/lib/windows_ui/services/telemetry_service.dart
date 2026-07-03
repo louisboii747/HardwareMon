@@ -29,6 +29,10 @@ class TelemetryService extends ChangeNotifier {
   double ramUsed = 0;
   double ramAvailable = 0;
   double ramTotal = 0;
+  double? batteryPercent;
+  bool? batteryPlugged;
+  int? batterySecondsLeft;
+  String? batteryStatus;
 
   double get cpuClockGHz => cpuClock / 1000;
 
@@ -110,6 +114,10 @@ class TelemetryService extends ChangeNotifier {
       ramUsed = (data['ram_used'] ?? 0).toDouble();
       ramAvailable = (data['ram_available'] ?? 0).toDouble();
       ramTotal = (data['ram_total'] ?? 0).toDouble();
+      batteryPercent = (data['battery_percent'] as num?)?.toDouble();
+      batteryPlugged = data['battery_plugged'] as bool?;
+      batterySecondsLeft = (data['battery_seconds_left'] as num?)?.round();
+      batteryStatus = data['battery_status']?.toString();
 
       cpuName = data['cpu_name'] ?? 'Unknown CPU';
       gpuName = data['gpu_name'] ?? 'Unknown GPU';

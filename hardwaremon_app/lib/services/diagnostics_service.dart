@@ -198,6 +198,14 @@ class DiagnosticsService {
       buffer.writeln('RAM Available: ${telemetry['ram_available']} GB');
       buffer.writeln('RAM Total: ${telemetry['ram_total']} GB');
       buffer.writeln('');
+      buffer.writeln('Battery: ${_metric(telemetry, 'battery_percent', '%')}');
+      buffer.writeln(
+        'Battery Status: ${telemetry['battery_status'] ?? 'Unavailable'}',
+      );
+      buffer.writeln(
+        'Power Connected: ${telemetry['battery_plugged'] ?? 'Unavailable'}',
+      );
+      buffer.writeln('');
 
       buffer.writeln('GPU Name: ${telemetry['gpu_name'] ?? 'Unknown GPU'}');
       buffer.writeln('GPU Usage: ${_metric(telemetry, 'gpu_usage', '%')}');

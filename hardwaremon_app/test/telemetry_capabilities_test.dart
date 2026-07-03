@@ -11,6 +11,7 @@ void main() {
         'supports_cpu_temperature': false,
         'supports_gpu_temperature': false,
         'supports_power_metrics': false,
+        'supports_battery': true,
       }, isMacOS: true);
 
       expect(capabilities.supportsProcessList, isTrue);
@@ -18,6 +19,9 @@ void main() {
       expect(capabilities.supportsCpuTemperature, isFalse);
       expect(capabilities.supportsGpuTemperature, isFalse);
       expect(capabilities.supportsPowerMetrics, isFalse);
+      expect(capabilities.supportsBattery, isTrue);
+      expect(capabilities.supportsCpuUsage, isTrue);
+      expect(capabilities.supportsMemory, isTrue);
       expect(capabilities.supportsHistoricalMonitoring, isTrue);
     },
   );

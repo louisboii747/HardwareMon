@@ -14,3 +14,17 @@ updates:
       interval: "weekly"
     labels:
       - dependencies
+
+  - package-ecosystem: "pub"
+    directory: "/hardwaremon_app"
+    schedule:
+      interval: "weekly"
+    labels:
+      - dependencies
+
+  - package-ecosystem: "gradle"
+    directory: "/android"
+    schedule:
+      interval: "weekly"
+    labels:
+      - dependencies

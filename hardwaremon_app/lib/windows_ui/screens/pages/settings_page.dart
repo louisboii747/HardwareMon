@@ -1004,6 +1004,15 @@ class _SettingsPageState extends State<SettingsPage> {
                     ? Icons.check_circle_outline_rounded
                     : Icons.cloud_off_rounded,
               ),
+              if (widget.telemetry.capabilities.supportsBattery &&
+                  widget.telemetry.batteryPercent != null)
+                _MacOSInfoChip(
+                  label:
+                      'Battery ${widget.telemetry.batteryPercent!.toStringAsFixed(0)}% · ${widget.telemetry.batteryStatus ?? 'Available'}',
+                  icon: widget.telemetry.batteryPlugged == true
+                      ? Icons.battery_charging_full_rounded
+                      : Icons.battery_std_rounded,
+                ),
             ],
           ),
           const SizedBox(height: 12),

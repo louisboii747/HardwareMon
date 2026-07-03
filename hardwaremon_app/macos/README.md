@@ -51,6 +51,11 @@ Developer ID signing and notarization are intentionally deferred until a real
 Apple Developer certificate is available. Do not add placeholder identities or
 fake certificate secrets.
 
+The release also publishes `SHA256SUMS-macos.txt`, CycloneDX SBOM and release
+metadata JSON files, plus GitHub-hosted provenance and SBOM attestations. Follow
+the repository's [release verification guide](../../docs/release-verification.md)
+to verify a DMG before opening it.
+
 ## Testing a release
 
 1. Run the workflow manually and confirm the log shows the expected app path,
@@ -73,6 +78,8 @@ limitation rather than evidence that the signed app bundle is invalid.
 | Dashboard | Working; capability-aware cards prioritise CPU and memory |
 | CPU usage and Apple chip name | Supported |
 | RAM used, available, and total | Supported |
+| Disk and network | Supported through the existing cross-platform collectors |
+| MacBook battery | Supported when macOS reports a system battery |
 | Temperatures, fan RPM, and power draw | Limited or unavailable through public unprivileged APIs |
 | Detailed GPU usage and VRAM | Limited; Apple unified memory is not presented as dedicated VRAM |
 | Process list | Experimental and permission-dependent |

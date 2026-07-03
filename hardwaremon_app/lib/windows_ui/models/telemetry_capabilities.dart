@@ -1,9 +1,15 @@
 class TelemetryCapabilities {
+  final bool supportsCpuUsage;
+  final bool supportsMemory;
+  final bool supportsDisk;
+  final bool supportsNetwork;
+  final bool supportsBattery;
   final bool supportsProcessList;
   final bool supportsProcessKill;
   final bool supportsCpuTemperature;
   final bool supportsGpuTemperature;
   final bool supportsFanControl;
+  final bool supportsFanMetrics;
   final bool supportsPowerMetrics;
   final bool supportsCpuFrequency;
   final bool supportsGpuUsage;
@@ -12,11 +18,17 @@ class TelemetryCapabilities {
   final bool supportsNotifications;
 
   const TelemetryCapabilities({
+    required this.supportsCpuUsage,
+    required this.supportsMemory,
+    required this.supportsDisk,
+    required this.supportsNetwork,
+    required this.supportsBattery,
     required this.supportsProcessList,
     required this.supportsProcessKill,
     required this.supportsCpuTemperature,
     required this.supportsGpuTemperature,
     required this.supportsFanControl,
+    required this.supportsFanMetrics,
     required this.supportsPowerMetrics,
     required this.supportsCpuFrequency,
     required this.supportsGpuUsage,
@@ -27,11 +39,17 @@ class TelemetryCapabilities {
 
   factory TelemetryCapabilities.fallback({required bool isMacOS}) {
     return TelemetryCapabilities(
+      supportsCpuUsage: true,
+      supportsMemory: true,
+      supportsDisk: true,
+      supportsNetwork: true,
+      supportsBattery: false,
       supportsProcessList: true,
       supportsProcessKill: !isMacOS,
       supportsCpuTemperature: !isMacOS,
       supportsGpuTemperature: !isMacOS,
       supportsFanControl: false,
+      supportsFanMetrics: false,
       supportsPowerMetrics: !isMacOS,
       supportsCpuFrequency: !isMacOS,
       supportsGpuUsage: !isMacOS,
@@ -50,6 +68,11 @@ class TelemetryCapabilities {
         json?[key] is bool ? json![key] as bool : value;
 
     return TelemetryCapabilities(
+      supportsCpuUsage: read('supports_cpu_usage', fallback.supportsCpuUsage),
+      supportsMemory: read('supports_memory', fallback.supportsMemory),
+      supportsDisk: read('supports_disk', fallback.supportsDisk),
+      supportsNetwork: read('supports_network', fallback.supportsNetwork),
+      supportsBattery: read('supports_battery', fallback.supportsBattery),
       supportsProcessList: read(
         'supports_process_list',
         fallback.supportsProcessList,
@@ -69,6 +92,10 @@ class TelemetryCapabilities {
       supportsFanControl: read(
         'supports_fan_control',
         fallback.supportsFanControl,
+      ),
+      supportsFanMetrics: read(
+        'supports_fan_metrics',
+        fallback.supportsFanMetrics,
       ),
       supportsPowerMetrics: read(
         'supports_power_metrics',
@@ -92,11 +119,17 @@ class TelemetryCapabilities {
   }
 
   Map<String, bool> toDiagnosticMap() => {
+    'CPU usage': supportsCpuUsage,
+    'Memory': supportsMemory,
+    'Disk': supportsDisk,
+    'Network': supportsNetwork,
+    'Battery': supportsBattery,
     'Process list': supportsProcessList,
     'Process termination': supportsProcessKill,
     'CPU temperature': supportsCpuTemperature,
     'GPU temperature': supportsGpuTemperature,
     'Fan control': supportsFanControl,
+    'Fan metrics': supportsFanMetrics,
     'Power metrics': supportsPowerMetrics,
     'CPU frequency': supportsCpuFrequency,
     'GPU usage': supportsGpuUsage,

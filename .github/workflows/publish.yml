@@ -13,6 +13,9 @@ jobs:
 
     permissions:
       contents: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
 
     steps:
       # ─────────────────────────────────────────────
@@ -312,6 +315,48 @@ jobs:
 
           grep -E "Header V[0-9]+ RSA|Header V[0-9]+ DSA|Header V[0-9]+ PGP|Signature" rpm-verify.txt
 
+      - name: Generate Linux checksums and release metadata
+        run: |
+          python .github/scripts/generate-release-metadata.py \
+            --output-dir dist \
+            --checksums-name SHA256SUMS-linux.txt \
+            --metadata-name release-metadata-linux.json \
+            dist/hardwaremon.deb dist/hardwaremon.rpm
+
+      - name: Generate Linux CycloneDX SBOM
+        run: |
+          python .github/scripts/generate-release-sbom.py \
+            --output "dist/HardwareMon-Linux-${{ steps.version.outputs.version }}.cdx.json" \
+            --version "${{ steps.version.outputs.version }}" \
+            --artifact "DEB and RPM packages"
+
+      - name: Attest Linux package provenance
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            dist/hardwaremon.deb
+            dist/hardwaremon.rpm
+
+      - name: Attest Linux package SBOM
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            dist/hardwaremon.deb
+            dist/hardwaremon.rpm
+          sbom-path: dist/HardwareMon-Linux-${{ steps.version.outputs.version }}.cdx.json
+
+      - name: Upload Linux release evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: HardwareMon-Linux-${{ steps.version.outputs.version }}-release-evidence
+          path: |
+            dist/hardwaremon.deb
+            dist/hardwaremon.rpm
+            dist/SHA256SUMS-linux.txt
+            dist/release-metadata-linux.json
+            dist/HardwareMon-Linux-${{ steps.version.outputs.version }}.cdx.json
+          if-no-files-found: error
+
       - name: Install AWS CLI
         run: |
           curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
@@ -474,3 +519,6 @@ jobs:
           files: |
             dist/hardwaremon.deb
             dist/hardwaremon.rpm
+            dist/SHA256SUMS-linux.txt
+            dist/release-metadata-linux.json
+            dist/HardwareMon-Linux-${{ steps.version.outputs.version }}.cdx.json

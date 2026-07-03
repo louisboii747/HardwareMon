@@ -9,6 +9,9 @@ on:
 # The tag job may create a GitHub Release and upload its macOS assets.
 permissions:
   contents: write
+  id-token: write
+  attestations: write
+  artifact-metadata: write
 
 env:
   APP_NAME: HardwareMon
@@ -218,6 +221,29 @@ jobs:
         working-directory: dist
         run: shasum -a 256 "$DMG_NAME" > "$DMG_NAME.sha256"
 
+      - name: Generate macOS release metadata and CycloneDX SBOM
+        run: |
+          python .github/scripts/generate-release-metadata.py \
+            --output-dir dist \
+            --checksums-name SHA256SUMS-macos.txt \
+            --metadata-name release-metadata-macos.json \
+            "dist/$DMG_NAME"
+          python .github/scripts/generate-release-sbom.py \
+            --output "dist/HardwareMon-macOS-$VERSION.cdx.json" \
+            --version "$VERSION" \
+            --artifact "$DMG_NAME"
+
+      - name: Attest macOS DMG provenance
+        uses: actions/attest@v4
+        with:
+          subject-path: dist/${{ env.DMG_NAME }}
+
+      - name: Attest macOS DMG SBOM
+        uses: actions/attest@v4
+        with:
+          subject-path: dist/${{ env.DMG_NAME }}
+          sbom-path: dist/HardwareMon-macOS-${{ env.VERSION }}.cdx.json
+
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
@@ -225,6 +251,9 @@ jobs:
           path: |
             dist/${{ env.DMG_NAME }}
             dist/${{ env.DMG_NAME }}.sha256
+            dist/SHA256SUMS-macos.txt
+            dist/release-metadata-macos.json
+            dist/HardwareMon-macOS-${{ env.VERSION }}.cdx.json
           if-no-files-found: error
 
       - name: Create or update matching GitHub Release
@@ -244,4 +273,7 @@ jobs:
           gh release upload "$GITHUB_REF_NAME" \
             "dist/$DMG_NAME" \
             "dist/$DMG_NAME.sha256" \
+            "dist/SHA256SUMS-macos.txt" \
+            "dist/release-metadata-macos.json" \
+            "dist/HardwareMon-macOS-$VERSION.cdx.json" \
             --clobber

@@ -210,6 +210,12 @@ documented in [docs/benchmark-cloud-api.md](docs/benchmark-cloud-api.md).
 * Signed Android APKs with SHA-256 checksums
 * GitHub Releases automation
 
+Every release workflow publishes SHA-256 checksums, human-readable release
+metadata, and GitHub artifact attestations. Desktop releases also publish a
+CycloneDX SBOM for the Flutter and Python dependency sets they ship. See
+[Verifying a HardwareMon release](docs/release-verification.md)
+for beginner-friendly checksum, provenance, SBOM, and platform-signing guidance.
+
 ---
 
 ## Why HardwareMon?
@@ -377,6 +383,8 @@ zeroes.
 | Dashboard | Working with capability-aware cards; unavailable sensors are omitted |
 | CPU usage and name | Supported, including Apple M1/M2/M3/M4 names when reported |
 | RAM used/available/total | Supported |
+| Disk and network | Supported through the existing cross-platform collectors |
+| MacBook battery | Supported when macOS reports a system battery |
 | Temperatures, fans, and power | May be unavailable; never estimated or replaced with fake zero values |
 | Processes | Viewing is experimental; termination is disabled on macOS |
 | Historical monitoring | Supported for metrics macOS reports |

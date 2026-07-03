@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -47,6 +48,9 @@ class ShellScreen extends StatefulWidget {
 }
 
 class _ShellScreenState extends State<ShellScreen> {
+  static const _macOSMenuChannel = MethodChannel(
+    'com.hardwaremon.HardwareMon/menu',
+  );
   late TelemetryService telemetry;
   late ChartPreferences chartPreferences;
   late DashboardPreferences dashboardPreferences;
@@ -61,6 +65,9 @@ class _ShellScreenState extends State<ShellScreen> {
   @override
   void initState() {
     super.initState();
+    if (defaultTargetPlatform == TargetPlatform.macOS) {
+      _macOSMenuChannel.setMethodCallHandler(_handleMacOSMenuAction);
+    }
 
     telemetry = TelemetryService();
     chartPreferences = ChartPreferences();
@@ -120,6 +127,9 @@ class _ShellScreenState extends State<ShellScreen> {
 
   @override
   void dispose() {
+    if (defaultTargetPlatform == TargetPlatform.macOS) {
+      _macOSMenuChannel.setMethodCallHandler(null);
+    }
     _desktopCommandSubscription?.cancel();
     DesktopIntegrationService.instance.detachTelemetry(telemetry);
     telemetry.stop();
@@ -129,6 +139,17 @@ class _ShellScreenState extends State<ShellScreen> {
     monitoringLensPreferences.dispose();
     sessionJournal.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleMacOSMenuAction(MethodCall call) async {
+    switch (call.method) {
+      case 'openSettings':
+        _selectPage(9);
+        break;
+      case 'refreshTelemetry':
+        await telemetry.refreshNow(includeHistory: true);
+        break;
+    }
   }
 
   Future<void> _handleDesktopCommand(DesktopCommand command) async {
@@ -1135,6 +1156,8 @@ Disk: ${telemetry.diskUsage}%
             telemetry.refreshNow(includeHistory: true),
         const SingleActivator(LogicalKeyboardKey.keyR, control: true): () =>
             telemetry.refreshNow(includeHistory: true),
+        const SingleActivator(LogicalKeyboardKey.keyR, meta: true): () =>
+            telemetry.refreshNow(includeHistory: true),
         const SingleActivator(
           LogicalKeyboardKey.keyR,
           control: true,
@@ -1150,6 +1173,8 @@ Disk: ${telemetry.diskUsage}%
           shift: true,
         ): _copySystemSnapshot,
         const SingleActivator(LogicalKeyboardKey.comma, control: true): () =>
+            _selectPage(9),
+        const SingleActivator(LogicalKeyboardKey.comma, meta: true): () =>
             _selectPage(9),
       },
       child: Focus(

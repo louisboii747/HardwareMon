@@ -33,7 +33,11 @@
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="VOq-y0-SEH"/>
-                            <menuItem title="Preferences…" keyEquivalent="," id="BOF-NM-1cW"/>
+                            <menuItem title="Settings…" keyEquivalent="," id="BOF-NM-1cW">
+                                <connections>
+                                    <action selector="openHardwareMonSettings:" target="Voe-Tx-rLC" id="hmS-et-Tng"/>
+                                </connections>
+                            </menuItem>
                             <menuItem isSeparatorItem="YES" id="wFC-TO-SCJ"/>
                             <menuItem title="Services" id="NMo-om-nkz">
                                 <modifierMask key="keyEquivalentModifierMask"/>
@@ -61,6 +65,24 @@
                             <menuItem title="Quit APP_NAME" keyEquivalent="q" id="4sb-4s-VLi">
                                 <connections>
                                     <action selector="terminate:" target="-1" id="Te7-pn-YzF"/>
+                                </connections>
+                            </menuItem>
+                        </items>
+                    </menu>
+                </menuItem>
+                <menuItem title="File" id="hmF-il-E00">
+                    <modifierMask key="keyEquivalentModifierMask"/>
+                    <menu key="submenu" title="File" id="hmF-il-E01">
+                        <items>
+                            <menuItem title="Refresh Telemetry" keyEquivalent="r" id="hmR-ef-001">
+                                <connections>
+                                    <action selector="refreshHardwareMonTelemetry:" target="Voe-Tx-rLC" id="hmR-ef-002"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem isSeparatorItem="YES" id="hmF-se-P01"/>
+                            <menuItem title="Close Window" keyEquivalent="w" id="hmC-lo-001">
+                                <connections>
+                                    <action selector="performClose:" target="-1" id="hmC-lo-002"/>
                                 </connections>
                             </menuItem>
                         </items>

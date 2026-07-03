@@ -13,6 +13,9 @@ jobs:
 
     permissions:
       contents: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
 
     steps:
       - name: Checkout code
@@ -132,13 +135,46 @@ jobs:
             hardwaremon.flatpak \
             com.hardwaremon.HardwareMon
 
+      - name: Generate Flatpak checksums and release metadata
+        run: |
+          python .github/scripts/generate-release-metadata.py \
+            --output-dir dist/flatpak \
+            --checksums-name SHA256SUMS-flatpak.txt \
+            --metadata-name release-metadata-flatpak.json \
+            hardwaremon.flatpak
+          python .github/scripts/generate-release-sbom.py \
+            --output "dist/flatpak/HardwareMon-Flatpak-${{ steps.version.outputs.version }}.cdx.json" \
+            --version "${{ steps.version.outputs.version }}" \
+            --artifact "hardwaremon.flatpak"
+
+      - name: Attest Flatpak provenance
+        uses: actions/attest@v4
+        with:
+          subject-path: hardwaremon.flatpak
+
+      - name: Attest Flatpak SBOM
+        uses: actions/attest@v4
+        with:
+          subject-path: hardwaremon.flatpak
+          sbom-path: dist/flatpak/HardwareMon-Flatpak-${{ steps.version.outputs.version }}.cdx.json
+
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
           name: hardwaremon-flatpak
-          path: hardwaremon.flatpak
+          path: |
+            hardwaremon.flatpak
+            dist/flatpak/SHA256SUMS-flatpak.txt
+            dist/flatpak/release-metadata-flatpak.json
+            dist/flatpak/HardwareMon-Flatpak-${{ steps.version.outputs.version }}.cdx.json
+          if-no-files-found: error
 
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v3
         with:
-          files: hardwaremon.flatpak
+          fail_on_unmatched_files: true
+          files: |
+            hardwaremon.flatpak
+            dist/flatpak/SHA256SUMS-flatpak.txt
+            dist/flatpak/release-metadata-flatpak.json
+            dist/flatpak/HardwareMon-Flatpak-${{ steps.version.outputs.version }}.cdx.json
