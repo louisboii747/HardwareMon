@@ -5,12 +5,41 @@ import '../windows_ui/models/app_settings.dart';
 import '../windows_ui/services/settings_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../windows_ui/core/backend_config.dart';
 import '../windows_ui/services/network_service.dart';
 
 class DiagnosticsService {
+  static Future<void> copyDiagnostics() async {
+    final path = await exportDiagnostics();
+    final content = await File(path).readAsString();
+    await Clipboard.setData(ClipboardData(text: content));
+  }
+
+  static String _metric(
+    Map<String, dynamic> telemetry,
+    String key,
+    String suffix,
+  ) {
+    final value = telemetry[key];
+    if (value != null) return '$value$suffix';
+    final reasons = telemetry['unavailable_metrics'];
+    final reason = reasons is Map ? reasons[key]?.toString() : null;
+    return reason == null ? 'Unavailable' : 'Unavailable — $reason';
+  }
+
+  static String? _macOSBundlePath() {
+    if (!Platform.isMacOS) return null;
+    var directory = File(Platform.resolvedExecutable).parent;
+    while (directory.parent.path != directory.path) {
+      if (directory.path.endsWith('.app')) return directory.path;
+      directory = directory.parent;
+    }
+    return null;
+  }
+
   static Future<String> exportDiagnostics() async {
     final logsDir = await LogService.getLogsDirectory();
 
@@ -76,6 +105,24 @@ class DiagnosticsService {
     buffer.writeln('--------------------');
     buffer.writeln('OS: ${Platform.operatingSystem}');
     buffer.writeln('OS Version: ${Platform.operatingSystemVersion}');
+    if (telemetry?['platform'] is Map) {
+      final platform = telemetry!['platform'] as Map;
+      buffer.writeln('Platform Name: ${platform['name'] ?? 'Unknown'}');
+      buffer.writeln('Platform Version: ${platform['version'] ?? 'Unknown'}');
+      buffer.writeln('Architecture: ${platform['architecture'] ?? 'Unknown'}');
+      buffer.writeln('Device Name: ${platform['device_name'] ?? 'Unknown'}');
+      buffer.writeln('Model: ${platform['model_name'] ?? 'Unknown'}');
+      buffer.writeln(
+        'Model Identifier: ${platform['model_identifier'] ?? 'Unknown'}',
+      );
+    }
+    if (Platform.isMacOS) {
+      final bundlePath = _macOSBundlePath();
+      buffer.writeln('App Bundle Path: ${bundlePath ?? 'Unavailable'}');
+      buffer.writeln(
+        'Running From /Applications: ${bundlePath?.startsWith('/Applications/') ?? false}',
+      );
+    }
     buffer.writeln('');
     buffer.writeln('Settings');
     buffer.writeln('--------');
@@ -122,7 +169,9 @@ class DiagnosticsService {
     buffer.writeln('Version: ${packageInfo.version}');
     buffer.writeln('Build Number: ${packageInfo.buildNumber}');
     buffer.writeln('Backend: FastAPI');
-    buffer.writeln('Telemetry Source: LibreHardwareMonitor');
+    buffer.writeln(
+      'Telemetry Source: ${Platform.isMacOS ? 'macOS system APIs and psutil' : 'LibreHardwareMonitor / platform collectors'}',
+    );
     buffer.writeln('');
     buffer.writeln('Backend');
     buffer.writeln('-------');
@@ -137,9 +186,11 @@ class DiagnosticsService {
     if (telemetry != null) {
       buffer.writeln('CPU Name: ${telemetry['cpu_name']}');
       buffer.writeln('CPU Usage: ${telemetry['cpu']}%');
-      buffer.writeln('CPU Temperature: ${telemetry['cpu_temp']}°C');
-      buffer.writeln('CPU Clock: ${telemetry['cpu_clock']} MHz');
-      buffer.writeln('CPU Power: ${telemetry['cpu_power']} W');
+      buffer.writeln(
+        'CPU Temperature: ${_metric(telemetry, 'cpu_temp', '°C')}',
+      );
+      buffer.writeln('CPU Clock: ${_metric(telemetry, 'cpu_clock', ' MHz')}');
+      buffer.writeln('CPU Power: ${_metric(telemetry, 'cpu_power', ' W')}');
       buffer.writeln('');
 
       buffer.writeln('RAM Usage: ${telemetry['ram']}%');
@@ -148,15 +199,52 @@ class DiagnosticsService {
       buffer.writeln('RAM Total: ${telemetry['ram_total']} GB');
       buffer.writeln('');
 
-      buffer.writeln('GPU Usage: ${telemetry['gpu_usage']}%');
-      buffer.writeln('GPU Temperature: ${telemetry['gpu_temp']}°C');
-      buffer.writeln('GPU Power: ${telemetry['gpu_power']} W');
-      buffer.writeln('GPU VRAM Used: ${telemetry['gpu_vram_used']} GB');
+      buffer.writeln('GPU Name: ${telemetry['gpu_name'] ?? 'Unknown GPU'}');
+      buffer.writeln('GPU Usage: ${_metric(telemetry, 'gpu_usage', '%')}');
+      buffer.writeln(
+        'GPU Temperature: ${_metric(telemetry, 'gpu_temp', '°C')}',
+      );
+      buffer.writeln('GPU Power: ${_metric(telemetry, 'gpu_power', ' W')}');
+      buffer.writeln(
+        'GPU VRAM Used: ${_metric(telemetry, 'gpu_vram_used', ' GB')}',
+      );
+
+      final capabilities = telemetry['capabilities'];
+      if (capabilities is Map) {
+        buffer.writeln('');
+        buffer.writeln('Capabilities');
+        buffer.writeln('------------');
+        for (final entry in capabilities.entries) {
+          buffer.writeln('${entry.key}: ${entry.value}');
+        }
+      }
+
+      final unavailable = telemetry['unavailable_metrics'];
+      if (unavailable is Map && unavailable.isNotEmpty) {
+        buffer.writeln('');
+        buffer.writeln('Unavailable Metrics');
+        buffer.writeln('-------------------');
+        for (final entry in unavailable.entries) {
+          buffer.writeln('${entry.key}: ${entry.value}');
+        }
+      }
     } else {
       buffer.writeln('Telemetry unavailable');
     }
 
     buffer.writeln('');
+
+    if (Platform.isMacOS) {
+      buffer.writeln('macOS Notes');
+      buffer.writeln('-----------');
+      buffer.writeln(
+        'Some hardware sensors are not exposed by macOS without privileged/native integrations.',
+      );
+      buffer.writeln(
+        'Flutter macOS requires Metal; virtual machines without Metal support may show blank windows.',
+      );
+      buffer.writeln('');
+    }
     buffer.writeln('Network');
     buffer.writeln('-------');
     buffer.writeln(

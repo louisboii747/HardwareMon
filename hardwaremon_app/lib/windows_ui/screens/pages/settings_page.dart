@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../models/app_settings.dart';
@@ -694,6 +696,31 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
 
               _settingRow(
+                'Copy Diagnostics',
+                ElevatedButton(
+                  onPressed: () async {
+                    try {
+                      await DiagnosticsService.copyDiagnostics();
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Diagnostics copied to clipboard'),
+                        ),
+                      );
+                    } catch (e) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to copy diagnostics: $e'),
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text('Copy'),
+                ),
+              ),
+
+              _settingRow(
                 'Copy Settings Summary',
                 ElevatedButton(
                   onPressed: _copySettingsSummary,
@@ -910,6 +937,91 @@ class _SettingsPageState extends State<SettingsPage> {
                 ],
               );
             },
+          ),
+          if (Platform.isMacOS) ...[
+            const SizedBox(height: 16),
+            _buildMacOSSupportPanel(),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMacOSSupportPanel() {
+    final platform = widget.telemetry.platformInfo;
+    final capabilityRows = widget.telemetry.capabilities
+        .toDiagnosticMap()
+        .entries
+        .toList(growable: false);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.cyan.withValues(alpha: 0.045),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.cyan.withValues(alpha: 0.18)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.laptop_mac_rounded, color: Colors.cyan, size: 19),
+              SizedBox(width: 9),
+              Text(
+                'macOS support',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+              ),
+            ],
+          ),
+          const SizedBox(height: 7),
+          Text(
+            'macOS support is experimental. Core monitoring works, but some hardware sensors and process actions may be limited by Apple’s system APIs.',
+            style: TextStyle(
+              color: AppColors.textSecondary(context),
+              fontSize: 11,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _MacOSInfoChip(
+                label: widget.telemetry.cpuName,
+                icon: Icons.memory_rounded,
+              ),
+              _MacOSInfoChip(
+                label: platform?.architecture ?? 'Detecting architecture…',
+                icon: Icons.developer_board_rounded,
+              ),
+              _MacOSInfoChip(
+                label:
+                    'Backend ${widget.telemetry.lastError == null ? 'reachable' : 'unavailable'}',
+                icon: widget.telemetry.lastError == null
+                    ? Icons.check_circle_outline_rounded
+                    : Icons.cloud_off_rounded,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final entry in capabilityRows)
+                Tooltip(
+                  message: entry.value
+                      ? '${entry.key} is supported'
+                      : '${entry.key} is limited or unavailable on macOS',
+                  child: _MacOSCapabilityChip(
+                    label: entry.key,
+                    available: entry.value,
+                  ),
+                ),
+            ],
           ),
         ],
       ),
@@ -1194,6 +1306,75 @@ class _SettingsEmptySearch extends StatelessWidget {
             onPressed: onReset,
             icon: const Icon(Icons.restart_alt_rounded, size: 16),
             label: const Text('Show all settings'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MacOSInfoChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+
+  const _MacOSInfoChip({required this.label, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+      decoration: BoxDecoration(
+        color: AppColors.overlay(context, 0.035),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border(context)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: Colors.cyan),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MacOSCapabilityChip extends StatelessWidget {
+  final String label;
+  final bool available;
+
+  const _MacOSCapabilityChip({required this.label, required this.available});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = available ? Colors.greenAccent : Colors.orangeAccent;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(99),
+        border: Border.all(color: color.withValues(alpha: 0.16)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            available ? Icons.check_rounded : Icons.remove_rounded,
+            color: color,
+            size: 12,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 8,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ],
       ),

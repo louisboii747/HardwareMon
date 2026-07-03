@@ -60,3 +60,32 @@ fake certificate secrets.
 3. On an Apple Silicon Mac, mount the DMG and launch HardwareMon both directly
    and after copying it into `/Applications`.
 4. Confirm the bundled telemetry backend starts and live metrics appear.
+
+Use real Apple Silicon hardware for final UI testing. Flutter's macOS renderer
+requires Metal, and virtual machines without a Metal-capable virtual GPU can
+launch the process while showing a blank window. That is a VM graphics
+limitation rather than evidence that the signed app bundle is invalid.
+
+## Current macOS capability matrix
+
+| Area | Status |
+|------|--------|
+| Dashboard | Working; capability-aware cards prioritise CPU and memory |
+| CPU usage and Apple chip name | Supported |
+| RAM used, available, and total | Supported |
+| Temperatures, fan RPM, and power draw | Limited or unavailable through public unprivileged APIs |
+| Detailed GPU usage and VRAM | Limited; Apple unified memory is not presented as dedicated VRAM |
+| Process list | Experimental and permission-dependent |
+| Process termination | Disabled in the current macOS build |
+| Historical monitoring | Supported for available metrics |
+| Notifications | Subject to macOS notification permission |
+
+HardwareMon does not require `sudo`, request invasive entitlements, or estimate
+missing sensors. Diagnostics in Settings → About show the detected chip,
+architecture, backend status, app-bundle location, capability flags, and a
+reason for each unavailable metric.
+
+Current release builds remain ad-hoc signed. Users may need to use
+**Right-click → Open** after copying HardwareMon into `/Applications`.
+Developer ID signing and notarization will be added only when a real Apple
+Developer certificate is available.

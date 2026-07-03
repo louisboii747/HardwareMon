@@ -100,6 +100,10 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt pyinstaller
 
+      - name: Test macOS hardware parsing and unavailable telemetry
+        working-directory: ${{ env.APP_PATH }}/backend_fastapi
+        run: python -m unittest tests.test_macos_hardware -v
+
       - name: Build FastAPI macOS helper
         working-directory: ${{ env.APP_PATH }}/backend_fastapi
         run: pyinstaller --clean --noconfirm backend_macos.spec

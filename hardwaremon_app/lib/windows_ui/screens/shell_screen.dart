@@ -190,8 +190,12 @@ class _ShellScreenState extends State<ShellScreen> {
   SystemCondition get _systemCondition => evaluateSystemCondition(
     cpuUsage: telemetry.cpuUsage,
     ramUsage: telemetry.ramUsage,
-    cpuTemperature: telemetry.cpuTemp,
-    gpuTemperature: telemetry.gpuTemp,
+    cpuTemperature: telemetry.capabilities.supportsCpuTemperature
+        ? telemetry.cpuTemp
+        : null,
+    gpuTemperature: telemetry.capabilities.supportsGpuTemperature
+        ? telemetry.gpuTemp
+        : null,
     paused: telemetry.isPaused,
     hasError: telemetry.lastError != null,
   );
@@ -202,9 +206,9 @@ class _ShellScreenState extends State<ShellScreen> {
         '''
 HardwareMon snapshot · $capturedAt
 Status: ${_systemCondition.label}
-CPU: ${telemetry.cpuUsage}% · ${telemetry.cpuTemp}°C · ${telemetry.cpuClockGHz.toStringAsFixed(2)} GHz · ${telemetry.cpuPower.toStringAsFixed(1)} W
+CPU: ${telemetry.cpuUsage}% · ${telemetry.capabilities.supportsCpuTemperature ? '${telemetry.cpuTemp}°C' : telemetry.unavailableValue('cpu_temp')} · ${telemetry.capabilities.supportsCpuFrequency ? '${telemetry.cpuClockGHz.toStringAsFixed(2)} GHz' : telemetry.unavailableValue('cpu_clock')} · ${telemetry.capabilities.supportsPowerMetrics ? '${telemetry.cpuPower.toStringAsFixed(1)} W' : telemetry.unavailableValue('cpu_power')}
 Memory: ${telemetry.ramUsage}% · ${telemetry.ramUsed.toStringAsFixed(1)} / ${telemetry.ramTotal.toStringAsFixed(1)} GB
-GPU: ${telemetry.gpuUsage}% · ${telemetry.gpuTemp}°C · ${telemetry.gpuPower.toStringAsFixed(1)} W
+GPU: ${telemetry.capabilities.supportsGpuUsage ? '${telemetry.gpuUsage}%' : telemetry.unavailableValue('gpu_usage')} · ${telemetry.capabilities.supportsGpuTemperature ? '${telemetry.gpuTemp}°C' : telemetry.unavailableValue('gpu_temp')} · ${telemetry.capabilities.supportsPowerMetrics ? '${telemetry.gpuPower.toStringAsFixed(1)} W' : telemetry.unavailableValue('gpu_power')}
 Disk: ${telemetry.diskUsage}%
 ''';
 
@@ -636,8 +640,11 @@ Disk: ${telemetry.diskUsage}%
   }
 
   Future<void> _showCommandPalette() {
+    final gpuSummary = telemetry.capabilities.supportsGpuTemperature
+        ? 'GPU ${telemetry.gpuTemp}°'
+        : 'GPU sensors unavailable';
     final telemetrySummary =
-        'CPU ${telemetry.cpuUsage}%  ·  RAM ${telemetry.ramUsage}%  ·  GPU ${telemetry.gpuTemp}°';
+        'CPU ${telemetry.cpuUsage}%  ·  RAM ${telemetry.ramUsage}%  ·  $gpuSummary';
     return showHardwareMonCommandPalette(
       context: context,
       actions: _commandPaletteActions(),
@@ -836,8 +843,12 @@ Disk: ${telemetry.diskUsage}%
     final cpuTemperature = _DashboardMetric(
       id: DashboardMetricId.cpuTemperature,
       title: 'CPU Temp',
-      value: '${telemetry.cpuTemp}°',
-      subtitle: 'Package temperature',
+      value: telemetry.capabilities.supportsCpuTemperature
+          ? '${telemetry.cpuTemp}°'
+          : telemetry.unavailableValue('cpu_temp'),
+      subtitle: telemetry.capabilities.supportsCpuTemperature
+          ? 'Package temperature'
+          : telemetry.unavailableReason('cpu_temp'),
       icon: Icons.thermostat_rounded,
       accent: HardwareDomain.thermal.color,
       samples: telemetry.cpuTempHistory,
@@ -848,8 +859,12 @@ Disk: ${telemetry.diskUsage}%
     final gpuTemperature = _DashboardMetric(
       id: DashboardMetricId.gpuTemperature,
       title: 'GPU Temp',
-      value: '${telemetry.gpuTemp}°',
-      subtitle: 'Graphics temperature',
+      value: telemetry.capabilities.supportsGpuTemperature
+          ? '${telemetry.gpuTemp}°'
+          : telemetry.unavailableValue('gpu_temp'),
+      subtitle: telemetry.capabilities.supportsGpuTemperature
+          ? 'Graphics temperature'
+          : telemetry.unavailableReason('gpu_temp'),
       icon: Icons.graphic_eq_rounded,
       accent: HardwareDomain.thermal.color,
       samples: telemetry.gpuTempHistory,
@@ -860,8 +875,12 @@ Disk: ${telemetry.diskUsage}%
     final cpuPower = _DashboardMetric(
       id: DashboardMetricId.cpuPower,
       title: 'CPU Power',
-      value: '${telemetry.cpuPower.toStringAsFixed(1)} W',
-      subtitle: 'Package power draw',
+      value: telemetry.capabilities.supportsPowerMetrics
+          ? '${telemetry.cpuPower.toStringAsFixed(1)} W'
+          : telemetry.unavailableValue('cpu_power'),
+      subtitle: telemetry.capabilities.supportsPowerMetrics
+          ? 'Package power draw'
+          : telemetry.unavailableReason('cpu_power'),
       icon: Icons.bolt_rounded,
       accent: HardwareDomain.power.color,
       samples: telemetry.cpuPowerHistory,
@@ -870,8 +889,12 @@ Disk: ${telemetry.diskUsage}%
     final gpuPower = _DashboardMetric(
       id: DashboardMetricId.gpuPower,
       title: 'GPU Power',
-      value: '${telemetry.gpuPower.toStringAsFixed(1)} W',
-      subtitle: 'Board power draw',
+      value: telemetry.capabilities.supportsPowerMetrics
+          ? '${telemetry.gpuPower.toStringAsFixed(1)} W'
+          : telemetry.unavailableValue('gpu_power'),
+      subtitle: telemetry.capabilities.supportsPowerMetrics
+          ? 'Board power draw'
+          : telemetry.unavailableReason('gpu_power'),
       icon: Icons.electric_bolt_rounded,
       accent: HardwareDomain.power.color,
       samples: telemetry.gpuPowerHistory,
@@ -879,11 +902,28 @@ Disk: ${telemetry.diskUsage}%
     );
 
     final workspaceMetrics = switch (workspace) {
-      DashboardWorkspace.overview => [cpuUsage, memory, gpuTemperature],
-      DashboardWorkspace.workload => [cpuUsage, gpuUsage, memory],
-      DashboardWorkspace.thermals => [cpuTemperature, gpuTemperature, cpuPower],
-      DashboardWorkspace.power => [cpuPower, gpuPower, gpuUsage],
+      DashboardWorkspace.overview => [
+        cpuUsage,
+        memory,
+        if (telemetry.capabilities.supportsGpuTemperature) gpuTemperature,
+      ],
+      DashboardWorkspace.workload => [
+        cpuUsage,
+        if (telemetry.capabilities.supportsGpuUsage) gpuUsage,
+        memory,
+      ],
+      DashboardWorkspace.thermals => [
+        if (telemetry.capabilities.supportsCpuTemperature) cpuTemperature,
+        if (telemetry.capabilities.supportsGpuTemperature) gpuTemperature,
+        if (telemetry.capabilities.supportsPowerMetrics) cpuPower,
+      ],
+      DashboardWorkspace.power => [
+        if (telemetry.capabilities.supportsPowerMetrics) cpuPower,
+        if (telemetry.capabilities.supportsPowerMetrics) gpuPower,
+        if (telemetry.capabilities.supportsGpuUsage) gpuUsage,
+      ],
     };
+    if (workspaceMetrics.isEmpty) return [cpuUsage, memory];
     final byId = {for (final metric in workspaceMetrics) metric.id: metric};
     return dashboardPreferences
         .orderedVisible(byId.keys)
@@ -897,7 +937,7 @@ Disk: ${telemetry.diskUsage}%
         return buildDashboard();
 
       case 1:
-        return const ProcessesPage();
+        return ProcessesPage(capabilities: telemetry.capabilities);
 
       case 2:
         return PerformancePage(
@@ -1402,10 +1442,25 @@ Disk: ${telemetry.diskUsage}%
                                         padding: const EdgeInsets.only(top: 16),
                                         child: TelemetryStrip(
                                           cpuUsage: telemetry.cpuUsage,
-                                          cpuTemperature: telemetry.cpuTemp,
+                                          cpuTemperature:
+                                              telemetry
+                                                  .capabilities
+                                                  .supportsCpuTemperature
+                                              ? telemetry.cpuTemp
+                                              : null,
                                           ramUsage: telemetry.ramUsage,
-                                          gpuUsage: telemetry.gpuUsage,
-                                          gpuTemperature: telemetry.gpuTemp,
+                                          gpuUsage:
+                                              telemetry
+                                                  .capabilities
+                                                  .supportsGpuUsage
+                                              ? telemetry.gpuUsage
+                                              : null,
+                                          gpuTemperature:
+                                              telemetry
+                                                  .capabilities
+                                                  .supportsGpuTemperature
+                                              ? telemetry.gpuTemp
+                                              : null,
                                           diskUsage: telemetry.diskUsage,
                                           paused: telemetry.isPaused,
                                           hasError: telemetry.lastError != null,

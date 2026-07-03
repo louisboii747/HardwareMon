@@ -2,6 +2,7 @@ import unittest
 import sys
 from pathlib import Path
 from unittest.mock import patch
+from fastapi import HTTPException
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -46,6 +47,14 @@ class ProcessClassificationTests(unittest.TestCase):
                     "louis",
                 )
             )
+
+    def test_macos_process_termination_is_explicitly_unsupported(self):
+        with patch.object(processes, "_OPERATING_SYSTEM", "Darwin"):
+            with self.assertRaises(HTTPException) as raised:
+                processes.kill_process(123)
+
+        self.assertEqual(raised.exception.status_code, 501)
+        self.assertIn("macOS restricts process management", raised.exception.detail)
 
 
 if __name__ == "__main__":

@@ -19,8 +19,8 @@ class SystemCondition {
 SystemCondition evaluateSystemCondition({
   required int cpuUsage,
   required int ramUsage,
-  required int cpuTemperature,
-  required int gpuTemperature,
+  required int? cpuTemperature,
+  required int? gpuTemperature,
   required bool paused,
   required bool hasError,
 }) {
@@ -41,12 +41,13 @@ SystemCondition evaluateSystemCondition({
     );
   }
 
-  final hottest = cpuTemperature > gpuTemperature
-      ? cpuTemperature
-      : gpuTemperature;
+  final temperatures = [?cpuTemperature, ?gpuTemperature];
+  final hottest = temperatures.isEmpty
+      ? null
+      : temperatures.reduce((a, b) => a > b ? a : b);
   final busiest = cpuUsage > ramUsage ? cpuUsage : ramUsage;
 
-  if (hottest >= 88 || busiest >= 96) {
+  if ((hottest != null && hottest >= 88) || busiest >= 96) {
     return const SystemCondition(
       label: 'Under pressure',
       description: 'A resource is near its limit',
@@ -54,7 +55,7 @@ SystemCondition evaluateSystemCondition({
       icon: Icons.warning_amber_rounded,
     );
   }
-  if (hottest >= 76 || busiest >= 82) {
+  if ((hottest != null && hottest >= 76) || busiest >= 82) {
     return const SystemCondition(
       label: 'Working hard',
       description: 'Sustained system activity',
@@ -62,7 +63,7 @@ SystemCondition evaluateSystemCondition({
       icon: Icons.local_fire_department_rounded,
     );
   }
-  if (busiest <= 24 && hottest < 58) {
+  if (busiest <= 24 && (hottest == null || hottest < 58)) {
     return const SystemCondition(
       label: 'Coasting',
       description: 'Plenty of headroom',
@@ -80,10 +81,10 @@ SystemCondition evaluateSystemCondition({
 
 class TelemetryStrip extends StatelessWidget {
   final int cpuUsage;
-  final int cpuTemperature;
+  final int? cpuTemperature;
   final int ramUsage;
-  final int gpuUsage;
-  final int gpuTemperature;
+  final int? gpuUsage;
+  final int? gpuTemperature;
   final int diskUsage;
   final bool paused;
   final bool hasError;
@@ -118,7 +119,7 @@ class TelemetryStrip extends StatelessWidget {
     return Semantics(
       button: true,
       label:
-          '${condition.label}. CPU $cpuUsage percent, memory $ramUsage percent, GPU $gpuTemperature degrees.',
+          '${condition.label}. CPU $cpuUsage percent, memory $ramUsage percent, GPU ${gpuTemperature == null ? 'temperature unavailable' : '$gpuTemperature degrees'}.',
       child: Tooltip(
         message:
             '${condition.description}  •  Click for performance  •  Right-click to copy',
@@ -252,7 +253,7 @@ class _ConditionChip extends StatelessWidget {
 
 class _MetricPulse extends StatelessWidget {
   final String label;
-  final num value;
+  final num? value;
   final String suffix;
   final Color color;
   final double maximum;
@@ -267,10 +268,15 @@ class _MetricPulse extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final normalized = (value.toDouble() / maximum).clamp(0.0, 1.0);
-    final displayValue = value is double
+    final normalized = value == null
+        ? 0.0
+        : (value!.toDouble() / maximum).clamp(0.0, 1.0);
+    final displayValue = value == null
+        ? 'Unavailable'
+        : value is double
         ? (value as double).toStringAsFixed(1)
         : value.toString();
+    final displaySuffix = value == null ? '' : suffix;
 
     return Container(
       width: 104,
@@ -310,7 +316,7 @@ class _MetricPulse extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  '$displayValue$suffix',
+                  '$displayValue$displaySuffix',
                   key: ValueKey(displayValue),
                   style: TextStyle(
                     color: AppColors.textPrimary(context),

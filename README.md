@@ -362,12 +362,34 @@ flatpak run com.hardwaremon.HardwareMon
 
 # macOS (Apple Silicon Only)
 
-HardwareMon offers a DMG file downloadable from Github Releases. This DMG does not currently support x64 based macs, as the build process targets ARM based M1+ systems only.
-There are plans to port the app over to the App Store on macOS. x64 versions for Intel macs will arrive soon.
+HardwareMon offers an Apple Silicon DMG from GitHub Releases. Core CPU and
+memory monitoring works on real Mac hardware, while lower-level sensors remain
+best-effort because macOS does not expose every value through simple public
+APIs. HardwareMon reports unavailable data honestly rather than substituting
+zeroes.
 
 > Current macOS CI builds are consistently ad-hoc signed and are not yet
 > Developer ID signed or notarized. After downloading, macOS may require
 > **Right-click → Open** and confirmation on first launch.
+
+| Area | Current macOS support |
+|------|-----------------------|
+| Dashboard | Working with capability-aware cards; unavailable sensors are omitted |
+| CPU usage and name | Supported, including Apple M1/M2/M3/M4 names when reported |
+| RAM used/available/total | Supported |
+| Temperatures, fans, and power | May be unavailable; never estimated or replaced with fake zero values |
+| Processes | Viewing is experimental; termination is disabled on macOS |
+| Historical monitoring | Supported for metrics macOS reports |
+| Notifications | Supported subject to macOS notification permission |
+| DMG launch | Supported on real Apple Silicon Mac hardware |
+| Virtual machines | Not recommended unless the VM exposes a working Metal device |
+
+Apple Silicon identifies hardware differently from Windows and Linux, process
+control is more restricted, and several sensors need privileged/native
+integrations that HardwareMon intentionally does not request today. Flutter
+also requires Metal on macOS: a VM may boot macOS successfully yet show a blank
+Flutter window when no Metal device is available. A real Mac is recommended for
+release testing.
 
 | Architecture | Support |
 |--------------|---------|

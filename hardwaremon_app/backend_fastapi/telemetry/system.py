@@ -11,11 +11,13 @@ import time
 import psutil
 from database.database import get_data_dir
 from process_utils import hidden_process_kwargs
+from telemetry.macos_hardware import read_macos_hardware_info
 
 router = APIRouter()
 
 LHM_URL = "http://127.0.0.1:8085/data.json"
 IS_WINDOWS = platform.system() == "Windows"
+IS_MACOS = platform.system() == "Darwin"
 _last_lhm_error_log = 0
 
 
@@ -40,7 +42,70 @@ def read_cpu_name():
         except (ImportError, OSError):
             pass
 
+    if IS_MACOS:
+        return read_macos_hardware_info()["cpu_name"]
+
     return platform.processor() or "Unknown CPU"
+
+
+def collect_capabilities():
+    if IS_MACOS:
+        return {
+            "supports_process_list": True,
+            "supports_process_kill": False,
+            "supports_cpu_temperature": False,
+            "supports_gpu_temperature": False,
+            "supports_fan_control": False,
+            "supports_power_metrics": False,
+            "supports_cpu_frequency": False,
+            "supports_gpu_usage": False,
+            "supports_gpu_vram": False,
+            "supports_historical_monitoring": True,
+            "supports_notifications": True,
+        }
+
+    return {
+        "supports_process_list": True,
+        "supports_process_kill": True,
+        "supports_cpu_temperature": True,
+        "supports_gpu_temperature": True,
+        "supports_fan_control": False,
+        "supports_power_metrics": True,
+        "supports_cpu_frequency": True,
+        "supports_gpu_usage": True,
+        "supports_gpu_vram": True,
+        "supports_historical_monitoring": True,
+        "supports_notifications": True,
+    }
+
+
+def collect_platform_info():
+    system = platform.system()
+    result = {
+        "system": system,
+        "name": "macOS" if system == "Darwin" else system,
+        "version": platform.mac_ver()[0] if system == "Darwin" else platform.release(),
+        "architecture": platform.machine() or "Unknown",
+        "device_name": platform.node() or "Unknown device",
+        "model_identifier": None,
+        "model_name": None,
+    }
+    if IS_MACOS:
+        hardware = read_macos_hardware_info()
+        result.update(
+            architecture=hardware["architecture"],
+            model_identifier=hardware["model_identifier"],
+            model_name=hardware["model_name"],
+            chip_name=hardware["chip_name"],
+        )
+    return result
+
+
+def attach_system_metadata(stats, unavailable_metrics=None):
+    stats["platform"] = collect_platform_info()
+    stats["capabilities"] = collect_capabilities()
+    stats["unavailable_metrics"] = unavailable_metrics or {}
+    return stats
 
 
 def collect_basic_stats():
@@ -293,9 +358,47 @@ def collect_linux_stats():
     return stats
 
 
+def collect_macos_stats():
+    stats = collect_basic_stats()
+    hardware = read_macos_hardware_info()
+    reason = (
+        "macOS does not expose this sensor through the public, unprivileged "
+        "interfaces used by HardwareMon."
+    )
+    unavailable = {
+        "cpu_temp": reason,
+        "gpu_temp": reason,
+        "cpu_power": reason,
+        "gpu_power": reason,
+        "cpu_clock": "Current Apple Silicon clock speed is not reported by macOS through a stable public API.",
+        "gpu_usage": "Detailed GPU utilisation is not exposed by the current unprivileged macOS integration.",
+        "gpu_vram_used": "Apple unified memory is not reported as dedicated VRAM by macOS.",
+        "fan_rpm": "Fan telemetry is not exposed by the current unprivileged macOS integration.",
+    }
+    stats.update(
+        cpu_name=hardware["cpu_name"],
+        gpu_name=(
+            f'{hardware["chip_name"]} integrated GPU'
+            if hardware["chip_name"] and hardware["chip_name"] != "Apple Silicon"
+            else "Apple integrated GPU"
+        ),
+        cpu_temp=None,
+        gpu_temp=None,
+        cpu_power=None,
+        gpu_power=None,
+        cpu_clock=None,
+        gpu_usage=None,
+        gpu_vram_used=None,
+    )
+    return attach_system_metadata(stats, unavailable)
+
+
 def collect_stats():
+    if IS_MACOS:
+        return collect_macos_stats()
+
     if not IS_WINDOWS:
-        return collect_linux_stats()
+        return attach_system_metadata(collect_linux_stats())
 
     stats = collect_basic_stats()
     stats.update(collect_nvidia_smi_stats())
@@ -313,7 +416,7 @@ def collect_stats():
                 f"{error}"
             )
             _last_lhm_error_log = now
-        return stats
+        return attach_system_metadata(stats)
 
     try:
         with open(get_data_dir() / "lhm_data.json", "w", encoding="utf-8") as file:
@@ -373,7 +476,7 @@ def collect_stats():
         if vram_used is not None:
             stats["gpu_vram_used"] = round(sensor_value(vram_used) / 1024, 1)
 
-    return stats
+    return attach_system_metadata(stats)
 
 
 @router.get("/stats")

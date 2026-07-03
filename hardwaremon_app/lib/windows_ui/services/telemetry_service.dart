@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../../services/alert_service.dart';
 import 'settings_service.dart';
 import '../core/backend_config.dart';
 import '../models/telemetry_sample.dart';
+import '../models/telemetry_capabilities.dart';
 import '../utils/time_axis.dart';
 
 class TelemetryService extends ChangeNotifier {
@@ -31,6 +33,23 @@ class TelemetryService extends ChangeNotifier {
   double get cpuClockGHz => cpuClock / 1000;
 
   String cpuName = 'Loading...';
+  String gpuName = 'Loading...';
+  late TelemetryCapabilities capabilities = TelemetryCapabilities.fallback(
+    isMacOS: Platform.isMacOS,
+  );
+  TelemetryPlatformInfo? platformInfo;
+  Map<String, String> unavailableMetricReasons = const {};
+
+  bool get isMacOS => Platform.isMacOS || platformInfo?.system == 'Darwin';
+
+  String unavailableValue(String metric) =>
+      isMacOS ? 'Unavailable on macOS' : 'Unavailable';
+
+  String unavailableReason(String metric) =>
+      unavailableMetricReasons[metric] ??
+      (isMacOS
+          ? 'Not reported by macOS through HardwareMon’s current unprivileged integration.'
+          : 'This metric is not reported on the current system.');
 
   // Live telemetry history
   final List<TelemetrySample> cpuHistory = [];
@@ -75,12 +94,12 @@ class TelemetryService extends ChangeNotifier {
 
       final data = jsonDecode(response.body);
 
-      cpuUsage = data['cpu'] ?? 0;
-      cpuTemp = data['cpu_temp'] ?? 0;
-      ramUsage = data['ram'] ?? 0;
-      diskUsage = data['disk'] ?? 0;
-      gpuTemp = data['gpu_temp'] ?? 0;
-      gpuUsage = data['gpu_usage'] ?? 0;
+      cpuUsage = (data['cpu'] as num?)?.round() ?? 0;
+      cpuTemp = (data['cpu_temp'] as num?)?.round() ?? 0;
+      ramUsage = (data['ram'] as num?)?.round() ?? 0;
+      diskUsage = (data['disk'] as num?)?.round() ?? 0;
+      gpuTemp = (data['gpu_temp'] as num?)?.round() ?? 0;
+      gpuUsage = (data['gpu_usage'] as num?)?.round() ?? 0;
 
       cpuPower = (data['cpu_power'] ?? 0).toDouble();
       cpuClock = (data['cpu_clock'] ?? 0).toDouble();
@@ -93,20 +112,51 @@ class TelemetryService extends ChangeNotifier {
       ramTotal = (data['ram_total'] ?? 0).toDouble();
 
       cpuName = data['cpu_name'] ?? 'Unknown CPU';
+      gpuName = data['gpu_name'] ?? 'Unknown GPU';
+      capabilities = TelemetryCapabilities.fromJson(
+        data['capabilities'] is Map
+            ? Map<String, dynamic>.from(data['capabilities'] as Map)
+            : null,
+        isMacOS: Platform.isMacOS,
+      );
+      platformInfo = TelemetryPlatformInfo.fromJson(
+        data['platform'] is Map
+            ? Map<String, dynamic>.from(data['platform'] as Map)
+            : null,
+      );
+      unavailableMetricReasons = data['unavailable_metrics'] is Map
+          ? (data['unavailable_metrics'] as Map).map(
+              (key, value) => MapEntry(key.toString(), value.toString()),
+            )
+          : const {};
 
       final sampledAt = DateTime.now();
       _appendSample(cpuHistory, cpuUsage.toDouble(), sampledAt);
-      _appendSample(cpuTempHistory, cpuTemp.toDouble(), sampledAt);
-      _appendSample(cpuClockHistory, cpuClockGHz, sampledAt);
-      _appendSample(cpuPowerHistory, cpuPower, sampledAt);
+      if (data['cpu_temp'] is num) {
+        _appendSample(cpuTempHistory, cpuTemp.toDouble(), sampledAt);
+      }
+      if (data['cpu_clock'] is num) {
+        _appendSample(cpuClockHistory, cpuClockGHz, sampledAt);
+      }
+      if (data['cpu_power'] is num) {
+        _appendSample(cpuPowerHistory, cpuPower, sampledAt);
+      }
       _appendSample(ramHistory, ramUsage.toDouble(), sampledAt);
       _appendSample(ramUsedHistory, ramUsed, sampledAt);
       _appendSample(ramAvailableHistory, ramAvailable, sampledAt);
       _appendSample(ramTotalHistory, ramTotal, sampledAt);
-      _appendSample(gpuTempHistory, gpuTemp.toDouble(), sampledAt);
-      _appendSample(gpuUsageHistory, gpuUsage.toDouble(), sampledAt);
-      _appendSample(gpuPowerHistory, gpuPower, sampledAt);
-      _appendSample(gpuVramUsedHistory, gpuVramUsed, sampledAt);
+      if (data['gpu_temp'] is num) {
+        _appendSample(gpuTempHistory, gpuTemp.toDouble(), sampledAt);
+      }
+      if (data['gpu_usage'] is num) {
+        _appendSample(gpuUsageHistory, gpuUsage.toDouble(), sampledAt);
+      }
+      if (data['gpu_power'] is num) {
+        _appendSample(gpuPowerHistory, gpuPower, sampledAt);
+      }
+      if (data['gpu_vram_used'] is num) {
+        _appendSample(gpuVramUsedHistory, gpuVramUsed, sampledAt);
+      }
 
       await AlertService.instance.evaluate(
         cpuTemperature: cpuTemp.toDouble(),

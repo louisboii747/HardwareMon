@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:flutter/services.dart';
 
 import '../../models/process_info.dart';
 import '../../models/process_preferences.dart';
+import '../../models/telemetry_capabilities.dart';
 import '../../services/process_service.dart';
 import '../../core/theme/app_colors.dart';
 
@@ -13,12 +15,14 @@ class ProcessesPage extends StatefulWidget {
   final List<ProcessInfo>? initialProcesses;
   final bool autoLoad;
   final Duration refreshInterval;
+  final TelemetryCapabilities? capabilities;
 
   const ProcessesPage({
     super.key,
     this.initialProcesses,
     this.autoLoad = true,
     this.refreshInterval = const Duration(seconds: 2),
+    this.capabilities,
   });
 
   @override
@@ -39,6 +43,11 @@ class _ProcessesPageState extends State<ProcessesPage> {
   DateTime? lastUpdated;
   Timer? refreshTimer;
 
+  bool get _supportsProcessList =>
+      widget.capabilities?.supportsProcessList ?? true;
+  bool get _supportsProcessKill =>
+      widget.capabilities?.supportsProcessKill ?? !Platform.isMacOS;
+
   @override
   void initState() {
     super.initState();
@@ -48,9 +57,11 @@ class _ProcessesPageState extends State<ProcessesPage> {
       lastUpdated = DateTime.now();
     }
     unawaited(_loadPreferences());
-    if (widget.autoLoad) {
+    if (widget.autoLoad && _supportsProcessList) {
       unawaited(loadProcesses());
       _scheduleRefreshTimer();
+    } else if (!_supportsProcessList) {
+      loading = false;
     }
   }
 
@@ -277,6 +288,13 @@ class _ProcessesPageState extends State<ProcessesPage> {
   }
 
   Future<void> _confirmKill(ProcessInfo process) async {
+    if (!_supportsProcessKill) {
+      _toast(
+        'macOS restricts process management. Terminating processes is not currently supported.',
+      );
+      return;
+    }
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -686,7 +704,9 @@ class _ProcessesPageState extends State<ProcessesPage> {
                       watched: preferences.isWatched(process.name),
                       maxRam: maxRam,
                       compactDensity: preferences.compactDensity,
-                      onKill: () => _confirmKill(process),
+                      onKill: _supportsProcessKill
+                          ? () => _confirmKill(process)
+                          : null,
                       onToggleWatched: () => _toggleWatched(process),
                       onCopy: () => _copyProcess(process),
                     );
@@ -748,6 +768,16 @@ class _ProcessesPageState extends State<ProcessesPage> {
             final compactListHeight = math.max(300.0, availableHeight * 0.48);
             final leadingChildren = [
               _buildHeader(),
+              if (Platform.isMacOS || !_supportsProcessKill) ...[
+                SizedBox(height: denseVertical ? 8 : 12),
+                _InlineNotice(
+                  icon: Icons.lock_outline_rounded,
+                  message: _supportsProcessList
+                      ? 'macOS restricts process management for security. Process viewing may work, but terminating processes may require additional permissions or is not currently supported.'
+                      : 'Process monitoring on macOS is currently limited. HardwareMon’s macOS support is still expanding, and this page will improve in a future release.',
+                  color: Colors.orangeAccent,
+                ),
+              ],
               SizedBox(height: largeGap),
               _buildSummaryCards(summary),
               SizedBox(height: mediumGap),
@@ -766,8 +796,9 @@ class _ProcessesPageState extends State<ProcessesPage> {
                 SizedBox(height: denseVertical ? 6 : 10),
                 _InlineNotice(
                   icon: Icons.cloud_off_rounded,
-                  message:
-                      'Process telemetry is unavailable. HardwareMon will retry the local backend.',
+                  message: Platform.isMacOS
+                      ? 'Process monitoring on macOS is currently limited. HardwareMon’s macOS support is still expanding, and this page will improve in a future release.'
+                      : 'Process telemetry is unavailable. HardwareMon will retry the local backend.',
                   color: Colors.redAccent,
                 ),
               ],
@@ -963,7 +994,7 @@ class _ProcessTile extends StatefulWidget {
   final bool watched;
   final double maxRam;
   final bool compactDensity;
-  final VoidCallback onKill;
+  final VoidCallback? onKill;
   final VoidCallback onToggleWatched;
   final VoidCallback onCopy;
 
@@ -1003,13 +1034,21 @@ class _ProcessTileState extends State<_ProcessTile> {
         ),
         const PopupMenuItem(value: 'copy', child: Text('Copy process details')),
         const PopupMenuDivider(),
-        const PopupMenuItem(value: 'end', child: Text('End process')),
+        PopupMenuItem(
+          value: 'end',
+          enabled: widget.onKill != null,
+          child: Text(
+            widget.onKill == null
+                ? 'End process unavailable on macOS'
+                : 'End process',
+          ),
+        ),
       ],
     );
 
     if (action == 'watch') widget.onToggleWatched();
     if (action == 'copy') widget.onCopy();
-    if (action == 'end') widget.onKill();
+    if (action == 'end') widget.onKill?.call();
   }
 
   @override
@@ -1311,7 +1350,7 @@ class _ProcessActions extends StatelessWidget {
   final bool expanded;
   final VoidCallback onExpand;
   final VoidCallback onCopy;
-  final VoidCallback onKill;
+  final VoidCallback? onKill;
 
   const _ProcessActions({
     required this.expanded,
@@ -1344,13 +1383,17 @@ class _ProcessActions extends StatelessWidget {
           ),
         ),
         IconButton(
-          tooltip: 'End process',
+          tooltip: onKill == null
+              ? 'Process termination is unavailable on macOS'
+              : 'End process',
           onPressed: onKill,
           iconSize: 18,
           visualDensity: VisualDensity.compact,
           icon: Icon(
             Icons.close_rounded,
-            color: Colors.redAccent.withValues(alpha: 0.85),
+            color: onKill == null
+                ? AppColors.textMuted(context)
+                : Colors.redAccent.withValues(alpha: 0.85),
           ),
         ),
       ],

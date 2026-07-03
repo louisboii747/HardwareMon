@@ -247,6 +247,15 @@ def get_processes():
 
 @router.post("/kill/{pid}")
 def kill_process(pid: int):
+    if _OPERATING_SYSTEM == "Darwin":
+        raise HTTPException(
+            status_code=501,
+            detail=(
+                "macOS restricts process management for security. Process viewing "
+                "is available, but terminating processes is not currently supported."
+            ),
+        )
+
     try:
         process = psutil.Process(pid)
 

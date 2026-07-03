@@ -64,18 +64,24 @@ class PerformancePage extends StatelessWidget {
             chartPreferences: chartPreferences,
           ),
           const SizedBox(height: 16),
-          _SessionIntelligencePanel(
-            summary: sessionSummary,
-            sessionAge: sessionAge,
-            telemetry: telemetry,
-            onCopyReport: () =>
-                _copySessionReport(context, sessionSummary, sessionAge),
-          ),
-          const SizedBox(height: 24),
-          TelemetryStudio(
-            telemetry: telemetry,
-            chartPreferences: chartPreferences,
-          ),
+          if (telemetry.isMacOS) ...[
+            _MacOSCapabilityNotice(telemetry: telemetry),
+            const SizedBox(height: 24),
+          ] else ...[
+            _SessionIntelligencePanel(
+              summary: sessionSummary,
+              sessionAge: sessionAge,
+              telemetry: telemetry,
+              onCopyReport: () =>
+                  _copySessionReport(context, sessionSummary, sessionAge),
+            ),
+            const SizedBox(height: 24),
+          ],
+          if (!telemetry.isMacOS || telemetry.capabilities.supportsGpuUsage)
+            TelemetryStudio(
+              telemetry: telemetry,
+              chartPreferences: chartPreferences,
+            ),
           _PerformanceSection(
             title: 'CPU',
             icon: Icons.memory_rounded,
@@ -93,41 +99,44 @@ class PerformancePage extends StatelessWidget {
                 alertKind: MetricAlertKind.cpuUsage,
                 alertValue: telemetry.cpuUsage.toDouble(),
               ),
-              MetricCard(
-                title: 'CPU Temperature',
-                value: '${telemetry.cpuTemp}°C',
-                subtitle: 'CPU Package Temperature',
-                icon: Icons.thermostat_rounded,
-                accent: Colors.red,
-                graphPoints: telemetry.cpuTempHistory,
-                chartPreferences: chartPreferences,
-                metricKind: TelemetryMetricKind.temperature,
-                statisticsSince: telemetry.sessionStatisticsStartedAt,
-                alertKind: MetricAlertKind.cpuTemperature,
-                alertValue: telemetry.cpuTemp.toDouble(),
-              ),
-              MetricCard(
-                title: 'CPU Clock',
-                value: '${telemetry.cpuClockGHz.toStringAsFixed(2)} GHz',
-                subtitle: 'Current clock speed',
-                icon: Icons.speed_rounded,
-                accent: Colors.green,
-                graphPoints: telemetry.cpuClockHistory,
-                chartPreferences: chartPreferences,
-                metricKind: TelemetryMetricKind.gigahertz,
-                statisticsSince: telemetry.sessionStatisticsStartedAt,
-              ),
-              MetricCard(
-                title: 'CPU Power',
-                value: '${telemetry.cpuPower.toStringAsFixed(1)} W',
-                subtitle: 'Package power draw',
-                icon: Icons.bolt_rounded,
-                accent: Colors.amber,
-                graphPoints: telemetry.cpuPowerHistory,
-                chartPreferences: chartPreferences,
-                metricKind: TelemetryMetricKind.watts,
-                statisticsSince: telemetry.sessionStatisticsStartedAt,
-              ),
+              if (telemetry.capabilities.supportsCpuTemperature)
+                MetricCard(
+                  title: 'CPU Temperature',
+                  value: '${telemetry.cpuTemp}°C',
+                  subtitle: 'CPU Package Temperature',
+                  icon: Icons.thermostat_rounded,
+                  accent: Colors.red,
+                  graphPoints: telemetry.cpuTempHistory,
+                  chartPreferences: chartPreferences,
+                  metricKind: TelemetryMetricKind.temperature,
+                  statisticsSince: telemetry.sessionStatisticsStartedAt,
+                  alertKind: MetricAlertKind.cpuTemperature,
+                  alertValue: telemetry.cpuTemp.toDouble(),
+                ),
+              if (telemetry.capabilities.supportsCpuFrequency)
+                MetricCard(
+                  title: 'CPU Clock',
+                  value: '${telemetry.cpuClockGHz.toStringAsFixed(2)} GHz',
+                  subtitle: 'Current clock speed',
+                  icon: Icons.speed_rounded,
+                  accent: Colors.green,
+                  graphPoints: telemetry.cpuClockHistory,
+                  chartPreferences: chartPreferences,
+                  metricKind: TelemetryMetricKind.gigahertz,
+                  statisticsSince: telemetry.sessionStatisticsStartedAt,
+                ),
+              if (telemetry.capabilities.supportsPowerMetrics)
+                MetricCard(
+                  title: 'CPU Power',
+                  value: '${telemetry.cpuPower.toStringAsFixed(1)} W',
+                  subtitle: 'Package power draw',
+                  icon: Icons.bolt_rounded,
+                  accent: Colors.amber,
+                  graphPoints: telemetry.cpuPowerHistory,
+                  chartPreferences: chartPreferences,
+                  metricKind: TelemetryMetricKind.watts,
+                  statisticsSince: telemetry.sessionStatisticsStartedAt,
+                ),
             ],
           ),
           _PerformanceSection(
@@ -182,58 +191,66 @@ class PerformancePage extends StatelessWidget {
               ),
             ],
           ),
-          _PerformanceSection(
-            title: 'GPU',
-            icon: Icons.graphic_eq_rounded,
-            accent: Colors.orange,
-            cards: [
-              MetricCard(
-                title: 'GPU Temperature',
-                value: '${telemetry.gpuTemp}°C',
-                subtitle: 'Live telemetry',
-                icon: Icons.graphic_eq_rounded,
-                accent: Colors.orange,
-                graphPoints: telemetry.gpuTempHistory,
-                chartPreferences: chartPreferences,
-                metricKind: TelemetryMetricKind.temperature,
-                statisticsSince: telemetry.sessionStatisticsStartedAt,
-                alertKind: MetricAlertKind.gpuTemperature,
-                alertValue: telemetry.gpuTemp.toDouble(),
-              ),
-              MetricCard(
-                title: 'GPU Usage',
-                value: '${telemetry.gpuUsage}%',
-                subtitle: 'Current GPU load',
-                icon: Icons.show_chart_rounded,
-                accent: Colors.blue,
-                graphPoints: telemetry.gpuUsageHistory,
-                chartPreferences: chartPreferences,
-                statisticsSince: telemetry.sessionStatisticsStartedAt,
-              ),
-              MetricCard(
-                title: 'GPU Power',
-                value: '${telemetry.gpuPower.toStringAsFixed(1)} W',
-                subtitle: 'Board power draw',
-                icon: Icons.bolt_rounded,
-                accent: const Color.fromARGB(255, 115, 255, 0),
-                graphPoints: telemetry.gpuPowerHistory,
-                chartPreferences: chartPreferences,
-                metricKind: TelemetryMetricKind.watts,
-                statisticsSince: telemetry.sessionStatisticsStartedAt,
-              ),
-              MetricCard(
-                title: 'VRAM Used',
-                value: '${telemetry.gpuVramUsed.toStringAsFixed(1)} GB',
-                subtitle: 'Graphics memory usage',
-                icon: Icons.memory_rounded,
-                accent: Colors.purple,
-                graphPoints: telemetry.gpuVramUsedHistory,
-                chartPreferences: chartPreferences,
-                metricKind: TelemetryMetricKind.gigabytes,
-                statisticsSince: telemetry.sessionStatisticsStartedAt,
-              ),
-            ],
-          ),
+          if (telemetry.capabilities.supportsGpuTemperature ||
+              telemetry.capabilities.supportsGpuUsage ||
+              telemetry.capabilities.supportsPowerMetrics ||
+              telemetry.capabilities.supportsGpuVram)
+            _PerformanceSection(
+              title: 'GPU',
+              icon: Icons.graphic_eq_rounded,
+              accent: Colors.orange,
+              cards: [
+                if (telemetry.capabilities.supportsGpuTemperature)
+                  MetricCard(
+                    title: 'GPU Temperature',
+                    value: '${telemetry.gpuTemp}°C',
+                    subtitle: 'Live telemetry',
+                    icon: Icons.graphic_eq_rounded,
+                    accent: Colors.orange,
+                    graphPoints: telemetry.gpuTempHistory,
+                    chartPreferences: chartPreferences,
+                    metricKind: TelemetryMetricKind.temperature,
+                    statisticsSince: telemetry.sessionStatisticsStartedAt,
+                    alertKind: MetricAlertKind.gpuTemperature,
+                    alertValue: telemetry.gpuTemp.toDouble(),
+                  ),
+                if (telemetry.capabilities.supportsGpuUsage)
+                  MetricCard(
+                    title: 'GPU Usage',
+                    value: '${telemetry.gpuUsage}%',
+                    subtitle: 'Current GPU load',
+                    icon: Icons.show_chart_rounded,
+                    accent: Colors.blue,
+                    graphPoints: telemetry.gpuUsageHistory,
+                    chartPreferences: chartPreferences,
+                    statisticsSince: telemetry.sessionStatisticsStartedAt,
+                  ),
+                if (telemetry.capabilities.supportsPowerMetrics)
+                  MetricCard(
+                    title: 'GPU Power',
+                    value: '${telemetry.gpuPower.toStringAsFixed(1)} W',
+                    subtitle: 'Board power draw',
+                    icon: Icons.bolt_rounded,
+                    accent: const Color.fromARGB(255, 115, 255, 0),
+                    graphPoints: telemetry.gpuPowerHistory,
+                    chartPreferences: chartPreferences,
+                    metricKind: TelemetryMetricKind.watts,
+                    statisticsSince: telemetry.sessionStatisticsStartedAt,
+                  ),
+                if (telemetry.capabilities.supportsGpuVram)
+                  MetricCard(
+                    title: 'VRAM Used',
+                    value: '${telemetry.gpuVramUsed.toStringAsFixed(1)} GB',
+                    subtitle: 'Graphics memory usage',
+                    icon: Icons.memory_rounded,
+                    accent: Colors.purple,
+                    graphPoints: telemetry.gpuVramUsedHistory,
+                    chartPreferences: chartPreferences,
+                    metricKind: TelemetryMetricKind.gigabytes,
+                    statisticsSince: telemetry.sessionStatisticsStartedAt,
+                  ),
+              ],
+            ),
           _PerformanceSection(
             title: 'Historical Analytics',
             icon: Icons.timeline_rounded,
@@ -258,15 +275,16 @@ class PerformancePage extends StatelessWidget {
                 graphPoints: telemetry.historicalRamHistory,
                 chartPreferences: chartPreferences,
               ),
-              MetricCard(
-                title: 'GPU History',
-                value: '${telemetry.historicalGpuHistory.length}',
-                subtitle: 'Timestamped samples',
-                icon: Icons.graphic_eq_rounded,
-                accent: Colors.orange,
-                graphPoints: telemetry.historicalGpuHistory,
-                chartPreferences: chartPreferences,
-              ),
+              if (telemetry.capabilities.supportsGpuUsage)
+                MetricCard(
+                  title: 'GPU History',
+                  value: '${telemetry.historicalGpuHistory.length}',
+                  subtitle: 'Timestamped samples',
+                  icon: Icons.graphic_eq_rounded,
+                  accent: Colors.orange,
+                  graphPoints: telemetry.historicalGpuHistory,
+                  chartPreferences: chartPreferences,
+                ),
             ],
           ),
         ],
@@ -304,6 +322,113 @@ class PerformancePage extends StatelessWidget {
       const SnackBar(
         content: Text('Performance session report copied'),
         duration: Duration(seconds: 2),
+      ),
+    );
+  }
+}
+
+class _MacOSCapabilityNotice extends StatelessWidget {
+  final TelemetryService telemetry;
+
+  const _MacOSCapabilityNotice({required this.telemetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final platform = telemetry.platformInfo;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.cyan.withValues(alpha: 0.09),
+            AppColors.surface(context),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.cyan.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: Colors.cyan.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: const Icon(Icons.laptop_mac_rounded, color: Colors.cyan),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${telemetry.cpuName} · ${platform?.architecture ?? 'Apple Silicon'}',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  'CPU and memory monitoring are active. macOS does not expose every temperature, fan, power, or detailed GPU sensor through stable public APIs, so HardwareMon hides unavailable cards instead of inventing readings.',
+                  style: TextStyle(
+                    color: AppColors.textSecondary(context),
+                    fontSize: 11,
+                    height: 1.45,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: const [
+                    _CapabilityPill(label: 'CPU usage', available: true),
+                    _CapabilityPill(label: 'Memory', available: true),
+                    _CapabilityPill(label: 'Sensors', available: false),
+                    _CapabilityPill(label: 'Power', available: false),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CapabilityPill extends StatelessWidget {
+  final String label;
+  final bool available;
+
+  const _CapabilityPill({required this.label, required this.available});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = available ? Colors.greenAccent : Colors.orangeAccent;
+    return Tooltip(
+      message: available
+          ? '$label is available on macOS'
+          : '$label is not reported by the current macOS integration',
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.075),
+          borderRadius: BorderRadius.circular(99),
+          border: Border.all(color: color.withValues(alpha: 0.18)),
+        ),
+        child: Text(
+          '${available ? 'Available' : 'Limited'} · $label',
+          style: TextStyle(
+            color: color,
+            fontSize: 9,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
       ),
     );
   }
