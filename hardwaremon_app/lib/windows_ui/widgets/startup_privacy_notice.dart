@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 
 class StartupPrivacyNotice {
+  static const Color backgroundColor = Color.fromARGB(255, 120, 199, 255);
   static const summary =
       'Privacy-first: monitoring, diagnostics, and benchmarks stay on this device. '
       'HardwareMon does not currently upload telemetry or benchmark results; '
@@ -12,6 +13,7 @@ class StartupPrivacyNotice {
     final messenger = ScaffoldMessenger.of(context);
     messenger.showSnackBar(
       SnackBar(
+        backgroundColor: backgroundColor,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 10),
         content: const Row(
