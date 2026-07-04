@@ -21,6 +21,7 @@ import '../widgets/hardware_skeleton.dart';
 import '../widgets/metric_card.dart';
 import '../widgets/metric_alert_action.dart';
 import '../widgets/command_palette.dart';
+import '../widgets/dashboard_companion_widgets.dart';
 import '../widgets/system_pulse_background.dart';
 import '../widgets/telemetry_strip.dart';
 import '../widgets/telemetry_studio.dart';
@@ -61,6 +62,7 @@ class _ShellScreenState extends State<ShellScreen> {
 
   int selectedIndex = 0;
   int _previousIndex = 0;
+  int _pageTransitionSerial = 0;
 
   @override
   void initState() {
@@ -178,6 +180,7 @@ class _ShellScreenState extends State<ShellScreen> {
     setState(() {
       _previousIndex = selectedIndex;
       selectedIndex = index;
+      _pageTransitionSerial++;
     });
   }
 
@@ -771,6 +774,12 @@ Disk: ${telemetry.diskUsage}%
                   childCount: cards.length,
                 ),
               ),
+            SliverToBoxAdapter(
+              child: DashboardCompanionWidgets(
+                telemetry: telemetry,
+                preferences: customizationPreferences,
+              ),
+            ),
             const SliverToBoxAdapter(child: SizedBox(height: 8)),
           ],
         );
@@ -1005,6 +1014,7 @@ Disk: ${telemetry.diskUsage}%
           telemetry: telemetry,
           chartPreferences: chartPreferences,
           dashboardPreferences: dashboardPreferences,
+          customizationPreferences: customizationPreferences,
         );
 
       default:
@@ -1538,7 +1548,13 @@ Disk: ${telemetry.diskUsage}%
                                   },
 
                                   child: KeyedSubtree(
-                                    key: ValueKey(selectedIndex),
+                                    // A page can be revisited before its previous
+                                    // switch-out animation has finished. A visit
+                                    // key prevents two outgoing/incoming pages
+                                    // from briefly sharing the same sibling key.
+                                    key: ValueKey(
+                                      '$selectedIndex-$_pageTransitionSerial',
+                                    ),
                                     child: getCurrentPage(),
                                   ),
                                 ),

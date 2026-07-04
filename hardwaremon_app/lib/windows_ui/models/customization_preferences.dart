@@ -114,6 +114,7 @@ class CustomizationPreferences extends ChangeNotifier {
   static const _ambientGlowKey = 'customizationAmbientGlow';
   static const _widgetOrderKey = 'customizationWidgetOrder';
   static const _enabledWidgetsKey = 'customizationEnabledWidgets';
+  static const _weatherLocationKey = 'customizationWeatherLocation';
   static const _profilesKey = 'customizationProfiles';
   static const _activeProfileKey = 'customizationActiveProfile';
 
@@ -136,6 +137,7 @@ class CustomizationPreferences extends ChangeNotifier {
     CustomWidgetId.hardwareHealth,
     CustomWidgetId.updates,
   };
+  String weatherLocation = '';
   List<CustomizationProfile> profiles = [];
   String? activeProfileId;
 
@@ -200,6 +202,7 @@ class CustomizationPreferences extends ChangeNotifier {
         enabledWidgets.map((item) => item.name).join(','),
       ),
     ).toSet();
+    weatherLocation = await _settingsService.getString(_weatherLocationKey, '');
     activeProfileId = await _settingsService.getString(_activeProfileKey, '');
     if (activeProfileId?.isEmpty == true) activeProfileId = null;
 
@@ -292,6 +295,12 @@ class CustomizationPreferences extends ChangeNotifier {
     }
     notifyListeners();
     await _persistWidgets();
+  }
+
+  Future<void> setWeatherLocation(String value) async {
+    weatherLocation = value.trim();
+    notifyListeners();
+    await _settingsService.setString(_weatherLocationKey, weatherLocation);
   }
 
   Future<CustomizationProfile> createProfile({
@@ -428,6 +437,7 @@ class CustomizationPreferences extends ChangeNotifier {
         'ambient_glow': ambientGlowIntensity,
         'widget_order': widgetOrder.map((item) => item.name).toList(),
         'enabled_widgets': enabledWidgets.map((item) => item.name).toList(),
+        'weather_location': weatherLocation,
       },
     };
   }
@@ -522,6 +532,7 @@ class CustomizationPreferences extends ChangeNotifier {
     ambientGlowIntensity = (studio['ambient_glow'] as num?)?.toDouble() ?? 0.75;
     widgetOrder = _widgetList(studio['widget_order'], appendMissing: true);
     enabledWidgets = _widgetList(studio['enabled_widgets']).toSet();
+    weatherLocation = studio['weather_location']?.toString().trim() ?? '';
     activeProfileId = profile.id;
     notifyListeners();
     await Future.wait([
@@ -547,6 +558,7 @@ class CustomizationPreferences extends ChangeNotifier {
       CustomWidgetId.hardwareHealth,
       CustomWidgetId.updates,
     };
+    weatherLocation = '';
     notifyListeners();
     await Future.wait([_persistStudio(), _persistWidgets()]);
   }
@@ -577,6 +589,7 @@ class CustomizationPreferences extends ChangeNotifier {
         _enabledWidgetsKey,
         enabledWidgets.map((item) => item.name).join(','),
       ),
+      _settingsService.setString(_weatherLocationKey, weatherLocation),
     ]);
   }
 

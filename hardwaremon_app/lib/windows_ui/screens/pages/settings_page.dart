@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../models/app_settings.dart';
 import '../../models/chart_preferences.dart';
+import '../../models/customization_preferences.dart';
 import '../../models/dashboard_preferences.dart';
 import '../../services/settings_service.dart';
 import '../../services/telemetry_service.dart';
@@ -53,12 +54,14 @@ class SettingsPage extends StatefulWidget {
   final TelemetryService telemetry;
   final ChartPreferences chartPreferences;
   final DashboardPreferences dashboardPreferences;
+  final CustomizationPreferences customizationPreferences;
 
   const SettingsPage({
     super.key,
     required this.telemetry,
     required this.chartPreferences,
     required this.dashboardPreferences,
+    required this.customizationPreferences,
   });
 
   @override
@@ -72,12 +75,16 @@ class _SettingsPageState extends State<SettingsPage> {
   AppSettings settings = const AppSettings();
   RuntimeBuildInfo? buildInfo;
   final TextEditingController _searchController = TextEditingController();
+  late final TextEditingController _weatherLocationController;
   String _searchQuery = '';
   _SettingsCategory _category = _SettingsCategory.all;
 
   @override
   void initState() {
     super.initState();
+    _weatherLocationController = TextEditingController(
+      text: widget.customizationPreferences.weatherLocation,
+    );
     desktopIntegration.addListener(_onDesktopIntegrationChanged);
     _loadSettings();
     _loadBuildInfo();
@@ -87,6 +94,7 @@ class _SettingsPageState extends State<SettingsPage> {
   void dispose() {
     desktopIntegration.removeListener(_onDesktopIntegrationChanged);
     _searchController.dispose();
+    _weatherLocationController.dispose();
     super.dispose();
   }
 
@@ -116,6 +124,9 @@ class _SettingsPageState extends State<SettingsPage> {
       ]) ||
       _showSection('Monitoring', _SettingsCategory.monitoring, const [
         'refresh interval history telemetry',
+      ]) ||
+      _showSection('Dashboard summaries', _SettingsCategory.monitoring, const [
+        'weather network health activity benchmarks updates widgets',
       ]) ||
       _showSection('Notifications', _SettingsCategory.alerts, const [
         'cpu ram temperature disk sound',
@@ -219,6 +230,8 @@ class _SettingsPageState extends State<SettingsPage> {
     await settingsService.saveSettings(effectiveDefaults);
     await widget.chartPreferences.resetDefaults();
     await widget.dashboardPreferences.resetDefaults();
+    await widget.customizationPreferences.resetStudioDefaults();
+    _weatherLocationController.clear();
 
     setState(() {
       settings = effectiveDefaults;
@@ -480,6 +493,53 @@ class _SettingsPageState extends State<SettingsPage> {
                   },
                 ),
               ),
+            ]),
+
+          if (_showSection(
+            'Dashboard summaries',
+            _SettingsCategory.monitoring,
+            const [
+              'weather network health activity benchmarks updates widgets',
+            ],
+          ))
+            _buildSection('Dashboard summaries', [
+              for (final id in CustomWidgetId.values)
+                _settingRow(
+                  id.label,
+                  Switch(
+                    value: widget.customizationPreferences.enabledWidgets
+                        .contains(id),
+                    onChanged: (value) => widget.customizationPreferences
+                        .setWidgetEnabled(id, value),
+                  ),
+                ),
+              if (widget.customizationPreferences.enabledWidgets.contains(
+                CustomWidgetId.weather,
+              ))
+                Padding(
+                  padding: const EdgeInsets.only(top: 8, bottom: 4),
+                  child: TextField(
+                    controller: _weatherLocationController,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted:
+                        widget.customizationPreferences.setWeatherLocation,
+                    decoration: InputDecoration(
+                      labelText: 'Weather location',
+                      hintText: 'City or postcode',
+                      helperText:
+                          'Used only to request current conditions from Open-Meteo.',
+                      prefixIcon: const Icon(Icons.location_on_rounded),
+                      suffixIcon: IconButton(
+                        tooltip: 'Save weather location',
+                        onPressed: () =>
+                            widget.customizationPreferences.setWeatherLocation(
+                              _weatherLocationController.text,
+                            ),
+                        icon: const Icon(Icons.check_rounded),
+                      ),
+                    ),
+                  ),
+                ),
             ]),
 
           if (_showSection('Notifications', _SettingsCategory.alerts, const [
@@ -772,6 +832,7 @@ class _SettingsPageState extends State<SettingsPage> {
         Icons.monitor_heart_rounded,
         HardwareDomain.network.color,
       ),
+      'Dashboard summaries' => (Icons.widgets_rounded, Colors.pinkAccent),
       'Notifications' => (
         Icons.notifications_active_rounded,
         HardwareDomain.thermal.color,

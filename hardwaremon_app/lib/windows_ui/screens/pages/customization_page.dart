@@ -695,7 +695,7 @@ class _WidgetManagementSection extends StatelessWidget {
       icon: Icons.widgets_rounded,
       color: Colors.pinkAccent,
       title: 'Widget Management',
-      subtitle: 'Prepare and arrange modules for future dashboard surfaces.',
+      subtitle: 'Show, hide, and arrange live modules on the Dashboard.',
       child: SizedBox(
         height: 350,
         child: ReorderableListView.builder(
@@ -711,7 +711,7 @@ class _WidgetManagementSection extends StatelessWidget {
               index: index,
               icon: _widgetIcon(id),
               title: id.label,
-              subtitle: enabled ? 'Enabled architecture' : 'Disabled',
+              subtitle: enabled ? 'Visible on Dashboard' : 'Hidden',
               enabled: enabled,
               onEnabled: (value) => customization.setWidgetEnabled(id, value),
             );

@@ -23,4 +23,30 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
   });
+
+  testWidgets('rapid page revisits do not duplicate transition keys', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const HardwareMonApp());
+    await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.tap(find.bySemanticsLabel('Customization'));
+    await tester.pump(const Duration(milliseconds: 40));
+    await tester.tap(find.bySemanticsLabel('Settings'));
+    await tester.pump(const Duration(milliseconds: 40));
+    await tester.tap(find.bySemanticsLabel('Customization'));
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.text('Customization'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
+  });
 }

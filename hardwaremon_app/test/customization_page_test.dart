@@ -60,5 +60,20 @@ void main() {
     expect(find.text('Graph Customization'), findsOneWidget);
     expect(find.text('Animation Studio'), findsOneWidget);
     expect(tester.takeException(), isNull);
+
+    final weatherRow = find.ancestor(
+      of: find.text('Weather'),
+      matching: find.byType(ListTile),
+    );
+    final weatherSwitch = find.descendant(
+      of: weatherRow,
+      matching: find.byType(Switch),
+    );
+    await tester.ensureVisible(weatherSwitch);
+    await tester.pump();
+    await tester.tap(weatherSwitch);
+    await tester.pump();
+    expect(studio.enabledWidgets, contains(CustomWidgetId.weather));
+    expect(tester.takeException(), isNull);
   });
 }
