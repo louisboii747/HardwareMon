@@ -61,6 +61,8 @@ Install Python dependencies:
 pip install -r requirements.txt
 ```
 
+You will also need to run the same `pip install` command for the same `requirements.txt` located in the `backend_fastapi` folder.
+
 ### Running the Backend
 
 HardwareMon uses FastAPI and Uvicorn for its backend services.

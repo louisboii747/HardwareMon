@@ -16,10 +16,9 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 import psutil
-
 from database.database import get_connection, get_data_dir
-from benchmark.hardware import collect_hardware_profile
 
+from benchmark.hardware import collect_hardware_profile
 
 BENCHMARK_VERSION = "1.0"
 TERMINAL_STATES = {"completed", "failed", "cancelled"}
@@ -85,9 +84,7 @@ class BenchmarkService:
     def start(self) -> Dict[str, Any]:
         with self._lock:
             if self._state["status"] == "running":
-                raise BenchmarkAlreadyRunningError(
-                    "A benchmark is already running on this device."
-                )
+                raise BenchmarkAlreadyRunningError("A benchmark is already running on this device.")
 
             run_id = str(uuid.uuid4())
             self._cancel_event = threading.Event()
@@ -156,9 +153,7 @@ class BenchmarkService:
         try:
             self._check_cancelled()
             self._update("Profiling hardware", 1.0)
-            hardware_profile = self._hardware_profile_factory(
-                Path(self._temp_dir_factory())
-            )
+            hardware_profile = self._hardware_profile_factory(Path(self._temp_dir_factory()))
             single_ops = self._run_cpu_single()
             multi_ops, workers = self._run_cpu_multi()
             memory_mib_s = self._run_memory()
@@ -193,9 +188,7 @@ class BenchmarkService:
                 },
                 "hardware": hardware_profile,
             }
-            result_id = self._persist_result(
-                scores, duration, raw_result, hardware_profile
-            )
+            result_id = self._persist_result(scores, duration, raw_result, hardware_profile)
             self._finish(
                 run_id,
                 status="completed",
@@ -230,9 +223,7 @@ class BenchmarkService:
         payload = b"HardwareMon benchmark v1 single thread"
         while time.monotonic() < deadline:
             self._check_cancelled()
-            hashlib.pbkdf2_hmac(
-                "sha256", payload, b"hardwaremon", self.config.pbkdf2_iterations
-            )
+            hashlib.pbkdf2_hmac("sha256", payload, b"hardwaremon", self.config.pbkdf2_iterations)
             operations += 1
             elapsed = duration - max(0.0, deadline - time.monotonic())
             self._update("CPU single-thread", 5.0 + 20.0 * min(1.0, elapsed / duration))
@@ -354,9 +345,9 @@ class BenchmarkService:
         memory_score = 1000.0 * memory_mib_s / 6000.0
         # Geometric mean prevents one unusually cached disk direction from
         # overwhelming the other direction in the combined disk result.
-        disk_score = 1000.0 * math.sqrt(
-            max(0.0, disk_read_mib_s) * max(0.0, disk_write_mib_s)
-        ) / 500.0
+        disk_score = (
+            1000.0 * math.sqrt(max(0.0, disk_read_mib_s) * max(0.0, disk_write_mib_s)) / 500.0
+        )
         # Overall v1 weighting: CPU 60%, memory 20%, disk 20%.
         overall_score = 0.60 * cpu_score + 0.20 * memory_score + 0.20 * disk_score
         return {
