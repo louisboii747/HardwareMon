@@ -40,7 +40,7 @@
 <img src="https://img.shields.io/badge/GitHub_Actions-CI%2FCD-2088FF?logo=github-actions" alt="GitHub Actions">
 
 <a href="https://hardwaremon-site.pages.dev/">
-  <img src="https://img.shields.io/badge/Website-hardwaremon.pages.dev-orange?logo=cloudflare" alt="Website">
+  <img src="https://img.shields.io/badge/Website-hardwaremon-site.pages.dev-orange?logo=cloudflare" alt="Website">
 </a>
 
 </p>
