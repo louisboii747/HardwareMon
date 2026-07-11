@@ -29,6 +29,7 @@ import '../widgets/startup_privacy_notice.dart';
 import '../widgets/system_intelligence_hero.dart';
 import '../widgets/session_journal_dialog.dart';
 import 'pages/performance_page.dart';
+import 'pages/gaming_page.dart';
 import 'pages/processes_page.dart';
 import 'pages/network_page.dart';
 import 'pages/storage_page.dart';
@@ -146,7 +147,7 @@ class _ShellScreenState extends State<ShellScreen> {
   Future<void> _handleMacOSMenuAction(MethodCall call) async {
     switch (call.method) {
       case 'openSettings':
-        _selectPage(9);
+        _selectPage(10);
         break;
       case 'refreshTelemetry':
         await telemetry.refreshNow(includeHistory: true);
@@ -170,7 +171,7 @@ class _ShellScreenState extends State<ShellScreen> {
         break;
       case DesktopCommand.settings:
         Navigator.of(context).popUntil((route) => route.isFirst);
-        _selectPage(9);
+        _selectPage(10);
         break;
     }
   }
@@ -309,6 +310,7 @@ Disk: ${telemetry.diskUsage}%
     const shortcuts = [
       ('Command palette', 'Ctrl K'),
       ('Navigate pages', 'Alt 1–9'),
+      ('Open Gaming', 'Alt G'),
       ('Open Benchmark', 'Alt B'),
       ('Refresh telemetry', 'F5 / Ctrl R'),
       ('Pause or resume', 'Ctrl P'),
@@ -391,15 +393,33 @@ Disk: ${telemetry.diskUsage}%
         run: () => _selectPage(2),
       ),
       CommandPaletteAction(
+        id: 'gaming',
+        title: 'Open Gaming',
+        description: 'Review live game detection, sessions, and gaming history',
+        section: 'Navigate',
+        shortcut: 'Alt G',
+        icon: Icons.sports_esports_rounded,
+        selected: selectedIndex == 3,
+        keywords: const [
+          'game',
+          'gaming',
+          'session',
+          'minecraft',
+          'steam',
+          'gpu',
+        ],
+        run: () => _selectPage(3),
+      ),
+      CommandPaletteAction(
         id: 'network',
         title: 'Open Network',
         description: 'Inspect adapters, bandwidth, and test endpoints',
         section: 'Navigate',
         shortcut: 'Alt 4',
         icon: Icons.language_rounded,
-        selected: selectedIndex == 3,
+        selected: selectedIndex == 4,
         keywords: const ['ping', 'adapter', 'bandwidth', 'latency'],
-        run: () => _selectPage(3),
+        run: () => _selectPage(4),
       ),
       CommandPaletteAction(
         id: 'storage',
@@ -408,7 +428,7 @@ Disk: ${telemetry.diskUsage}%
         section: 'Navigate',
         shortcut: 'Alt 5',
         icon: Icons.storage_rounded,
-        selected: selectedIndex == 4,
+        selected: selectedIndex == 5,
         keywords: const [
           'disk',
           'drive',
@@ -417,7 +437,7 @@ Disk: ${telemetry.diskUsage}%
           'benchmark',
           'space',
         ],
-        run: () => _selectPage(4),
+        run: () => _selectPage(5),
       ),
       CommandPaletteAction(
         id: 'optimization',
@@ -426,7 +446,7 @@ Disk: ${telemetry.diskUsage}%
         section: 'Navigate',
         shortcut: 'Alt 6',
         icon: Icons.auto_awesome_rounded,
-        selected: selectedIndex == 5,
+        selected: selectedIndex == 6,
         keywords: const [
           'health',
           'startup',
@@ -435,7 +455,7 @@ Disk: ${telemetry.diskUsage}%
           'thermal',
           'gaming',
         ],
-        run: () => _selectPage(5),
+        run: () => _selectPage(6),
       ),
       CommandPaletteAction(
         id: 'reliability',
@@ -444,7 +464,7 @@ Disk: ${telemetry.diskUsage}%
         section: 'Navigate',
         shortcut: 'Alt 7',
         icon: Icons.verified_rounded,
-        selected: selectedIndex == 6,
+        selected: selectedIndex == 7,
         keywords: const [
           'stability',
           'health',
@@ -453,7 +473,7 @@ Disk: ${telemetry.diskUsage}%
           'runbook',
           'timeline',
         ],
-        run: () => _selectPage(6),
+        run: () => _selectPage(7),
       ),
       CommandPaletteAction(
         id: 'benchmark',
@@ -462,7 +482,7 @@ Disk: ${telemetry.diskUsage}%
         section: 'Navigate',
         shortcut: 'Alt B',
         icon: Icons.speed_rounded,
-        selected: selectedIndex == 7,
+        selected: selectedIndex == 8,
         keywords: const [
           'score',
           'performance',
@@ -471,7 +491,7 @@ Disk: ${telemetry.diskUsage}%
           'disk',
           'test',
         ],
-        run: () => _selectPage(7),
+        run: () => _selectPage(8),
       ),
       CommandPaletteAction(
         id: 'customization',
@@ -480,7 +500,7 @@ Disk: ${telemetry.diskUsage}%
         section: 'Navigate',
         shortcut: 'Alt 8',
         icon: Icons.palette_rounded,
-        selected: selectedIndex == 8,
+        selected: selectedIndex == 9,
         keywords: const [
           'theme',
           'accent',
@@ -489,7 +509,7 @@ Disk: ${telemetry.diskUsage}%
           'profile',
           'widgets',
         ],
-        run: () => _selectPage(8),
+        run: () => _selectPage(9),
       ),
       CommandPaletteAction(
         id: 'settings',
@@ -498,9 +518,9 @@ Disk: ${telemetry.diskUsage}%
         section: 'Navigate',
         shortcut: 'Alt 9',
         icon: Icons.settings_rounded,
-        selected: selectedIndex == 9,
+        selected: selectedIndex == 10,
         keywords: const ['preferences', 'configure'],
-        run: () => _selectPage(9),
+        run: () => _selectPage(10),
       ),
       for (final workspace in DashboardWorkspace.values)
         CommandPaletteAction(
@@ -976,32 +996,35 @@ Disk: ${telemetry.diskUsage}%
         );
 
       case 3:
-        return const NetworkPage();
+        return const GamingPage();
 
       case 4:
-        return const StoragePage();
+        return const NetworkPage();
 
       case 5:
+        return const StoragePage();
+
+      case 6:
         return OptimizationPage(
           telemetry: telemetry,
           chartPreferences: chartPreferences,
           onOpenProcesses: () => _selectPage(1),
-          onOpenStorage: () => _selectPage(4),
+          onOpenStorage: () => _selectPage(5),
         );
 
-      case 6:
+      case 7:
         return ReliabilityPage(
           telemetry: telemetry,
           onOpenPerformance: () => _selectPage(2),
           onOpenProcesses: () => _selectPage(1),
-          onOpenStorage: () => _selectPage(4),
-          onOpenNetwork: () => _selectPage(3),
+          onOpenStorage: () => _selectPage(5),
+          onOpenNetwork: () => _selectPage(4),
         );
 
-      case 7:
+      case 8:
         return const BenchmarkPage();
 
-      case 8:
+      case 9:
         return CustomizationPage(
           telemetry: telemetry,
           chartPreferences: chartPreferences,
@@ -1009,7 +1032,7 @@ Disk: ${telemetry.diskUsage}%
           customizationPreferences: customizationPreferences,
         );
 
-      case 9:
+      case 10:
         return SettingsPage(
           telemetry: telemetry,
           chartPreferences: chartPreferences,
@@ -1140,19 +1163,21 @@ Disk: ${telemetry.diskUsage}%
         const SingleActivator(LogicalKeyboardKey.digit3, alt: true): () =>
             _selectPage(2),
         const SingleActivator(LogicalKeyboardKey.digit4, alt: true): () =>
-            _selectPage(3),
-        const SingleActivator(LogicalKeyboardKey.digit5, alt: true): () =>
             _selectPage(4),
-        const SingleActivator(LogicalKeyboardKey.digit6, alt: true): () =>
+        const SingleActivator(LogicalKeyboardKey.digit5, alt: true): () =>
             _selectPage(5),
-        const SingleActivator(LogicalKeyboardKey.digit7, alt: true): () =>
+        const SingleActivator(LogicalKeyboardKey.digit6, alt: true): () =>
             _selectPage(6),
-        const SingleActivator(LogicalKeyboardKey.digit8, alt: true): () =>
-            _selectPage(8),
-        const SingleActivator(LogicalKeyboardKey.digit9, alt: true): () =>
-            _selectPage(9),
-        const SingleActivator(LogicalKeyboardKey.keyB, alt: true): () =>
+        const SingleActivator(LogicalKeyboardKey.digit7, alt: true): () =>
             _selectPage(7),
+        const SingleActivator(LogicalKeyboardKey.digit8, alt: true): () =>
+            _selectPage(9),
+        const SingleActivator(LogicalKeyboardKey.digit9, alt: true): () =>
+            _selectPage(10),
+        const SingleActivator(LogicalKeyboardKey.keyB, alt: true): () =>
+            _selectPage(8),
+        const SingleActivator(LogicalKeyboardKey.keyG, alt: true): () =>
+            _selectPage(3),
         const SingleActivator(LogicalKeyboardKey.keyK, control: true):
             _showCommandPalette,
         const SingleActivator(
@@ -1183,9 +1208,9 @@ Disk: ${telemetry.diskUsage}%
           shift: true,
         ): _copySystemSnapshot,
         const SingleActivator(LogicalKeyboardKey.comma, control: true): () =>
-            _selectPage(9),
+            _selectPage(10),
         const SingleActivator(LogicalKeyboardKey.comma, meta: true): () =>
-            _selectPage(9),
+            _selectPage(10),
       },
       child: Focus(
         autofocus: true,
@@ -1300,11 +1325,31 @@ Disk: ${telemetry.diskUsage}%
                                         const SizedBox(height: 12),
 
                                         _DockItem(
+                                          icon: Icons.sports_esports_rounded,
+                                          label: 'Gaming',
+                                          shortcut: 'Alt+G',
+                                          active: selectedIndex == 3,
+                                          onTap: () => _selectPage(3),
+                                          showLabel:
+                                              customizationPreferences
+                                                  .showSidebarLabels ||
+                                              customizationPreferences
+                                                      .sidebarMode ==
+                                                  SidebarMode.expanded,
+                                          iconSize: customizationPreferences
+                                              .sidebarIconSize,
+                                          hoverEffects: customizationPreferences
+                                              .hoverEffects,
+                                        ),
+
+                                        const SizedBox(height: 12),
+
+                                        _DockItem(
                                           icon: Icons.language_rounded,
                                           label: 'Network',
                                           shortcut: 'Alt+4',
-                                          active: selectedIndex == 3,
-                                          onTap: () => _selectPage(3),
+                                          active: selectedIndex == 4,
+                                          onTap: () => _selectPage(4),
                                           showLabel:
                                               customizationPreferences
                                                   .showSidebarLabels ||
@@ -1323,8 +1368,8 @@ Disk: ${telemetry.diskUsage}%
                                           icon: Icons.storage_rounded,
                                           label: 'Storage',
                                           shortcut: 'Alt+5',
-                                          active: selectedIndex == 4,
-                                          onTap: () => _selectPage(4),
+                                          active: selectedIndex == 5,
+                                          onTap: () => _selectPage(5),
                                           showLabel:
                                               customizationPreferences
                                                   .showSidebarLabels ||
@@ -1343,8 +1388,8 @@ Disk: ${telemetry.diskUsage}%
                                           icon: Icons.auto_awesome_rounded,
                                           label: 'Optimisation',
                                           shortcut: 'Alt+6',
-                                          active: selectedIndex == 5,
-                                          onTap: () => _selectPage(5),
+                                          active: selectedIndex == 6,
+                                          onTap: () => _selectPage(6),
                                           showLabel:
                                               customizationPreferences
                                                   .showSidebarLabels ||
@@ -1363,8 +1408,8 @@ Disk: ${telemetry.diskUsage}%
                                           icon: Icons.verified_rounded,
                                           label: 'Reliability',
                                           shortcut: 'Alt+7',
-                                          active: selectedIndex == 6,
-                                          onTap: () => _selectPage(6),
+                                          active: selectedIndex == 7,
+                                          onTap: () => _selectPage(7),
                                           showLabel:
                                               customizationPreferences
                                                   .showSidebarLabels ||
@@ -1383,8 +1428,8 @@ Disk: ${telemetry.diskUsage}%
                                           icon: Icons.speed_rounded,
                                           label: 'Benchmark',
                                           shortcut: 'Alt+B',
-                                          active: selectedIndex == 7,
-                                          onTap: () => _selectPage(7),
+                                          active: selectedIndex == 8,
+                                          onTap: () => _selectPage(8),
                                           showLabel:
                                               customizationPreferences
                                                   .showSidebarLabels ||
@@ -1403,8 +1448,8 @@ Disk: ${telemetry.diskUsage}%
                                           icon: Icons.palette_rounded,
                                           label: 'Customization',
                                           shortcut: 'Alt+8',
-                                          active: selectedIndex == 8,
-                                          onTap: () => _selectPage(8),
+                                          active: selectedIndex == 9,
+                                          onTap: () => _selectPage(9),
                                           showLabel:
                                               customizationPreferences
                                                   .showSidebarLabels ||
@@ -1423,8 +1468,8 @@ Disk: ${telemetry.diskUsage}%
                                           icon: Icons.settings_rounded,
                                           label: 'Settings',
                                           shortcut: 'Alt+9',
-                                          active: selectedIndex == 9,
-                                          onTap: () => _selectPage(9),
+                                          active: selectedIndex == 10,
+                                          onTap: () => _selectPage(10),
                                           showLabel:
                                               customizationPreferences
                                                   .showSidebarLabels ||

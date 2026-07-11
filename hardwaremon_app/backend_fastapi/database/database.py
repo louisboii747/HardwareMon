@@ -75,6 +75,63 @@ def init_benchmark_schema(conn):
     """)
 
 
+def init_gaming_schema(conn):
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS gaming_sessions (
+            id TEXT PRIMARY KEY,
+            game_name TEXT NOT NULL,
+            executable TEXT NOT NULL,
+            started_at TEXT NOT NULL,
+            ended_at TEXT,
+            duration_seconds REAL NOT NULL DEFAULT 0,
+            platform TEXT NOT NULL,
+            avg_cpu_usage REAL,
+            avg_gpu_usage REAL,
+            avg_ram_usage REAL,
+            avg_cpu_temperature REAL,
+            avg_gpu_temperature REAL,
+            peak_cpu_temperature REAL,
+            peak_gpu_temperature REAL,
+            peak_ram_usage REAL,
+            peak_gpu_usage REAL,
+            avg_cpu_clock REAL,
+            avg_gpu_power REAL,
+            avg_cpu_power REAL,
+            max_cpu_usage REAL,
+            max_gpu_usage REAL,
+            total_samples INTEGER NOT NULL DEFAULT 0,
+            hardwaremon_version TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'active',
+            raw_session_json TEXT NOT NULL DEFAULT '{}',
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    columns = {
+        row["name"] if hasattr(row, "keys") else row[1]
+        for row in conn.execute("PRAGMA table_info(gaming_sessions)")
+    }
+    migrations = {
+        "status": "TEXT NOT NULL DEFAULT 'active'",
+        "raw_session_json": "TEXT NOT NULL DEFAULT '{}'",
+        "created_at": "TEXT",
+        "updated_at": "TEXT",
+    }
+    for name, definition in migrations.items():
+        if name not in columns:
+            conn.execute(f"ALTER TABLE gaming_sessions ADD COLUMN {name} {definition}")
+
+    conn.execute("""
+        CREATE INDEX IF NOT EXISTS idx_gaming_sessions_started_at
+        ON gaming_sessions (started_at DESC)
+    """)
+    conn.execute("""
+        CREATE INDEX IF NOT EXISTS idx_gaming_sessions_game_name
+        ON gaming_sessions (game_name)
+    """)
+
+
 def init_database():
     conn = get_connection()
 
@@ -114,6 +171,7 @@ def init_database():
     """)
 
     init_benchmark_schema(conn)
+    init_gaming_schema(conn)
 
     conn.commit()
     conn.close()

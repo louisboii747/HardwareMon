@@ -157,6 +157,7 @@ HardwareMon immediately displays telemetry for the Android device itself. No acc
 * Real-time metric history
 * Expandable monitoring cards
 * Immersive focus-mode analytics views
+* Automatic Gaming Mode session capture
 
 ## System Intelligence
 
@@ -192,6 +193,28 @@ this release. HardwareMon never uploads a result automatically; after a run it
 asks for explicit anonymous-submission consent, and the application continues
 to work fully offline. The future cloud request/response and privacy contract is
 documented in [docs/benchmark-cloud-api.md](docs/benchmark-cloud-api.md).
+
+---
+
+## Gaming Mode
+
+Gaming Mode automatically watches the local process list for known game
+executables, starts a session when a game launches, samples existing
+HardwareMon telemetry while the game is running, and finishes the session when
+all detected game processes exit.
+
+Completed sessions are stored locally in SQLite with duration, platform,
+HardwareMon version, average CPU/GPU/RAM usage, CPU/GPU temperatures, peak
+temperatures, peak RAM/GPU/CPU usage, CPU clock, CPU/GPU power, and sample
+counts. The desktop Gaming page includes a live recording view, session
+history, full session details, and aggregate statistics such as most played
+game, longest session, total gaming hours, average session length, hottest
+recorded session, games played, and largest CPU/GPU usage.
+
+The game catalog lives in `hardwaremon_app/backend_fastapi/gaming/games.json`
+so new games can be added without changing detector code. Game artwork is an
+intentional placeholder in this release and is ready for future asset
+integration.
 
 ---
 

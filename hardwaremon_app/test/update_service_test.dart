@@ -375,11 +375,16 @@ void main() {
       expect(helper, contains('with administrator privileges'));
       expect(helper, contains('ditto "\$SOURCE_APP" "\$STAGED_APP"'));
       expect(helper, contains('open "\$TARGET_APP"'));
-      final syntaxCheck = await Process.run('/bin/sh', [
-        '-n',
-        starts.single.arguments.first,
-      ]);
-      expect(syntaxCheck.exitCode, 0, reason: syntaxCheck.stderr.toString());
+      final shellPath = Platform.isWindows
+          ? r'C:\Program Files\Git\bin\sh.exe'
+          : '/bin/sh';
+      if (await File(shellPath).exists()) {
+        final syntaxCheck = await Process.run(shellPath, [
+          '-n',
+          starts.single.arguments.first,
+        ]);
+        expect(syntaxCheck.exitCode, 0, reason: syntaxCheck.stderr.toString());
+      }
       expect(fixture.service.state.stage, UpdateStage.restarting);
       expect(closed, isTrue);
     },

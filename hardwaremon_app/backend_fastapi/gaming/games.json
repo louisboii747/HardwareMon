@@ -1,0 +1,121 @@
+[
+  {
+    "name": "Minecraft Launcher",
+    "executables": [
+      "MinecraftLauncher.exe",
+      "Minecraft Launcher.exe",
+      "minecraftlauncher"
+    ],
+    "icon": "minecraft",
+    "genre": "Sandbox",
+    "publisher": "Mojang Studios",
+    "steam_app_id": null
+  },
+  {
+    "name": "Roblox",
+    "executables": ["RobloxPlayerBeta.exe", "RobloxPlayerLauncher.exe"],
+    "icon": "roblox",
+    "genre": "Sandbox",
+    "publisher": "Roblox Corporation",
+    "steam_app_id": null
+  },
+  {
+    "name": "Minecraft Java Edition",
+    "executables": ["javaw.exe", "java.exe"],
+    "process_keywords": ["minecraft", ".minecraft", "net.minecraft"],
+    "icon": "minecraft",
+    "genre": "Sandbox",
+    "publisher": "Mojang Studios",
+    "steam_app_id": null
+  },
+  {
+    "name": "Minecraft for Windows",
+    "executables": ["Minecraft.Windows.exe"],
+    "icon": "minecraft",
+    "genre": "Sandbox",
+    "publisher": "Mojang Studios",
+    "steam_app_id": null
+  },
+  {
+    "name": "Fortnite",
+    "executables": ["FortniteClient-Win64-Shipping.exe", "FortniteClient"],
+    "icon": "fortnite",
+    "genre": "Battle Royale",
+    "publisher": "Epic Games",
+    "steam_app_id": null
+  },
+  {
+    "name": "Counter-Strike 2",
+    "executables": ["cs2.exe"],
+    "icon": "cs2",
+    "genre": "Shooter",
+    "publisher": "Valve",
+    "steam_app_id": "730"
+  },
+  {
+    "name": "VALORANT",
+    "executables": ["VALORANT-Win64-Shipping.exe", "valorant.exe"],
+    "icon": "valorant",
+    "genre": "Shooter",
+    "publisher": "Riot Games",
+    "steam_app_id": null
+  },
+  {
+    "name": "League of Legends",
+    "executables": [
+      "League of Legends.exe",
+      "LeagueClient.exe",
+      "LeagueClientUx.exe"
+    ],
+    "icon": "league",
+    "genre": "MOBA",
+    "publisher": "Riot Games",
+    "steam_app_id": null
+  },
+  {
+    "name": "Rocket League",
+    "executables": ["RocketLeague.exe"],
+    "icon": "rocketleague",
+    "genre": "Sports",
+    "publisher": "Psyonix",
+    "steam_app_id": "252950"
+  },
+  {
+    "name": "Grand Theft Auto V",
+    "executables": ["GTA5.exe", "GTAVLauncher.exe"],
+    "icon": "gta5",
+    "genre": "Action",
+    "publisher": "Rockstar Games",
+    "steam_app_id": "271590"
+  },
+  {
+    "name": "Red Dead Redemption 2",
+    "executables": ["RDR2.exe"],
+    "icon": "rdr2",
+    "genre": "Action Adventure",
+    "publisher": "Rockstar Games",
+    "steam_app_id": "1174180"
+  },
+  {
+    "name": "Elden Ring",
+    "executables": ["eldenring.exe", "start_protected_game.exe"],
+    "process_keywords": ["elden ring", "eldenring"],
+    "icon": "eldenring",
+    "genre": "Action RPG",
+    "publisher": "Bandai Namco",
+    "steam_app_id": "1245620"
+  },
+  {
+    "name": "Forza",
+    "executables": [
+      "ForzaHorizon5.exe",
+      "ForzaHorizon4.exe",
+      "ForzaMotorsport.exe",
+      "Forza"
+    ],
+    "icon": "forza",
+    "genre": "Racing",
+    "publisher": "Xbox Game Studios",
+    "steam_app_id": null
+  }
+]

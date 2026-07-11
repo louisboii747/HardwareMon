@@ -14,6 +14,7 @@ from database.logging_service import start_logging
 from routes.history import router as history_router
 from routes.optimization import router as optimization_router
 from routes.benchmark import router as benchmark_router
+from routes.gaming import router as gaming_router, gaming_service
 
 
 BACKEND_VERSION = "1.1.0"
@@ -30,8 +31,12 @@ async def lifespan(_app):
     # server. It must not delay FastAPI from accepting the GUI's health checks.
     threading.Thread(target=start_lhm, daemon=True, name="lhm-launcher").start()
     start_logging()
+    gaming_service.start()
 
-    yield
+    try:
+        yield
+    finally:
+        gaming_service.stop()
 
 
 app = FastAPI(
@@ -47,6 +52,7 @@ app.include_router(processes_router)
 app.include_router(history_router)
 app.include_router(optimization_router)
 app.include_router(benchmark_router)
+app.include_router(gaming_router)
 
 
 @app.get("/")

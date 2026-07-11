@@ -393,7 +393,7 @@ async def get_optimization_snapshot():
         "temporary_files": _temporary_files(),
         "capabilities": {
             "startup_toggle": platform.system() in {"Windows", "Linux"},
-            "gaming_mode": False,
+            "gaming_mode": True,
             "cleanup": False,
         },
     }
