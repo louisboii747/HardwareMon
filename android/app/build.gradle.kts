@@ -65,7 +65,7 @@ kotlin {
 
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2025.08.01")
-    val activityVersion = "1.12.1"
+    val activityVersion = "1.13.0"
     val lifecycleVersion = "2.9.4"
 
     implementation(composeBom)
