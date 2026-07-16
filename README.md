@@ -14,6 +14,16 @@
 </p>
 
 <p align="center">
+  <a href="https://peerpush.com/p/hardwaremon" target="_blank" rel="noopener">
+    <img
+      src="https://peerpush.com/p/hardwaremon/badge.png"
+      alt="HardwareMon on PeerPush"
+      width="230"
+    />
+  </a>
+</p>
+
+<p align="center">
   <a href="https://sourceforge.net/p/hardwaremon/"><img alt="Download HardwareMon" src="https://sourceforge.net/sflogo.php?type=18&amp;group_id=4105016" width=200></a>
 </p>
 
