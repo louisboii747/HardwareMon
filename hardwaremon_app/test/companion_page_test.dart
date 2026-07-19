@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_gui/windows_ui/screens/pages/companion_page.dart';
 import 'package:flutter_gui/windows_ui/services/companion_service.dart';
 import 'package:flutter_gui/windows_ui/services/telemetry_service.dart';
+import 'package:flutter_gui/windows_ui/models/card_workspace.dart';
 
 void main() {
   testWidgets('companion centre exposes private sharing and export controls', (
@@ -25,7 +26,11 @@ void main() {
       MaterialApp(
         theme: ThemeData.dark(),
         home: Scaffold(
-          body: CompanionPage(telemetry: TelemetryService(), service: service),
+          body: CompanionPage(
+            telemetry: TelemetryService(),
+            service: service,
+            cardWorkspacePreferences: CardWorkspacePreferences(),
+          ),
         ),
       ),
     );

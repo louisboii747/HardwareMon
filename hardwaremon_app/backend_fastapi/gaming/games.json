@@ -117,5 +117,446 @@
     "genre": "Racing",
     "publisher": "Xbox Game Studios",
     "steam_app_id": null
+  },
+  {
+    "name": "Apex Legends",
+    "executables": ["r5apex.exe"],
+    "icon": "apex",
+    "genre": "Battle Royale",
+    "publisher": "Electronic Arts",
+    "steam_app_id": "1172470"
+  },
+  {
+    "name": "Call of Duty",
+    "executables": ["cod.exe", "ModernWarfare.exe", "BlackOpsColdWar.exe"],
+    "icon": "callofduty",
+    "genre": "Shooter",
+    "publisher": "Activision",
+    "steam_app_id": "1938090"
+  },
+  {
+    "name": "Overwatch 2",
+    "executables": ["Overwatch.exe"],
+    "icon": "overwatch",
+    "genre": "Hero Shooter",
+    "publisher": "Blizzard Entertainment",
+    "steam_app_id": "2357570"
+  },
+  {
+    "name": "Tom Clancy's Rainbow Six Siege",
+    "executables": ["RainbowSix.exe", "RainbowSix_Vulkan.exe"],
+    "icon": "rainbowsix",
+    "genre": "Tactical Shooter",
+    "publisher": "Ubisoft",
+    "steam_app_id": "359550"
+  },
+  {
+    "name": "Destiny 2",
+    "executables": ["destiny2.exe"],
+    "icon": "destiny",
+    "genre": "Shooter",
+    "publisher": "Bungie",
+    "steam_app_id": "1085660"
+  },
+  {
+    "name": "PUBG: Battlegrounds",
+    "executables": ["TslGame.exe"],
+    "icon": "pubg",
+    "genre": "Battle Royale",
+    "publisher": "KRAFTON",
+    "steam_app_id": "578080"
+  },
+  {
+    "name": "Dead by Daylight",
+    "executables": ["DeadByDaylight-Win64-Shipping.exe", "DeadByDaylight.exe"],
+    "icon": "dbd",
+    "genre": "Horror",
+    "publisher": "Behaviour Interactive",
+    "steam_app_id": "381210"
+  },
+  {
+    "name": "Dota 2",
+    "executables": ["dota2.exe"],
+    "icon": "dota2",
+    "genre": "MOBA",
+    "publisher": "Valve",
+    "steam_app_id": "570"
+  },
+  {
+    "name": "Team Fortress 2",
+    "executables": ["tf_win64.exe", "hl2.exe"],
+    "process_keywords": ["team fortress", "tf_win64", "tf2"],
+    "icon": "tf2",
+    "genre": "Shooter",
+    "publisher": "Valve",
+    "steam_app_id": "440"
+  },
+  {
+    "name": "The Finals",
+    "executables": ["Discovery.exe"],
+    "icon": "thefinals",
+    "genre": "Shooter",
+    "publisher": "Embark Studios",
+    "steam_app_id": "2073850"
+  },
+  {
+    "name": "Marvel Rivals",
+    "executables": ["Marvel-Win64-Shipping.exe", "MarvelRivals_Launcher.exe"],
+    "icon": "marvelrivals",
+    "genre": "Hero Shooter",
+    "publisher": "NetEase Games",
+    "steam_app_id": "2767030"
+  },
+  {
+    "name": "Helldivers 2",
+    "executables": ["helldivers2.exe"],
+    "icon": "helldivers2",
+    "genre": "Co-op Shooter",
+    "publisher": "PlayStation Publishing",
+    "steam_app_id": "553850"
+  },
+  {
+    "name": "Warframe",
+    "executables": ["Warframe.x64.exe", "Warframe.exe"],
+    "icon": "warframe",
+    "genre": "Action RPG",
+    "publisher": "Digital Extremes",
+    "steam_app_id": "230410"
+  },
+  {
+    "name": "War Thunder",
+    "executables": ["aces.exe"],
+    "icon": "warthunder",
+    "genre": "Vehicle Combat",
+    "publisher": "Gaijin Entertainment",
+    "steam_app_id": "236390"
+  },
+  {
+    "name": "World of Tanks",
+    "executables": ["WorldOfTanks.exe"],
+    "icon": "worldoftanks",
+    "genre": "Vehicle Combat",
+    "publisher": "Wargaming",
+    "steam_app_id": "1407200"
+  },
+  {
+    "name": "Cyberpunk 2077",
+    "executables": ["Cyberpunk2077.exe"],
+    "icon": "cyberpunk",
+    "genre": "Action RPG",
+    "publisher": "CD PROJEKT RED",
+    "steam_app_id": "1091500"
+  },
+  {
+    "name": "The Witcher 3",
+    "executables": ["witcher3.exe", "witcher3_dx12.exe"],
+    "icon": "witcher3",
+    "genre": "Action RPG",
+    "publisher": "CD PROJEKT RED",
+    "steam_app_id": "292030"
+  },
+  {
+    "name": "Baldur's Gate 3",
+    "executables": ["bg3.exe", "bg3_dx11.exe"],
+    "icon": "bg3",
+    "genre": "RPG",
+    "publisher": "Larian Studios",
+    "steam_app_id": "1086940"
+  },
+  {
+    "name": "Hogwarts Legacy",
+    "executables": ["HogwartsLegacy.exe"],
+    "icon": "hogwarts",
+    "genre": "Action RPG",
+    "publisher": "Warner Bros. Games",
+    "steam_app_id": "990080"
+  },
+  {
+    "name": "Starfield",
+    "executables": ["Starfield.exe"],
+    "icon": "starfield",
+    "genre": "RPG",
+    "publisher": "Bethesda Softworks",
+    "steam_app_id": "1716740"
+  },
+  {
+    "name": "The Elder Scrolls V: Skyrim Special Edition",
+    "executables": ["SkyrimSE.exe"],
+    "icon": "skyrim",
+    "genre": "RPG",
+    "publisher": "Bethesda Softworks",
+    "steam_app_id": "489830"
+  },
+  {
+    "name": "Fallout 4",
+    "executables": ["Fallout4.exe"],
+    "icon": "fallout4",
+    "genre": "RPG",
+    "publisher": "Bethesda Softworks",
+    "steam_app_id": "377160"
+  },
+  {
+    "name": "Palworld",
+    "executables": ["Palworld-Win64-Shipping.exe", "Palworld.exe"],
+    "icon": "palworld",
+    "genre": "Survival",
+    "publisher": "Pocketpair",
+    "steam_app_id": "1623730"
+  },
+  {
+    "name": "Rust",
+    "executables": ["RustClient.exe", "Rust.exe"],
+    "icon": "rust",
+    "genre": "Survival",
+    "publisher": "Facepunch Studios",
+    "steam_app_id": "252490"
+  },
+  {
+    "name": "ARK: Survival Ascended",
+    "executables": ["ArkAscended.exe"],
+    "icon": "ark",
+    "genre": "Survival",
+    "publisher": "Studio Wildcard",
+    "steam_app_id": "2399830"
+  },
+  {
+    "name": "Terraria",
+    "executables": ["Terraria.exe"],
+    "icon": "terraria",
+    "genre": "Sandbox",
+    "publisher": "Re-Logic",
+    "steam_app_id": "105600"
+  },
+  {
+    "name": "Stardew Valley",
+    "executables": ["Stardew Valley.exe", "StardewValley"],
+    "icon": "stardew",
+    "genre": "Simulation",
+    "publisher": "ConcernedApe",
+    "steam_app_id": "413150"
+  },
+  {
+    "name": "No Man's Sky",
+    "executables": ["NMS.exe"],
+    "icon": "nomanssky",
+    "genre": "Exploration",
+    "publisher": "Hello Games",
+    "steam_app_id": "275850"
+  },
+  {
+    "name": "Subnautica",
+    "executables": ["Subnautica.exe"],
+    "icon": "subnautica",
+    "genre": "Survival",
+    "publisher": "Unknown Worlds",
+    "steam_app_id": "264710"
+  },
+  {
+    "name": "Satisfactory",
+    "executables": ["FactoryGame-Win64-Shipping.exe", "FactoryGame.exe"],
+    "icon": "satisfactory",
+    "genre": "Simulation",
+    "publisher": "Coffee Stain Publishing",
+    "steam_app_id": "526870"
+  },
+  {
+    "name": "Factorio",
+    "executables": ["factorio.exe", "factorio"],
+    "icon": "factorio",
+    "genre": "Simulation",
+    "publisher": "Wube Software",
+    "steam_app_id": "427520"
+  },
+  {
+    "name": "Civilization VI",
+    "executables": ["CivilizationVI.exe", "CivilizationVI_DX12.exe"],
+    "icon": "civ6",
+    "genre": "Strategy",
+    "publisher": "2K",
+    "steam_app_id": "289070"
+  },
+  {
+    "name": "Crusader Kings III",
+    "executables": ["ck3.exe"],
+    "icon": "ck3",
+    "genre": "Strategy",
+    "publisher": "Paradox Interactive",
+    "steam_app_id": "1158310"
+  },
+  {
+    "name": "Cities: Skylines II",
+    "executables": ["Cities2.exe"],
+    "icon": "cities2",
+    "genre": "Simulation",
+    "publisher": "Paradox Interactive",
+    "steam_app_id": "949230"
+  },
+  {
+    "name": "Euro Truck Simulator 2",
+    "executables": ["eurotrucks2.exe"],
+    "icon": "ets2",
+    "genre": "Simulation",
+    "publisher": "SCS Software",
+    "steam_app_id": "227300"
+  },
+  {
+    "name": "American Truck Simulator",
+    "executables": ["amtrucks.exe"],
+    "icon": "ats",
+    "genre": "Simulation",
+    "publisher": "SCS Software",
+    "steam_app_id": "270880"
+  },
+  {
+    "name": "Assetto Corsa Competizione",
+    "executables": ["AC2-Win64-Shipping.exe", "acc.exe"],
+    "icon": "acc",
+    "genre": "Racing",
+    "publisher": "Kunos Simulazioni",
+    "steam_app_id": "805550"
+  },
+  {
+    "name": "F1 24",
+    "executables": ["F1_24.exe"],
+    "icon": "f1",
+    "genre": "Racing",
+    "publisher": "Electronic Arts",
+    "steam_app_id": "2488620"
+  },
+  {
+    "name": "EA Sports FC 25",
+    "executables": ["FC25.exe"],
+    "icon": "fc25",
+    "genre": "Sports",
+    "publisher": "Electronic Arts",
+    "steam_app_id": "2669320"
+  },
+  {
+    "name": "NBA 2K25",
+    "executables": ["NBA2K25.exe"],
+    "icon": "nba2k",
+    "genre": "Sports",
+    "publisher": "2K",
+    "steam_app_id": "2878980"
+  },
+  {
+    "name": "Football Manager 2024",
+    "executables": ["fm.exe"],
+    "icon": "fm24",
+    "genre": "Sports Simulation",
+    "publisher": "SEGA",
+    "steam_app_id": "2252570"
+  },
+  {
+    "name": "Path of Exile",
+    "executables": ["PathOfExile_x64.exe", "PathOfExileSteam.exe"],
+    "icon": "poe",
+    "genre": "Action RPG",
+    "publisher": "Grinding Gear Games",
+    "steam_app_id": "238960"
+  },
+  {
+    "name": "Diablo IV",
+    "executables": ["Diablo IV.exe"],
+    "icon": "diablo4",
+    "genre": "Action RPG",
+    "publisher": "Blizzard Entertainment",
+    "steam_app_id": "2344520"
+  },
+  {
+    "name": "Final Fantasy XIV",
+    "executables": ["ffxiv_dx11.exe", "ffxiv.exe"],
+    "icon": "ffxiv",
+    "genre": "MMORPG",
+    "publisher": "Square Enix",
+    "steam_app_id": "39210"
+  },
+  {
+    "name": "World of Warcraft",
+    "executables": ["Wow.exe", "WowClassic.exe", "WowClassicT.exe"],
+    "icon": "wow",
+    "genre": "MMORPG",
+    "publisher": "Blizzard Entertainment",
+    "steam_app_id": null
+  },
+  {
+    "name": "Guild Wars 2",
+    "executables": ["Gw2-64.exe"],
+    "icon": "gw2",
+    "genre": "MMORPG",
+    "publisher": "ArenaNet",
+    "steam_app_id": "1284210"
+  },
+  {
+    "name": "Lost Ark",
+    "executables": ["LOSTARK.exe"],
+    "icon": "lostark",
+    "genre": "MMORPG",
+    "publisher": "Amazon Games",
+    "steam_app_id": "1599340"
+  },
+  {
+    "name": "Genshin Impact",
+    "executables": ["GenshinImpact.exe", "YuanShen.exe"],
+    "icon": "genshin",
+    "genre": "Action RPG",
+    "publisher": "HoYoverse",
+    "steam_app_id": null
+  },
+  {
+    "name": "Honkai: Star Rail",
+    "executables": ["StarRail.exe"],
+    "icon": "starrail",
+    "genre": "RPG",
+    "publisher": "HoYoverse",
+    "steam_app_id": null
+  },
+  {
+    "name": "osu!",
+    "executables": ["osu!.exe", "osu.exe"],
+    "icon": "osu",
+    "genre": "Rhythm",
+    "publisher": "ppy",
+    "steam_app_id": null
+  },
+  {
+    "name": "Lethal Company",
+    "executables": ["Lethal Company.exe"],
+    "icon": "lethalcompany",
+    "genre": "Co-op Horror",
+    "publisher": "Zeekerss",
+    "steam_app_id": "1966720"
+  },
+  {
+    "name": "Phasmophobia",
+    "executables": ["Phasmophobia.exe"],
+    "icon": "phasmophobia",
+    "genre": "Co-op Horror",
+    "publisher": "Kinetic Games",
+    "steam_app_id": "739630"
+  },
+  {
+    "name": "Among Us",
+    "executables": ["Among Us.exe"],
+    "icon": "amongus",
+    "genre": "Social Deduction",
+    "publisher": "Innersloth",
+    "steam_app_id": "945360"
+  },
+  {
+    "name": "Fall Guys",
+    "executables": ["FallGuys_client_game.exe"],
+    "icon": "fallguys",
+    "genre": "Party",
+    "publisher": "Epic Games",
+    "steam_app_id": "1097150"
+  },
+  {
+    "name": "Euro Truck Simulator 2",
+    "executables": ["eurotrucks2.exe"],
+    "icon": "ets2",
+    "genre": "Simulation",
+    "publisher": "SCS Software",
+    "steam_app_id": "227300"
   }
 ]

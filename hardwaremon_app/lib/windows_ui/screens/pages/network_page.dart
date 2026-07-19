@@ -8,15 +8,19 @@ import 'package:intl/intl.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../models/network_models.dart';
+import '../../models/card_workspace.dart';
 import '../../models/telemetry_sample.dart';
 import '../../services/network_service.dart';
 import '../../widgets/glass_panel.dart';
+import '../../widgets/card_workspace.dart';
 import '../network_focus_screen.dart';
 
 enum _BandwidthMode { download, upload, both }
 
 class NetworkPage extends StatefulWidget {
-  const NetworkPage({super.key});
+  const NetworkPage({super.key, required this.cardWorkspacePreferences});
+
+  final CardWorkspacePreferences cardWorkspacePreferences;
 
   @override
   State<NetworkPage> createState() => _NetworkPageState();
@@ -741,22 +745,19 @@ Last checked: ${result.checkedAt.toIso8601String()}
       ),
     ];
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 1050
-            ? 3
-            : constraints.maxWidth >= 620
-            ? 2
-            : 1;
-        final width = (constraints.maxWidth - ((columns - 1) * 14)) / columns;
-        return Wrap(
-          spacing: 14,
-          runSpacing: 14,
-          children: [
-            for (final card in cards) SizedBox(width: width, child: card),
-          ],
-        );
-      },
+    return CardWorkspace(
+      pageId: 'network-overview',
+      pageLabel: 'Network overview',
+      preferences: widget.cardWorkspacePreferences,
+      standardHeight: 112,
+      cards: [
+        for (final card in cards)
+          WorkspaceCard(
+            id: card.label.toLowerCase().replaceAll(' ', '-'),
+            title: card.label,
+            child: card,
+          ),
+      ],
     );
   }
 

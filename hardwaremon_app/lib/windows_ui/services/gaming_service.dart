@@ -53,6 +53,19 @@ class GamingService {
     return GamingStatistics.fromJson(_decodeMap(response.body));
   }
 
+  Future<List<GameMetadata>> fetchCatalog() async {
+    final response = await http
+        .get(Uri.parse('${BackendConfig.baseUrl}/gaming/catalog'))
+        .timeout(const Duration(seconds: 8));
+    _ensureSuccess(response, 'Game catalog');
+    final decoded = jsonDecode(response.body);
+    if (decoded is! List) return const [];
+    return decoded
+        .whereType<Map>()
+        .map((item) => GameMetadata.fromJson(Map<String, dynamic>.from(item)))
+        .toList(growable: false);
+  }
+
   Future<void> deleteSession(String id) async {
     final response = await http
         .delete(Uri.parse('${BackendConfig.baseUrl}/gaming/session/$id'))

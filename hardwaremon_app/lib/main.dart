@@ -13,6 +13,7 @@ import 'package:flutter_gui/windows_ui/models/app_settings.dart';
 import 'package:flutter_gui/windows_ui/screens/shell_screen.dart';
 import 'package:flutter_gui/windows_ui/services/desktop_integration_service.dart';
 import 'package:flutter_gui/windows_ui/services/settings_service.dart';
+import 'package:flutter_gui/windows_ui/services/gaming_overlay_controller.dart';
 import 'package:flutter_gui/services/alert_service.dart';
 import 'package:flutter_gui/services/update_service.dart';
 import 'package:flutter_gui/widgets/alert_settings_widgets.dart';
@@ -271,6 +272,7 @@ Future<void> main() async {
     onExit: stopBackend,
   );
   AlertService.instance.updateSettings(effectiveSettings);
+  await GamingOverlayController.instance.initialize();
 
   if (Platform.environment['HARDWAREMON_BACKEND_MANAGED'] != '1') {
     await startBackend();

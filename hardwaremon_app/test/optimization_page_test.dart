@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_gui/windows_ui/models/chart_preferences.dart';
+import 'package:flutter_gui/windows_ui/models/card_workspace.dart';
 import 'package:flutter_gui/windows_ui/models/optimization_models.dart';
 import 'package:flutter_gui/windows_ui/models/storage_models.dart';
 import 'package:flutter_gui/windows_ui/screens/pages/optimization_page.dart';
@@ -38,6 +39,7 @@ void main() {
             onOpenStorage: () {},
             optimizationService: _FakeOptimizationService(),
             storageService: _FakeStorageService(),
+            cardWorkspacePreferences: CardWorkspacePreferences(),
           ),
         ),
       ),

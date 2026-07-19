@@ -6,9 +6,11 @@ import 'package:flutter/services.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../models/storage_models.dart';
+import '../../models/card_workspace.dart';
 import '../../services/storage_service.dart';
 import '../../widgets/glass_panel.dart';
 import '../../widgets/storage_visuals.dart';
+import '../../widgets/card_workspace.dart';
 import '../storage_focus_screen.dart';
 
 enum _StorageRange {
@@ -25,7 +27,9 @@ enum _StorageRange {
 }
 
 class StoragePage extends StatefulWidget {
-  const StoragePage({super.key});
+  const StoragePage({super.key, required this.cardWorkspacePreferences});
+
+  final CardWorkspacePreferences cardWorkspacePreferences;
 
   @override
   State<StoragePage> createState() => _StoragePageState();
@@ -275,7 +279,7 @@ class _StoragePageState extends State<StoragePage> {
   Widget _buildOverview(StorageSnapshot? snapshot) {
     final readHistory = [for (final sample in _liveHistory) sample.readBps];
     final writeHistory = [for (final sample in _liveHistory) sample.writeBps];
-    final cards = <Widget>[
+    final cards = <_StorageOverviewCard>[
       _StorageOverviewCard(
         key: const ValueKey('storage-overview-total'),
         title: 'Total Storage',
@@ -364,22 +368,19 @@ class _StoragePageState extends State<StoragePage> {
         ],
       ),
     ];
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 1180
-            ? 4
-            : constraints.maxWidth >= 650
-            ? 2
-            : 1;
-        final width = (constraints.maxWidth - ((columns - 1) * 16)) / columns;
-        return Wrap(
-          spacing: 16,
-          runSpacing: 16,
-          children: [
-            for (final card in cards) SizedBox(width: width, child: card),
-          ],
-        );
-      },
+    return CardWorkspace(
+      pageId: 'storage-overview',
+      pageLabel: 'Storage overview',
+      preferences: widget.cardWorkspacePreferences,
+      standardHeight: 300,
+      cards: [
+        for (final card in cards)
+          WorkspaceCard(
+            id: card.title.toLowerCase().replaceAll(' ', '-'),
+            title: card.title,
+            child: card,
+          ),
+      ],
     );
   }
 

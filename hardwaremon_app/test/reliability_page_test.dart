@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_gui/windows_ui/models/telemetry_sample.dart';
+import 'package:flutter_gui/windows_ui/models/card_workspace.dart';
 import 'package:flutter_gui/windows_ui/screens/pages/reliability_page.dart';
 import 'package:flutter_gui/windows_ui/services/telemetry_service.dart';
 
@@ -40,6 +41,7 @@ void main() {
             onOpenProcesses: () {},
             onOpenStorage: () {},
             onOpenNetwork: () {},
+            cardWorkspacePreferences: CardWorkspacePreferences(),
           ),
         ),
       ),

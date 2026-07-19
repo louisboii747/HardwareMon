@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_gui/windows_ui/models/chart_preferences.dart';
+import 'package:flutter_gui/windows_ui/models/card_workspace.dart';
 import 'package:flutter_gui/windows_ui/models/telemetry_sample.dart';
 import 'package:flutter_gui/windows_ui/models/telemetry_capabilities.dart';
 import 'package:flutter_gui/windows_ui/screens/pages/performance_page.dart';
@@ -47,6 +48,7 @@ void main() {
           body: PerformancePage(
             telemetry: telemetry,
             chartPreferences: preferences,
+            cardWorkspacePreferences: CardWorkspacePreferences(),
           ),
         ),
       ),
@@ -90,6 +92,7 @@ void main() {
           body: PerformancePage(
             telemetry: telemetry,
             chartPreferences: ChartPreferences(),
+            cardWorkspacePreferences: CardWorkspacePreferences(),
           ),
         ),
       ),

@@ -9,20 +9,24 @@ import 'package:intl/intl.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/benchmark_comparison.dart';
 import '../../models/benchmark_models.dart';
+import '../../models/card_workspace.dart';
 import '../../services/benchmark_comparison_provider.dart';
 import '../../services/benchmark_privacy_preferences.dart';
 import '../../services/benchmark_service.dart';
+import '../../widgets/card_workspace.dart';
 
 class BenchmarkPage extends StatefulWidget {
   final BenchmarkService? service;
   final BenchmarkComparisonCoordinator? comparisonCoordinator;
   final BenchmarkPrivacyPreferences? privacyPreferences;
+  final CardWorkspacePreferences cardWorkspacePreferences;
 
   const BenchmarkPage({
     super.key,
     this.service,
     this.comparisonCoordinator,
     this.privacyPreferences,
+    required this.cardWorkspacePreferences,
   });
 
   @override
@@ -468,33 +472,24 @@ class _BenchmarkPageState extends State<BenchmarkPage> {
             ],
           ),
           const SizedBox(height: 14),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final columns = constraints.maxWidth >= 760 ? 4 : 2;
-              final spacing = 10.0;
-              final width =
-                  (constraints.maxWidth - spacing * (columns - 1)) / columns;
-              return Wrap(
-                spacing: spacing,
-                runSpacing: spacing,
-                children: [
-                  for (var i = 0; i < cards.length; i++)
-                    SizedBox(
-                      width: width,
-                      child:
-                          _ScoreCard(
-                                label: cards[i].$1,
-                                score: cards[i].$2,
-                                icon: cards[i].$3,
-                                color: cards[i].$4,
-                              )
-                              .animate(delay: (70 * i).ms)
-                              .fadeIn()
-                              .scaleXY(begin: 0.97),
-                    ),
-                ],
-              );
-            },
+          CardWorkspace(
+            pageId: 'benchmark-scores',
+            pageLabel: 'Benchmark scores',
+            preferences: widget.cardWorkspacePreferences,
+            standardHeight: 122,
+            cards: [
+              for (var i = 0; i < cards.length; i++)
+                WorkspaceCard(
+                  id: cards[i].$1.toLowerCase(),
+                  title: '${cards[i].$1} score',
+                  child: _ScoreCard(
+                    label: cards[i].$1,
+                    score: cards[i].$2,
+                    icon: cards[i].$3,
+                    color: cards[i].$4,
+                  ).animate(delay: (70 * i).ms).fadeIn().scaleXY(begin: 0.97),
+                ),
+            ],
           ),
           const SizedBox(height: 14),
           Row(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_gui/windows_ui/models/gaming_models.dart';
+import 'package:flutter_gui/windows_ui/models/card_workspace.dart';
 import 'package:flutter_gui/windows_ui/screens/pages/gaming_page.dart';
 import 'package:flutter_gui/windows_ui/services/gaming_service.dart';
 
@@ -27,7 +28,12 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: ThemeData.dark(),
-        home: Scaffold(body: GamingPage(service: _IdleGamingService())),
+        home: Scaffold(
+          body: GamingPage(
+            service: _IdleGamingService(),
+            cardWorkspacePreferences: CardWorkspacePreferences(),
+          ),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -48,7 +54,12 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: ThemeData.dark(),
-        home: Scaffold(body: GamingPage(service: _ActiveGamingService())),
+        home: Scaffold(
+          body: GamingPage(
+            service: _ActiveGamingService(),
+            cardWorkspacePreferences: CardWorkspacePreferences(),
+          ),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -71,7 +82,12 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: ThemeData.dark(),
-        home: Scaffold(body: GamingPage(service: _HistoryGamingService())),
+        home: Scaffold(
+          body: GamingPage(
+            service: _HistoryGamingService(),
+            cardWorkspacePreferences: CardWorkspacePreferences(),
+          ),
+        ),
       ),
     );
     await tester.pumpAndSettle();

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_gui/windows_ui/screens/pages/plugins_page.dart';
 import 'package:flutter_gui/windows_ui/services/companion_service.dart';
+import 'package:flutter_gui/windows_ui/models/card_workspace.dart';
 
 void main() {
   testWidgets(
@@ -30,7 +31,12 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: ThemeData.dark(),
-          home: Scaffold(body: PluginsPage(service: service)),
+          home: Scaffold(
+            body: PluginsPage(
+              service: service,
+              cardWorkspacePreferences: CardWorkspacePreferences(),
+            ),
+          ),
         ),
       );
       await tester.pump();

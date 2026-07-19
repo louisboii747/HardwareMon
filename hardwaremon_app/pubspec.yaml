@@ -47,6 +47,7 @@ dependencies:
   package_info_plus: ^8.0.0
   local_notifier: ^0.1.6
   tray_manager: ^0.5.3
+  hotkey_manager: ^0.2.3
   qr_flutter: ^4.1.0
   pdf: ^3.11.3
   file_selector: ^1.0.4

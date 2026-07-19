@@ -8,9 +8,11 @@ import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../models/card_workspace.dart';
 import '../../services/companion_service.dart';
 import '../../services/telemetry_service.dart';
 import '../../widgets/glass_panel.dart';
+import '../../widgets/card_workspace.dart';
 
 enum SnapshotLayout { compact, standard, social, minimal }
 
@@ -19,10 +21,12 @@ class CompanionPage extends StatefulWidget {
     super.key,
     required this.telemetry,
     required this.service,
+    required this.cardWorkspacePreferences,
   });
 
   final TelemetryService telemetry;
   final CompanionService service;
+  final CardWorkspacePreferences cardWorkspacePreferences;
 
   @override
   State<CompanionPage> createState() => _CompanionPageState();
@@ -161,33 +165,31 @@ class _CompanionPageState extends State<CompanionPage> {
         const SizedBox(height: 16),
         _InventoryCard(service: widget.service),
         const SizedBox(height: 16),
-        LayoutBuilder(
-          builder: (context, constraints) => Wrap(
-            spacing: 16,
-            runSpacing: 16,
-            children: [
-              SizedBox(
-                width: constraints.maxWidth >= 900
-                    ? (constraints.maxWidth - 16) / 2
-                    : constraints.maxWidth,
-                child: _ExportCard(
-                  inventory: _inventory,
-                  telemetry: _telemetry,
-                  plugins: _plugins,
-                  onInventory: (v) => setState(() => _inventory = v),
-                  onTelemetry: (v) => setState(() => _telemetry = v),
-                  onPlugins: (v) => setState(() => _plugins = v),
-                  onExport: _exportBundle,
-                ),
+        CardWorkspace(
+          pageId: 'companion-tools',
+          pageLabel: 'Companion tools',
+          preferences: widget.cardWorkspacePreferences,
+          standardHeight: 470,
+          cards: [
+            WorkspaceCard(
+              id: 'export-centre',
+              title: 'Export Centre',
+              child: _ExportCard(
+                inventory: _inventory,
+                telemetry: _telemetry,
+                plugins: _plugins,
+                onInventory: (v) => setState(() => _inventory = v),
+                onTelemetry: (v) => setState(() => _telemetry = v),
+                onPlugins: (v) => setState(() => _plugins = v),
+                onExport: _exportBundle,
               ),
-              SizedBox(
-                width: constraints.maxWidth >= 900
-                    ? (constraints.maxWidth - 16) / 2
-                    : constraints.maxWidth,
-                child: _RuntimeCard(service: widget.service),
-              ),
-            ],
-          ),
+            ),
+            WorkspaceCard(
+              id: 'runtime-extensions',
+              title: 'Runtime & extensions',
+              child: _RuntimeCard(service: widget.service),
+            ),
+          ],
         ),
       ],
     );

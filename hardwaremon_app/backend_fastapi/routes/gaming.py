@@ -50,3 +50,13 @@ async def delete_gaming_session(session_id: str):
 @router.get("/statistics")
 async def gaming_statistics():
     return gaming_service.statistics()
+
+
+@router.get("/catalog")
+async def gaming_catalog():
+    return gaming_service.games
+
+
+@router.get("/overlay/capabilities")
+async def gaming_overlay_capabilities():
+    return gaming_service.overlay_capabilities()

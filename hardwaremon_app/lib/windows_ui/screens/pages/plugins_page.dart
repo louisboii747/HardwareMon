@@ -2,13 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:file_selector/file_selector.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../models/card_workspace.dart';
 import '../../services/companion_service.dart';
+import '../../widgets/card_workspace.dart';
 import '../../widgets/glass_panel.dart';
 
 class PluginsPage extends StatefulWidget {
-  const PluginsPage({super.key, required this.service});
+  const PluginsPage({
+    super.key,
+    required this.service,
+    required this.cardWorkspacePreferences,
+  });
 
   final CompanionService service;
+  final CardWorkspacePreferences cardWorkspacePreferences;
 
   @override
   State<PluginsPage> createState() => _PluginsPageState();
@@ -212,29 +219,24 @@ class _PluginsPageState extends State<PluginsPage> {
             child: _EmptyPlugins(onRefresh: _refresh),
           )
         else
-          SliverLayoutBuilder(
-            builder: (context, constraints) {
-              final columns = constraints.crossAxisExtent >= 1050
-                  ? 3
-                  : constraints.crossAxisExtent >= 680
-                  ? 2
-                  : 1;
-              return SliverGrid(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: columns,
-                  mainAxisExtent: 286,
-                  crossAxisSpacing: 14,
-                  mainAxisSpacing: 14,
-                ),
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) => _PluginCard(
-                    plugin: plugins[index],
-                    onOpen: () => _configure(plugins[index]),
+          SliverToBoxAdapter(
+            child: CardWorkspace(
+              pageId: 'plugins',
+              pageLabel: 'Plugin Studio',
+              preferences: widget.cardWorkspacePreferences,
+              standardHeight: 286,
+              cards: [
+                for (final plugin in plugins)
+                  WorkspaceCard(
+                    id: plugin.id,
+                    title: plugin.name,
+                    child: _PluginCard(
+                      plugin: plugin,
+                      onOpen: () => _configure(plugin),
+                    ),
                   ),
-                  childCount: plugins.length,
-                ),
-              );
-            },
+              ],
+            ),
           ),
         const SliverToBoxAdapter(child: SizedBox(height: 28)),
       ],

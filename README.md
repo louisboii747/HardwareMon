@@ -240,6 +240,22 @@ Plugin authors can use the dependency-free Python SDK and package builder under
 `hardwaremon_app/plugin_sdk`. The manifest, protocol, security boundary and
 development workflow are documented in [docs/PLUGIN_SYSTEM.md](docs/PLUGIN_SYSTEM.md).
 
+## Card Workspaces
+
+Card-based analytics can be reordered, resized or hidden independently on each
+page. Named layouts capture the entire app configuration and can be switched
+from any workspace toolbar or Ctrl+K. See
+[docs/CARD_WORKSPACES.md](docs/CARD_WORKSPACES.md) for the interaction and
+persistence model.
+
+## Gaming overlay
+
+Gaming includes global overlay hotkeys, click-through desktop telemetry, a
+substantially larger executable catalogue, official Steam artwork when
+available, and a real external frame-statistics bridge. See
+[docs/GAMING_OVERLAY.md](docs/GAMING_OVERLAY.md) for platform capabilities and
+collector integration.
+
 ---
 
 ## Distribution & Packaging

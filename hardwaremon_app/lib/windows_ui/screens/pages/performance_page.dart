@@ -5,19 +5,23 @@ import 'package:flutter_gui/windows_ui/services/telemetry_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/chart_preferences.dart';
 import '../../models/telemetry_insights.dart';
+import '../../models/card_workspace.dart';
 import '../../utils/telemetry_chart.dart';
 import '../../widgets/metric_card.dart';
 import '../../widgets/metric_alert_action.dart';
 import '../../widgets/telemetry_studio.dart';
+import '../../widgets/card_workspace.dart';
 
 class PerformancePage extends StatelessWidget {
   final TelemetryService telemetry;
   final ChartPreferences chartPreferences;
+  final CardWorkspacePreferences cardWorkspacePreferences;
 
   const PerformancePage({
     super.key,
     required this.telemetry,
     required this.chartPreferences,
+    required this.cardWorkspacePreferences,
   });
 
   @override
@@ -83,6 +87,7 @@ class PerformancePage extends StatelessWidget {
               chartPreferences: chartPreferences,
             ),
           _PerformanceSection(
+            preferences: cardWorkspacePreferences,
             title: 'CPU',
             icon: Icons.memory_rounded,
             accent: Colors.cyan,
@@ -140,6 +145,7 @@ class PerformancePage extends StatelessWidget {
             ],
           ),
           _PerformanceSection(
+            preferences: cardWorkspacePreferences,
             title: 'Memory',
             icon: Icons.storage_rounded,
             accent: Colors.purple,
@@ -196,6 +202,7 @@ class PerformancePage extends StatelessWidget {
               telemetry.capabilities.supportsPowerMetrics ||
               telemetry.capabilities.supportsGpuVram)
             _PerformanceSection(
+              preferences: cardWorkspacePreferences,
               title: 'GPU',
               icon: Icons.graphic_eq_rounded,
               accent: Colors.orange,
@@ -252,6 +259,7 @@ class PerformancePage extends StatelessWidget {
               ],
             ),
           _PerformanceSection(
+            preferences: cardWorkspacePreferences,
             title: 'Historical Analytics',
             icon: Icons.timeline_rounded,
             accent: AppColors.accent,
@@ -1069,12 +1077,14 @@ class _PerformanceSection extends StatefulWidget {
   final Color accent;
   final List<Widget> cards;
   final int preferredColumns;
+  final CardWorkspacePreferences preferences;
 
   const _PerformanceSection({
     required this.title,
     required this.icon,
     required this.accent,
     required this.cards,
+    required this.preferences,
     this.preferredColumns = 2,
   });
 
@@ -1203,9 +1213,25 @@ class _PerformanceSectionState extends State<_PerformanceSection> {
                 ? Column(
                     children: [
                       const SizedBox(height: 16),
-                      _ResponsiveMetricGrid(
-                        preferredColumns: widget.preferredColumns,
-                        cards: widget.cards,
+                      CardWorkspace(
+                        pageId:
+                            'performance-${widget.title.toLowerCase().replaceAll(' ', '-')}',
+                        pageLabel: '${widget.title} metrics',
+                        preferences: widget.preferences,
+                        standardHeight: 245,
+                        showToolbar: true,
+                        cards: [
+                          for (
+                            var index = 0;
+                            index < widget.cards.length;
+                            index++
+                          )
+                            WorkspaceCard(
+                              id: 'metric-$index',
+                              title: '${widget.title} metric ${index + 1}',
+                              child: widget.cards[index],
+                            ),
+                        ],
                       ),
                     ],
                   )
@@ -1217,6 +1243,8 @@ class _PerformanceSectionState extends State<_PerformanceSection> {
   }
 }
 
+// Retained for focused legacy section tests and compatibility with extensions.
+// ignore: unused_element
 class _ResponsiveMetricGrid extends StatelessWidget {
   final List<Widget> cards;
   final int preferredColumns;

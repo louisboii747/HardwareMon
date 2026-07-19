@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_gui/windows_ui/models/benchmark_models.dart';
+import 'package:flutter_gui/windows_ui/models/card_workspace.dart';
 import 'package:flutter_gui/windows_ui/screens/pages/benchmark_page.dart';
 import 'package:flutter_gui/windows_ui/services/benchmark_service.dart';
 import 'package:flutter_gui/windows_ui/services/benchmark_privacy_preferences.dart';
@@ -28,7 +29,12 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: ThemeData.dark(),
-        home: Scaffold(body: BenchmarkPage(service: _EmptyBenchmarkService())),
+        home: Scaffold(
+          body: BenchmarkPage(
+            service: _EmptyBenchmarkService(),
+            cardWorkspacePreferences: CardWorkspacePreferences(),
+          ),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -46,7 +52,10 @@ void main() {
       MaterialApp(
         theme: ThemeData.dark(),
         home: Scaffold(
-          body: BenchmarkPage(service: _FailingBenchmarkService()),
+          body: BenchmarkPage(
+            service: _FailingBenchmarkService(),
+            cardWorkspacePreferences: CardWorkspacePreferences(),
+          ),
         ),
       ),
     );
@@ -69,7 +78,10 @@ void main() {
       MaterialApp(
         theme: ThemeData.dark(),
         home: Scaffold(
-          body: BenchmarkPage(service: _HistoryBenchmarkService()),
+          body: BenchmarkPage(
+            service: _HistoryBenchmarkService(),
+            cardWorkspacePreferences: CardWorkspacePreferences(),
+          ),
         ),
       ),
     );
@@ -92,6 +104,7 @@ void main() {
           body: BenchmarkPage(
             service: _CompletingBenchmarkService(),
             privacyPreferences: _AlwaysPromptPrivacyPreferences(),
+            cardWorkspacePreferences: CardWorkspacePreferences(),
           ),
         ),
       ),

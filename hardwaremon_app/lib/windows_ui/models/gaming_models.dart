@@ -71,6 +71,10 @@ class GamingSample {
   final double? cpuClock;
   final double? gpuPower;
   final double? cpuPower;
+  final double? fps;
+  final double? frameTimeMs;
+  final double? fpsOnePercentLow;
+  final String? frameStatsProvider;
 
   const GamingSample({
     required this.sampledAt,
@@ -82,6 +86,10 @@ class GamingSample {
     required this.cpuClock,
     required this.gpuPower,
     required this.cpuPower,
+    this.fps,
+    this.frameTimeMs,
+    this.fpsOnePercentLow,
+    this.frameStatsProvider,
   });
 
   factory GamingSample.fromJson(Map<String, dynamic> json) {
@@ -95,6 +103,10 @@ class GamingSample {
       cpuClock: _optionalDouble(json['cpu_clock']),
       gpuPower: _optionalDouble(json['gpu_power']),
       cpuPower: _optionalDouble(json['cpu_power']),
+      fps: _optionalDouble(json['fps']),
+      frameTimeMs: _optionalDouble(json['frame_time_ms']),
+      fpsOnePercentLow: _optionalDouble(json['fps_1_percent_low']),
+      frameStatsProvider: _optionalString(json['frame_stats_provider']),
     );
   }
 }
@@ -240,6 +252,7 @@ class GamingCurrent {
   final GamingEvent? lastEvent;
   final int knownGames;
   final double pollIntervalSeconds;
+  final GamingOverlayCapabilities overlay;
 
   const GamingCurrent({
     required this.active,
@@ -247,6 +260,7 @@ class GamingCurrent {
     required this.lastEvent,
     required this.knownGames,
     required this.pollIntervalSeconds,
+    this.overlay = const GamingOverlayCapabilities.unsupported(),
   });
 
   factory GamingCurrent.fromJson(Map<String, dynamic> json) {
@@ -259,8 +273,56 @@ class GamingCurrent {
       knownGames: (json['known_games'] as num?)?.toInt() ?? 0,
       pollIntervalSeconds:
           (json['poll_interval_seconds'] as num?)?.toDouble() ?? 5,
+      overlay: GamingOverlayCapabilities.fromJson(
+        _mapOrNull(json['overlay']) ?? const {},
+      ),
     );
   }
+}
+
+class GamingOverlayCapabilities {
+  final String platform;
+  final bool desktopOverlaySupported;
+  final bool globalHotkeysSupported;
+  final bool frameStatsAvailable;
+  final String? frameStatsProvider;
+  final bool exclusiveFullscreenSupported;
+  final String mode;
+  final String? reason;
+
+  const GamingOverlayCapabilities({
+    required this.platform,
+    required this.desktopOverlaySupported,
+    required this.globalHotkeysSupported,
+    required this.frameStatsAvailable,
+    required this.frameStatsProvider,
+    required this.exclusiveFullscreenSupported,
+    required this.mode,
+    required this.reason,
+  });
+
+  const GamingOverlayCapabilities.unsupported()
+    : platform = 'unknown',
+      desktopOverlaySupported = false,
+      globalHotkeysSupported = false,
+      frameStatsAvailable = false,
+      frameStatsProvider = null,
+      exclusiveFullscreenSupported = false,
+      mode = 'dashboard-only',
+      reason = 'Capability data is unavailable.';
+
+  factory GamingOverlayCapabilities.fromJson(Map<String, dynamic> json) =>
+      GamingOverlayCapabilities(
+        platform: json['platform']?.toString() ?? 'unknown',
+        desktopOverlaySupported: json['desktop_overlay_supported'] == true,
+        globalHotkeysSupported: json['global_hotkeys_supported'] == true,
+        frameStatsAvailable: json['frame_stats_available'] == true,
+        frameStatsProvider: _optionalString(json['frame_stats_provider']),
+        exclusiveFullscreenSupported:
+            json['exclusive_fullscreen_supported'] == true,
+        mode: json['mode']?.toString() ?? 'dashboard-only',
+        reason: _optionalString(json['reason']),
+      );
 }
 
 class GamingGameAggregate {

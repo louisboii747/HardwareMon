@@ -5,7 +5,9 @@ import 'package:flutter/services.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../models/telemetry_sample.dart';
+import '../../models/card_workspace.dart';
 import '../../services/telemetry_service.dart';
+import '../../widgets/card_workspace.dart';
 
 class ReliabilityPage extends StatelessWidget {
   final TelemetryService telemetry;
@@ -13,6 +15,7 @@ class ReliabilityPage extends StatelessWidget {
   final VoidCallback onOpenProcesses;
   final VoidCallback onOpenStorage;
   final VoidCallback onOpenNetwork;
+  final CardWorkspacePreferences cardWorkspacePreferences;
 
   const ReliabilityPage({
     super.key,
@@ -21,6 +24,7 @@ class ReliabilityPage extends StatelessWidget {
     required this.onOpenProcesses,
     required this.onOpenStorage,
     required this.onOpenNetwork,
+    required this.cardWorkspacePreferences,
   });
 
   Future<void> _copyBrief(
@@ -67,7 +71,10 @@ class ReliabilityPage extends StatelessWidget {
           const SizedBox(height: 16),
           _ReliabilityScorePanel(snapshot: snapshot),
           const SizedBox(height: 16),
-          _SignalMatrix(signals: snapshot.signals),
+          _SignalMatrix(
+            signals: snapshot.signals,
+            preferences: cardWorkspacePreferences,
+          ),
           const SizedBox(height: 16),
           _ReliabilitySection(
             title: 'Live Incident Timeline',
@@ -334,31 +341,25 @@ class _ReliabilityFacts extends StatelessWidget {
 
 class _SignalMatrix extends StatelessWidget {
   final List<_ReliabilitySignal> signals;
+  final CardWorkspacePreferences preferences;
 
-  const _SignalMatrix({required this.signals});
+  const _SignalMatrix({required this.signals, required this.preferences});
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 1100
-            ? 3
-            : constraints.maxWidth >= 700
-            ? 2
-            : 1;
-        final width = (constraints.maxWidth - ((columns - 1) * 12)) / columns;
-        return Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            for (final signal in signals)
-              SizedBox(
-                width: width,
-                child: _SignalCard(signal: signal),
-              ),
-          ],
-        );
-      },
+    return CardWorkspace(
+      pageId: 'reliability-signals',
+      pageLabel: 'Reliability signals',
+      preferences: preferences,
+      standardHeight: 150,
+      cards: [
+        for (final signal in signals)
+          WorkspaceCard(
+            id: signal.label.toLowerCase().replaceAll(' ', '-'),
+            title: signal.label,
+            child: _SignalCard(signal: signal),
+          ),
+      ],
     );
   }
 }

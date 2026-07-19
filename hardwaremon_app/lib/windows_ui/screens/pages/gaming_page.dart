@@ -8,15 +8,23 @@ import 'package:intl/intl.dart';
 import '../../../services/alert_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/gaming_models.dart';
+import '../../models/card_workspace.dart';
 import '../../services/gaming_service.dart';
+import '../../services/gaming_overlay_controller.dart';
 import '../../widgets/glass_panel.dart';
+import '../../widgets/card_workspace.dart';
 
-enum _GamingTab { live, history, statistics }
+enum _GamingTab { live, overlay, library, history, statistics }
 
 class GamingPage extends StatefulWidget {
   final GamingService? service;
+  final CardWorkspacePreferences cardWorkspacePreferences;
 
-  const GamingPage({super.key, this.service});
+  const GamingPage({
+    super.key,
+    this.service,
+    required this.cardWorkspacePreferences,
+  });
 
   @override
   State<GamingPage> createState() => _GamingPageState();
@@ -34,6 +42,7 @@ class _GamingPageState extends State<GamingPage> {
   GamingSession? _latest;
   List<GamingSession> _history = const [];
   GamingStatistics _statistics = const GamingStatistics.empty();
+  List<GameMetadata> _catalog = const [];
   Timer? _pollTimer;
   bool _loading = true;
   bool _refreshing = false;
@@ -46,10 +55,20 @@ class _GamingPageState extends State<GamingPage> {
     super.initState();
     _service = widget.service ?? GamingService();
     _load(initial: true);
+    if (widget.service == null) unawaited(_loadCatalog());
     _pollTimer = Timer.periodic(
       const Duration(seconds: 2),
       (_) => _refreshCurrent(),
     );
+  }
+
+  Future<void> _loadCatalog() async {
+    try {
+      final catalog = await _service.fetchCatalog();
+      if (mounted) setState(() => _catalog = catalog);
+    } catch (_) {
+      // Older backends can still serve live sessions and history.
+    }
   }
 
   @override
@@ -206,6 +225,8 @@ class _GamingPageState extends State<GamingPage> {
           else
             switch (_tab) {
               _GamingTab.live => _buildLive(),
+              _GamingTab.overlay => _buildOverlay(),
+              _GamingTab.library => _buildLibrary(),
               _GamingTab.history => _buildHistory(),
               _GamingTab.statistics => _buildStatistics(),
             },
@@ -265,6 +286,16 @@ class _GamingPageState extends State<GamingPage> {
             label: Text('Live'),
           ),
           ButtonSegment(
+            value: _GamingTab.overlay,
+            icon: Icon(Icons.picture_in_picture_alt_rounded, size: 16),
+            label: Text('Overlay'),
+          ),
+          ButtonSegment(
+            value: _GamingTab.library,
+            icon: Icon(Icons.grid_view_rounded, size: 16),
+            label: Text('Library'),
+          ),
+          ButtonSegment(
             value: _GamingTab.history,
             icon: Icon(Icons.history_rounded, size: 16),
             label: Text('History'),
@@ -295,9 +326,17 @@ class _GamingPageState extends State<GamingPage> {
         ).animate().fadeIn(duration: 320.ms).slideY(begin: 0.025),
         const SizedBox(height: 16),
         if (session != null)
-          _MetricGrid(metrics: _liveMetrics(session))
+          _MetricGrid(
+            metrics: _liveMetrics(session),
+            scope: 'gaming-live',
+            preferences: widget.cardWorkspacePreferences,
+          )
         else
-          _MetricGrid(metrics: _idleMetrics()),
+          _MetricGrid(
+            metrics: _idleMetrics(),
+            scope: 'gaming-live',
+            preferences: widget.cardWorkspacePreferences,
+          ),
       ],
     );
   }
@@ -305,6 +344,26 @@ class _GamingPageState extends State<GamingPage> {
   List<_GamingMetric> _liveMetrics(GamingSession session) {
     final sample = session.latestSample;
     return [
+      _GamingMetric(
+        label: 'FPS',
+        value: sample?.fps == null
+            ? 'Unavailable'
+            : sample!.fps!.toStringAsFixed(0),
+        subtitle: sample?.fpsOnePercentLow == null
+            ? 'Connect a frame stats provider'
+            : '1% low ${sample!.fpsOnePercentLow!.toStringAsFixed(0)} FPS',
+        icon: Icons.speed_rounded,
+        color: Colors.greenAccent,
+      ),
+      _GamingMetric(
+        label: 'Frame Time',
+        value: sample?.frameTimeMs == null
+            ? 'Unavailable'
+            : '${sample!.frameTimeMs!.toStringAsFixed(1)} ms',
+        subtitle: sample?.frameStatsProvider ?? 'No frame stats provider',
+        icon: Icons.timeline_rounded,
+        color: Colors.tealAccent,
+      ),
       _GamingMetric(
         label: 'CPU',
         value: _percent(sample?.cpuUsage ?? session.avgCpuUsage),
@@ -400,6 +459,199 @@ class _GamingPageState extends State<GamingPage> {
         progress: null,
       ),
     ];
+  }
+
+  Widget _buildOverlay() {
+    final controller = GamingOverlayController.instance;
+    final capability = _current.overlay;
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GlassPanel(
+            padding: const EdgeInsets.all(20),
+            glowColor: Colors.greenAccent,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.greenAccent.withValues(alpha: .1),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(
+                        Icons.speed_rounded,
+                        color: Colors.greenAccent,
+                      ),
+                    ),
+                    const SizedBox(width: 13),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'In-game performance overlay',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          SizedBox(height: 3),
+                          Text(
+                            'Non-injected · anti-cheat friendly · always on top',
+                            style: TextStyle(fontSize: 10),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: controller.enabled,
+                      onChanged: controller.desktopSupported
+                          ? controller.setEnabled
+                          : null,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    _OverlayStatus(
+                      label: 'Overlay window',
+                      ready:
+                          controller.desktopSupported &&
+                          capability.desktopOverlaySupported,
+                      detail: capability.mode,
+                    ),
+                    _OverlayStatus(
+                      label: 'Global hotkeys',
+                      ready: controller.registered,
+                      detail: controller.registered
+                          ? 'Registered'
+                          : (controller.registrationError ?? 'Unavailable'),
+                    ),
+                    _OverlayStatus(
+                      label: 'FPS provider',
+                      ready: capability.frameStatsAvailable,
+                      detail:
+                          capability.frameStatsProvider ??
+                          'PresentMon / MangoHud bridge',
+                    ),
+                    _OverlayStatus(
+                      label: 'Exclusive fullscreen',
+                      ready: capability.exclusiveFullscreenSupported,
+                      detail: capability.exclusiveFullscreenSupported
+                          ? 'Supported'
+                          : 'Use borderless mode',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                Wrap(
+                  spacing: 9,
+                  runSpacing: 9,
+                  children: [
+                    FilledButton.icon(
+                      onPressed:
+                          controller.enabled && controller.desktopSupported
+                          ? controller.toggle
+                          : null,
+                      icon: Icon(
+                        controller.visible
+                            ? Icons.visibility_off_rounded
+                            : Icons.visibility_rounded,
+                      ),
+                      label: Text(
+                        controller.visible ? 'Hide overlay' : 'Preview overlay',
+                      ),
+                    ),
+                    FilterChip(
+                      label: const Text('Compact'),
+                      selected: controller.compact,
+                      onSelected: controller.setCompact,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          GlassPanel(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'KEYBINDS',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.1,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const _KeybindRow(
+                  action: 'Show or hide overlay',
+                  shortcut: GamingOverlayController.toggleShortcutLabel,
+                ),
+                const SizedBox(height: 8),
+                const _KeybindRow(
+                  action: 'Toggle overlay interaction menu',
+                  shortcut: GamingOverlayController.interactionShortcutLabel,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'FPS is shown only when a real frame collector writes HARDWAREMON_FRAME_STATS_PATH. Hardware telemetry remains available across desktop platforms. Borderless fullscreen is recommended because exclusive fullscreen can cover normal OS windows.',
+                  style: TextStyle(
+                    color: AppColors.textMuted(context),
+                    fontSize: 10,
+                    height: 1.45,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLibrary() {
+    if (_catalog.isEmpty) {
+      return _EmptyState(
+        icon: Icons.grid_view_rounded,
+        title: '${_current.knownGames} games recognised',
+        message:
+            'The detailed game catalogue is loading from the HardwareMon backend.',
+      );
+    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 1100
+            ? 4
+            : constraints.maxWidth >= 720
+            ? 3
+            : 2;
+        final width = (constraints.maxWidth - 12 * (columns - 1)) / columns;
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            for (final game in _catalog)
+              SizedBox(
+                width: width,
+                child: _GameLibraryCard(game: game),
+              ),
+          ],
+        );
+      },
+    );
   }
 
   Widget _buildHistory() {
@@ -508,7 +760,11 @@ class _GamingPageState extends State<GamingPage> {
       ),
     ];
 
-    return _MetricGrid(metrics: cards);
+    return _MetricGrid(
+      metrics: cards,
+      scope: 'gaming-statistics',
+      preferences: widget.cardWorkspacePreferences,
+    );
   }
 
   Future<void> _showSession(GamingSession session) {
@@ -629,9 +885,10 @@ class _CurrentGamePanel extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final compact = constraints.maxWidth < 680;
-          final artwork = _ArtworkPlaceholder(
+          final artwork = _GameArtwork(
             title: session?.gameName ?? latest?.gameName ?? 'Gaming',
             active: current.active,
+            steamAppId: session?.game?.steamAppId ?? latest?.game?.steamAppId,
           );
           final details = session == null
               ? _IdleCurrentGame(latest: latest, onOpenLatest: onOpenLatest)
@@ -656,11 +913,16 @@ class _CurrentGamePanel extends StatelessWidget {
   }
 }
 
-class _ArtworkPlaceholder extends StatelessWidget {
+class _GameArtwork extends StatelessWidget {
   final String title;
   final bool active;
+  final String? steamAppId;
 
-  const _ArtworkPlaceholder({required this.title, required this.active});
+  const _GameArtwork({
+    required this.title,
+    required this.active,
+    this.steamAppId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -688,29 +950,61 @@ class _ArtworkPlaceholder extends StatelessWidget {
           ),
           border: Border.all(color: color.withValues(alpha: 0.22)),
         ),
+        clipBehavior: Clip.antiAlias,
         child: Stack(
           children: [
-            Center(
-              child: Text(
-                initials.isEmpty ? 'HM' : initials,
-                style: TextStyle(
-                  color: AppColors.textPrimary(context),
-                  fontSize: 42,
-                  fontWeight: FontWeight.w900,
+            if (steamAppId != null)
+              Positioned.fill(
+                child: Image.network(
+                  'https://cdn.akamai.steamstatic.com/steam/apps/$steamAppId/header.jpg',
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                ),
+              ),
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: .72),
+                    ],
+                  ),
                 ),
               ),
             ),
+            if (steamAppId == null)
+              Center(
+                child: Text(
+                  initials.isEmpty ? 'HM' : initials,
+                  style: TextStyle(
+                    color: AppColors.textPrimary(context),
+                    fontSize: 42,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
             Positioned(
               left: 12,
               right: 12,
               bottom: 12,
               child: Row(
                 children: [
-                  Icon(Icons.image_outlined, size: 14, color: color),
+                  Icon(
+                    steamAppId == null
+                        ? Icons.sports_esports_rounded
+                        : Icons.verified_rounded,
+                    size: 14,
+                    color: color,
+                  ),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      'Artwork placeholder',
+                      steamAppId == null
+                          ? 'Local game identity'
+                          : 'Official Steam artwork',
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: AppColors.textSecondary(context),
@@ -727,6 +1021,174 @@ class _ArtworkPlaceholder extends StatelessWidget {
       ),
     );
   }
+}
+
+class _GameLibraryCard extends StatelessWidget {
+  const _GameLibraryCard({required this.game});
+  final GameMetadata game;
+
+  @override
+  Widget build(BuildContext context) => GlassPanel(
+    padding: EdgeInsets.zero,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AspectRatio(
+          aspectRatio: 460 / 215,
+          child: ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+            child: game.steamAppId == null
+                ? _GameIdentityFallback(title: game.name)
+                : Image.network(
+                    'https://cdn.akamai.steamstatic.com/steam/apps/${game.steamAppId}/header.jpg',
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) =>
+                        _GameIdentityFallback(title: game.name),
+                  ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                game.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                [game.genre, game.publisher].whereType<String>().join(' · '),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: AppColors.textMuted(context),
+                  fontSize: 9,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _GameIdentityFallback extends StatelessWidget {
+  const _GameIdentityFallback({required this.title});
+  final String title;
+  @override
+  Widget build(BuildContext context) => Container(
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        colors: [
+          AppColors.accent.withValues(alpha: .25),
+          Colors.purpleAccent.withValues(alpha: .16),
+        ],
+      ),
+    ),
+    alignment: Alignment.center,
+    child: Text(
+      title
+          .split(RegExp(r'\s+'))
+          .take(2)
+          .map((word) => word[0])
+          .join()
+          .toUpperCase(),
+      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
+    ),
+  );
+}
+
+class _OverlayStatus extends StatelessWidget {
+  const _OverlayStatus({
+    required this.label,
+    required this.ready,
+    required this.detail,
+  });
+  final String label;
+  final bool ready;
+  final String detail;
+  @override
+  Widget build(BuildContext context) {
+    final color = ready ? Colors.greenAccent : Colors.amberAccent;
+    return Container(
+      width: 205,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.overlay(context, .04),
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(color: color.withValues(alpha: .18)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            ready ? Icons.check_circle_rounded : Icons.info_rounded,
+            color: color,
+            size: 17,
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  detail,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppColors.textMuted(context),
+                    fontSize: 8,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _KeybindRow extends StatelessWidget {
+  const _KeybindRow({required this.action, required this.shortcut});
+  final String action;
+  final String shortcut;
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Expanded(
+        child: Text(
+          action,
+          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+        ),
+      ),
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        decoration: BoxDecoration(
+          color: AppColors.overlay(context, .05),
+          borderRadius: BorderRadius.circular(9),
+          border: Border.all(color: AppColors.border(context)),
+        ),
+        child: Text(
+          shortcut,
+          style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800),
+        ),
+      ),
+    ],
+  );
 }
 
 class _ActiveCurrentGame extends StatelessWidget {
@@ -864,37 +1326,32 @@ class _IdleCurrentGame extends StatelessWidget {
 
 class _MetricGrid extends StatelessWidget {
   final List<_GamingMetric> metrics;
+  final String scope;
+  final CardWorkspacePreferences preferences;
 
-  const _MetricGrid({required this.metrics});
+  const _MetricGrid({
+    required this.metrics,
+    required this.scope,
+    required this.preferences,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 980
-            ? 4
-            : constraints.maxWidth >= 680
-            ? 3
-            : constraints.maxWidth >= 430
-            ? 2
-            : 1;
-        const spacing = 10.0;
-        final width =
-            (constraints.maxWidth - spacing * (columns - 1)) / columns;
-        return Wrap(
-          spacing: spacing,
-          runSpacing: spacing,
-          children: [
-            for (var index = 0; index < metrics.length; index++)
-              SizedBox(
-                width: width,
-                child: _GamingMetricCard(
-                  metric: metrics[index],
-                ).animate(delay: (45 * index).ms).fadeIn().scaleXY(begin: 0.98),
-              ),
-          ],
-        );
-      },
+    return CardWorkspace(
+      pageId: scope,
+      pageLabel: 'Gaming',
+      preferences: preferences,
+      standardHeight: 156,
+      cards: [
+        for (var index = 0; index < metrics.length; index++)
+          WorkspaceCard(
+            id: metrics[index].label.toLowerCase().replaceAll(' ', '-'),
+            title: metrics[index].label,
+            child: _GamingMetricCard(
+              metric: metrics[index],
+            ).animate(delay: (45 * index).ms).fadeIn().scaleXY(begin: 0.98),
+          ),
+      ],
     );
   }
 }

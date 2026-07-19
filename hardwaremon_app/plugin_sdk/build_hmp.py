@@ -6,7 +6,6 @@ import re
 import zipfile
 from pathlib import Path
 
-
 PLUGIN_ID = re.compile(r"^[a-z0-9][a-z0-9._-]{2,79}$")
 
 

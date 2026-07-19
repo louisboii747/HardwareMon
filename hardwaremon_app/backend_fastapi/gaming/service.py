@@ -9,7 +9,7 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Iterable, Optional
+from typing import Any, Callable, Iterable, Optional, Protocol
 
 import psutil
 
@@ -17,7 +17,7 @@ from database.database import get_connection
 from telemetry.system import collect_stats
 
 
-GAMING_MODE_VERSION = "1.0"
+GAMING_MODE_VERSION = "2.0"
 DEFAULT_HARDWAREMON_VERSION = os.environ.get("HARDWAREMON_VERSION", "1.1.0")
 
 
@@ -62,6 +62,44 @@ class GameDefinition:
             "publisher": self.publisher,
             "steam_app_id": self.steam_app_id,
             "process_keywords": list(self.process_keywords),
+        }
+
+
+class FrameStatsProvider(Protocol):
+    """Non-injected frame data bridge implemented by platform collectors."""
+
+    name: str
+
+    def sample(self, process_id: int) -> dict[str, Any]: ...
+
+
+class JsonFrameStatsProvider:
+    """Reads frame stats produced by PresentMon, MangoHud or another bridge.
+
+    The collector writes a small JSON document atomically. Keeping capture out
+    of the HardwareMon process avoids renderer injection and anti-cheat risk.
+    """
+
+    name = "external-json-bridge"
+
+    def __init__(self, path: Path) -> None:
+        self.path = path
+
+    def sample(self, process_id: int) -> dict[str, Any]:
+        try:
+            payload = json.loads(self.path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return {}
+        if not isinstance(payload, dict):
+            return {}
+        payload_pid = int(payload.get("pid") or 0)
+        if payload_pid not in (0, process_id):
+            return {}
+        return {
+            "fps": _number(payload.get("fps")),
+            "frame_time_ms": _number(payload.get("frame_time_ms")),
+            "fps_1_percent_low": _number(payload.get("fps_1_percent_low")),
+            "frame_stats_provider": str(payload.get("provider") or self.name),
         }
 
 
@@ -145,6 +183,10 @@ class ActiveGamingSession:
             "cpu_clock": _number(stats.get("cpu_clock")),
             "gpu_power": _number(stats.get("gpu_power")),
             "cpu_power": _number(stats.get("cpu_power")),
+            "fps": _number(stats.get("fps")),
+            "frame_time_ms": _number(stats.get("frame_time_ms")),
+            "fps_1_percent_low": _number(stats.get("fps_1_percent_low")),
+            "frame_stats_provider": stats.get("frame_stats_provider"),
         }
         self.latest_sample = sample
         self.total_samples += 1
@@ -210,6 +252,7 @@ class GamingService:
         stats_collector: StatsCollector = collect_stats,
         connection_factory: ConnectionFactory = get_connection,
         hardwaremon_version: str = DEFAULT_HARDWAREMON_VERSION,
+        frame_stats_provider: Optional[FrameStatsProvider] = None,
     ) -> None:
         self.poll_interval = max(1.0, poll_interval)
         self.games_path = games_path or Path(__file__).with_name("games.json")
@@ -217,6 +260,10 @@ class GamingService:
         self._stats_collector = stats_collector
         self._connection_factory = connection_factory
         self._hardwaremon_version = hardwaremon_version
+        bridge_path = os.environ.get("HARDWAREMON_FRAME_STATS_PATH")
+        self._frame_stats_provider = frame_stats_provider or (
+            JsonFrameStatsProvider(Path(bridge_path)) if bridge_path else None
+        )
         self._games = self._load_games()
         self._lock = threading.RLock()
         self._stop_event = threading.Event()
@@ -286,6 +333,9 @@ class GamingService:
 
         try:
             stats = self._stats_collector()
+            if self._frame_stats_provider is not None and self._current_session is not None:
+                process_id = int(self._current_session.active_processes[0].get("pid") or 0)
+                stats.update(self._frame_stats_provider.sample(process_id))
         except Exception as error:
             stats = {"sample_error": str(error)}
 
@@ -337,7 +387,22 @@ class GamingService:
                 "last_event": dict(self._last_event) if self._last_event else None,
                 "known_games": len(self._games),
                 "poll_interval_seconds": self.poll_interval,
+                "overlay": self.overlay_capabilities(),
             }
+
+    def overlay_capabilities(self) -> dict[str, Any]:
+        system = platform.system().lower()
+        desktop = system in {"windows", "linux", "darwin"}
+        return {
+            "platform": system,
+            "desktop_overlay_supported": desktop,
+            "global_hotkeys_supported": desktop,
+            "frame_stats_available": self._frame_stats_provider is not None,
+            "frame_stats_provider": getattr(self._frame_stats_provider, "name", None),
+            "exclusive_fullscreen_supported": False,
+            "mode": "always-on-top-window" if desktop else "dashboard-only",
+            "reason": None if desktop else "System-wide overlays are not enabled on this platform.",
+        }
 
     def list_sessions(self, limit: int = 50) -> list[dict[str, Any]]:
         conn = self._connection_factory()

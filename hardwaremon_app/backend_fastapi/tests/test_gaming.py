@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 from database.database import init_gaming_schema
-from gaming.service import GamingService
+from gaming.service import GamingService, JsonFrameStatsProvider
 
 
 class GamingServiceTests(unittest.TestCase):
@@ -161,6 +161,40 @@ class GamingServiceTests(unittest.TestCase):
         self.assertEqual(stats["most_played_game"]["game_name"], "Test Game")
         self.assertEqual(stats["largest_gpu_usage"], 90.0)
         self.assertEqual(stats["largest_cpu_usage"], 50.0)
+
+    def test_external_frame_stats_are_attached_without_game_injection(self):
+        bridge = self.root / "frame-stats.json"
+        bridge.write_text(
+            json.dumps({
+                "pid": 104,
+                "fps": 144.2,
+                "frame_time_ms": 6.94,
+                "fps_1_percent_low": 112.0,
+                "provider": "test-presentmon",
+            }),
+            encoding="utf-8",
+        )
+        self.processes = [{
+            "pid": 104,
+            "name": "testgame.exe",
+            "exe": "testgame.exe",
+            "cmdline": ["testgame.exe"],
+            "create_time": 1.0,
+        }]
+        service = GamingService(
+            games_path=self.games_path,
+            process_provider=lambda: list(self.processes),
+            stats_collector=lambda: dict(self.stats),
+            connection_factory=self.connection_factory,
+            frame_stats_provider=JsonFrameStatsProvider(bridge),
+        )
+
+        service.scan_once()
+        sample = service.get_current()["session"]["latest_sample"]
+        self.assertEqual(sample["fps"], 144.2)
+        self.assertEqual(sample["fps_1_percent_low"], 112.0)
+        self.assertEqual(sample["frame_stats_provider"], "test-presentmon")
+        self.assertTrue(service.overlay_capabilities()["frame_stats_available"])
 
 
 if __name__ == "__main__":

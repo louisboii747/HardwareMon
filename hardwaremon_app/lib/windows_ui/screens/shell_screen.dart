@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import '../models/chart_preferences.dart';
+import '../models/card_workspace.dart';
 import '../models/dashboard_preferences.dart';
 import '../models/customization_preferences.dart';
 import '../models/telemetry_sample.dart';
@@ -17,11 +18,13 @@ import '../../services/update_service.dart';
 import '../utils/telemetry_chart.dart';
 import '../services/desktop_integration_service.dart';
 import '../services/companion_service.dart';
+import '../services/gaming_overlay_controller.dart';
 import '../widgets/glass_panel.dart';
 import '../widgets/hardware_skeleton.dart';
 import '../widgets/metric_card.dart';
 import '../widgets/metric_alert_action.dart';
 import '../widgets/command_palette.dart';
+import '../widgets/card_workspace.dart';
 import '../widgets/dashboard_companion_widgets.dart';
 import '../widgets/system_pulse_background.dart';
 import '../widgets/telemetry_strip.dart';
@@ -63,6 +66,8 @@ class _ShellScreenState extends State<ShellScreen> {
   late MonitoringLensPreferences monitoringLensPreferences;
   late SessionJournal sessionJournal;
   late CompanionService companionService;
+  late CardWorkspacePreferences cardWorkspacePreferences;
+  final gamingOverlay = GamingOverlayController.instance;
   StreamSubscription<DesktopCommand>? _desktopCommandSubscription;
 
   int selectedIndex = 0;
@@ -83,6 +88,7 @@ class _ShellScreenState extends State<ShellScreen> {
     monitoringLensPreferences = MonitoringLensPreferences();
     sessionJournal = SessionJournal();
     companionService = CompanionService(snapshotProvider: _liveSnapshot);
+    cardWorkspacePreferences = CardWorkspacePreferences();
 
     telemetry.start();
     chartPreferences.load();
@@ -91,6 +97,8 @@ class _ShellScreenState extends State<ShellScreen> {
     monitoringLensPreferences.load();
     sessionJournal.load();
     companionService.initialise();
+    cardWorkspacePreferences.load();
+    gamingOverlay.addListener(_overlayChanged);
     DesktopIntegrationService.instance.attachTelemetry(telemetry);
     _desktopCommandSubscription = DesktopIntegrationService.instance.commands
         .listen(_handleDesktopCommand);
@@ -121,6 +129,9 @@ class _ShellScreenState extends State<ShellScreen> {
     sessionJournal.addListener(() {
       if (mounted) setState(() {});
     });
+    cardWorkspacePreferences.addListener(() {
+      if (mounted) setState(() {});
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       StartupPrivacyNotice.show(context);
@@ -148,7 +159,13 @@ class _ShellScreenState extends State<ShellScreen> {
     monitoringLensPreferences.dispose();
     sessionJournal.dispose();
     companionService.dispose();
+    cardWorkspacePreferences.dispose();
+    gamingOverlay.removeListener(_overlayChanged);
     super.dispose();
+  }
+
+  void _overlayChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _handleMacOSMenuAction(MethodCall call) async {
@@ -589,6 +606,25 @@ Disk: ${telemetry.diskUsage}%
         ],
         run: () => _selectPage(12),
       ),
+      CommandPaletteAction(
+        id: 'saved-card-layouts',
+        title: 'Manage Saved Card Layouts',
+        description: 'Save, apply, or delete app-wide card configurations',
+        section: 'Appearance',
+        icon: Icons.bookmarks_rounded,
+        keywords: const [
+          'cards',
+          'layout',
+          'reorder',
+          'resize',
+          'hidden',
+          'workspace',
+        ],
+        run: () => showCardLayoutsDialog(
+          context: context,
+          preferences: cardWorkspacePreferences,
+        ),
+      ),
       for (final workspace in DashboardWorkspace.values)
         CommandPaletteAction(
           id: 'workspace-${workspace.name}',
@@ -798,20 +834,19 @@ Disk: ${telemetry.diskUsage}%
     );
     final connecting =
         telemetry.lastUpdated == null && telemetry.lastError == null;
-    final cards = [
+    final cards = <WorkspaceCard>[
       for (var index = 0; index < metrics.length; index++)
-        connecting
-            ? HardwareSkeletonCard(key: ValueKey('dashboard-skeleton-$index'))
-            : _buildDashboardMetricCard(metrics[index], index),
+        WorkspaceCard(
+          id: metrics[index].id.name,
+          title: metrics[index].title,
+          child: connecting
+              ? HardwareSkeletonCard(key: ValueKey('dashboard-skeleton-$index'))
+              : _buildDashboardMetricCard(metrics[index], index),
+        ),
     ];
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 1050
-            ? 3
-            : constraints.maxWidth >= 680
-            ? 2
-            : 1;
         return CustomScrollView(
           key: const PageStorageKey('hardwaremon-dashboard-scroll'),
           slivers: [
@@ -841,26 +876,15 @@ Disk: ${telemetry.diskUsage}%
                 ),
               ),
             ),
-            if (cards.isEmpty)
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: _DashboardEmptyState(
-                  onRestore: dashboardPreferences.resetDefaults,
-                ),
-              )
-            else
-              SliverGrid(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: columns,
-                  mainAxisExtent: dashboardPreferences.cardSize.height,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                ),
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) => cards[index],
-                  childCount: cards.length,
-                ),
+            SliverToBoxAdapter(
+              child: CardWorkspace(
+                pageId: 'dashboard-${dashboardPreferences.workspace.name}',
+                pageLabel: 'Dashboard',
+                preferences: cardWorkspacePreferences,
+                cards: cards,
+                standardHeight: dashboardPreferences.cardSize.height,
               ),
+            ),
             SliverToBoxAdapter(
               child: DashboardCompanionWidgets(
                 telemetry: telemetry,
@@ -1060,16 +1084,17 @@ Disk: ${telemetry.diskUsage}%
         return PerformancePage(
           telemetry: telemetry,
           chartPreferences: chartPreferences,
+          cardWorkspacePreferences: cardWorkspacePreferences,
         );
 
       case 3:
-        return const GamingPage();
+        return GamingPage(cardWorkspacePreferences: cardWorkspacePreferences);
 
       case 4:
-        return const NetworkPage();
+        return NetworkPage(cardWorkspacePreferences: cardWorkspacePreferences);
 
       case 5:
-        return const StoragePage();
+        return StoragePage(cardWorkspacePreferences: cardWorkspacePreferences);
 
       case 6:
         return OptimizationPage(
@@ -1077,6 +1102,7 @@ Disk: ${telemetry.diskUsage}%
           chartPreferences: chartPreferences,
           onOpenProcesses: () => _selectPage(1),
           onOpenStorage: () => _selectPage(5),
+          cardWorkspacePreferences: cardWorkspacePreferences,
         );
 
       case 7:
@@ -1086,10 +1112,13 @@ Disk: ${telemetry.diskUsage}%
           onOpenProcesses: () => _selectPage(1),
           onOpenStorage: () => _selectPage(5),
           onOpenNetwork: () => _selectPage(4),
+          cardWorkspacePreferences: cardWorkspacePreferences,
         );
 
       case 8:
-        return const BenchmarkPage();
+        return BenchmarkPage(
+          cardWorkspacePreferences: cardWorkspacePreferences,
+        );
 
       case 9:
         return CustomizationPage(
@@ -1108,10 +1137,17 @@ Disk: ${telemetry.diskUsage}%
         );
 
       case 11:
-        return CompanionPage(telemetry: telemetry, service: companionService);
+        return CompanionPage(
+          telemetry: telemetry,
+          service: companionService,
+          cardWorkspacePreferences: cardWorkspacePreferences,
+        );
 
       case 12:
-        return PluginsPage(service: companionService);
+        return PluginsPage(
+          service: companionService,
+          cardWorkspacePreferences: cardWorkspacePreferences,
+        );
 
       default:
         return buildDashboard();
@@ -1227,6 +1263,9 @@ Disk: ${telemetry.diskUsage}%
 
   @override
   Widget build(BuildContext context) {
+    if (gamingOverlay.visible) {
+      return _InGameOverlay(telemetry: telemetry, controller: gamingOverlay);
+    }
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.digit1, alt: true): () =>
@@ -1733,6 +1772,134 @@ Disk: ${telemetry.diskUsage}%
   }
 }
 
+class _InGameOverlay extends StatelessWidget {
+  const _InGameOverlay({required this.telemetry, required this.controller});
+
+  final TelemetryService telemetry;
+  final GamingOverlayController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final metrics = <(String, String, Color)>[
+      ('FPS', 'Provider unavailable', Colors.white70),
+      ('CPU', '${telemetry.cpuUsage}%', AppColors.accent),
+      ('GPU', '${telemetry.gpuUsage}%', Colors.purpleAccent),
+      ('RAM', '${telemetry.ramUsage}%', Colors.lightGreenAccent),
+      (
+        'CPU',
+        telemetry.cpuTemp > 0 ? '${telemetry.cpuTemp}°C' : '—',
+        Colors.orangeAccent,
+      ),
+      (
+        'GPU',
+        telemetry.gpuTemp > 0 ? '${telemetry.gpuTemp}°C' : '—',
+        Colors.redAccent,
+      ),
+    ];
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: GestureDetector(
+        onPanStart: controller.interactionMode ? (_) {} : null,
+        child: Container(
+          margin: const EdgeInsets.all(6),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+          decoration: BoxDecoration(
+            color: const Color(0xED090D13),
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(color: AppColors.accent.withValues(alpha: .45)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: .45),
+                blurRadius: 24,
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 7,
+                    height: 7,
+                    decoration: const BoxDecoration(
+                      color: Colors.greenAccent,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 7),
+                  const Expanded(
+                    child: Text(
+                      'HARDWAREMON  ·  GAME OVERLAY',
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: .7,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    GamingOverlayController.toggleShortcutLabel,
+                    style: TextStyle(
+                      fontSize: 8,
+                      color: AppColors.textMuted(context),
+                    ),
+                  ),
+                  if (controller.interactionMode) ...[
+                    const SizedBox(width: 5),
+                    IconButton(
+                      onPressed: controller.hide,
+                      icon: const Icon(Icons.close_rounded, size: 16),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 10),
+              Expanded(
+                child: Wrap(
+                  spacing: 15,
+                  runSpacing: 7,
+                  children: [
+                    for (final metric in metrics)
+                      SizedBox(
+                        width: metric.$1 == 'FPS' ? 112 : 50,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              metric.$2,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: metric.$3,
+                                fontSize: metric.$1 == 'FPS' ? 11 : 17,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            Text(
+                              metric.$1,
+                              style: TextStyle(
+                                color: AppColors.textMuted(context),
+                                fontSize: 8,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _DashboardMetric {
   final DashboardMetricId id;
   final String title;
@@ -1759,6 +1926,8 @@ class _DashboardMetric {
   });
 }
 
+// Kept as the fallback used by older dashboard workspace integrations.
+// ignore: unused_element
 class _DashboardEmptyState extends StatelessWidget {
   final VoidCallback onRestore;
 

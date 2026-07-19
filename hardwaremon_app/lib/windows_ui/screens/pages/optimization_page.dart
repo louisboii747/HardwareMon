@@ -6,6 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../models/chart_preferences.dart';
+import '../../models/card_workspace.dart';
 import '../../models/optimization_models.dart';
 import '../../models/storage_models.dart';
 import '../../models/telemetry_sample.dart';
@@ -13,6 +14,7 @@ import '../../services/optimization_service.dart';
 import '../../services/storage_service.dart';
 import '../../services/telemetry_service.dart';
 import '../../widgets/glass_panel.dart';
+import '../../widgets/card_workspace.dart';
 
 class OptimizationPage extends StatefulWidget {
   final TelemetryService telemetry;
@@ -21,6 +23,7 @@ class OptimizationPage extends StatefulWidget {
   final VoidCallback onOpenStorage;
   final OptimizationService? optimizationService;
   final StorageService? storageService;
+  final CardWorkspacePreferences cardWorkspacePreferences;
 
   const OptimizationPage({
     super.key,
@@ -30,6 +33,7 @@ class OptimizationPage extends StatefulWidget {
     required this.onOpenStorage,
     this.optimizationService,
     this.storageService,
+    required this.cardWorkspacePreferences,
   });
 
   @override
@@ -171,7 +175,10 @@ class _OptimizationPageState extends State<OptimizationPage> {
               onOpenStorage: widget.onOpenStorage,
             ),
             const SizedBox(height: 20),
-            _MaintenanceFactsCard(snapshot: _optimization),
+            _MaintenanceFactsCard(
+              snapshot: _optimization,
+              preferences: widget.cardWorkspacePreferences,
+            ),
             const SizedBox(height: 20),
             LayoutBuilder(
               builder: (context, constraints) {
@@ -255,8 +262,12 @@ class _OptimizationPageState extends State<OptimizationPage> {
 
 class _MaintenanceFactsCard extends StatelessWidget {
   final OptimizationSnapshot? snapshot;
+  final CardWorkspacePreferences preferences;
 
-  const _MaintenanceFactsCard({required this.snapshot});
+  const _MaintenanceFactsCard({
+    required this.snapshot,
+    required this.preferences,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -267,6 +278,40 @@ class _MaintenanceFactsCard extends StatelessWidget {
       value?.biosVersion,
       value?.biosDate,
     ].whereType<String>().join(' · ');
+    final facts = <_MaintenanceFact>[
+      _MaintenanceFact(
+        icon: Icons.restart_alt_rounded,
+        label: 'System uptime',
+        value: value == null ? 'Loading…' : '$days days',
+        detail: value?.restartRecommended == true
+            ? 'Restart recommended'
+            : 'Within the 14-day guidance',
+      ),
+      _MaintenanceFact(
+        icon: Icons.developer_board_rounded,
+        label: 'BIOS',
+        value: bios.isEmpty ? 'Unavailable' : bios,
+        detail: 'Firmware identity reported by the operating system',
+      ),
+      _MaintenanceFact(
+        icon: Icons.battery_5_bar_rounded,
+        label: 'Battery',
+        value: value?.batteryPercent == null
+            ? 'Desktop or unavailable'
+            : '${value!.batteryPercent!.round()}%',
+        detail: value?.batteryPluggedIn == null
+            ? 'No battery was reported'
+            : value!.batteryPluggedIn!
+            ? 'Connected to power'
+            : 'Running on battery',
+      ),
+      const _MaintenanceFact(
+        icon: Icons.extension_rounded,
+        label: 'Provider readiness',
+        value: 'Extensible',
+        detail: 'Driver, backup, and restore-point providers are isolated',
+      ),
+    ];
     return GlassPanel(
       padding: const EdgeInsets.all(20),
       glowColor: Colors.tealAccent,
@@ -286,43 +331,18 @@ class _MaintenanceFactsCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              _MaintenanceFact(
-                icon: Icons.restart_alt_rounded,
-                label: 'System uptime',
-                value: value == null ? 'Loading…' : '$days days',
-                detail: value?.restartRecommended == true
-                    ? 'Restart recommended'
-                    : 'Within the 14-day guidance',
-              ),
-              _MaintenanceFact(
-                icon: Icons.developer_board_rounded,
-                label: 'BIOS',
-                value: bios.isEmpty ? 'Unavailable' : bios,
-                detail: 'Firmware identity reported by the operating system',
-              ),
-              _MaintenanceFact(
-                icon: Icons.battery_5_bar_rounded,
-                label: 'Battery',
-                value: value?.batteryPercent == null
-                    ? 'Desktop or unavailable'
-                    : '${value!.batteryPercent!.round()}%',
-                detail: value?.batteryPluggedIn == null
-                    ? 'No battery was reported'
-                    : value!.batteryPluggedIn!
-                    ? 'Connected to power'
-                    : 'Running on battery',
-              ),
-              const _MaintenanceFact(
-                icon: Icons.extension_rounded,
-                label: 'Provider readiness',
-                value: 'Extensible',
-                detail:
-                    'Driver, backup, and restore-point providers are isolated',
-              ),
+          CardWorkspace(
+            pageId: 'maintenance-evidence',
+            pageLabel: 'Maintenance evidence',
+            preferences: preferences,
+            standardHeight: 132,
+            cards: [
+              for (final fact in facts)
+                WorkspaceCard(
+                  id: fact.label.toLowerCase().replaceAll(' ', '-'),
+                  title: fact.label,
+                  child: fact,
+                ),
             ],
           ),
         ],
@@ -347,7 +367,7 @@ class _MaintenanceFact extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 230,
+      width: double.infinity,
       constraints: const BoxConstraints(minHeight: 112),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
