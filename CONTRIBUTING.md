@@ -55,6 +55,16 @@ python3 -m venv .venv
 source .venv/bin/activate
 ```
 
+Install the native Flutter desktop build dependencies on Debian/Ubuntu:
+
+```bash
+sudo apt-get install libgtk-3-dev libnotify-dev \
+  libayatana-appindicator3-dev libkeybinder-3.0-dev
+```
+
+`libkeybinder-3.0-dev` is required by HardwareMon's global gaming-overlay
+hotkeys. Packaged installations receive the matching runtime dependency.
+
 Install Python dependencies:
 
 ```bash

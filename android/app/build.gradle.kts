@@ -1,14 +1,11 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
 android {
     namespace = "com.hardwaremon.android"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.hardwaremon.android"
@@ -51,15 +48,8 @@ android {
     }
 
     lint {
-        // These versions are intentionally pinned to the API 36 / AGP 8 toolchain.
-        // Current major updates require API 37 and AGP 9.1.
+        // Dependency versions are intentionally pinned and upgraded as a tested set.
         disable += setOf("GradleDependency", "NewerVersionAvailable")
-    }
-}
-
-kotlin {
-    compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_17)
     }
 }
 
