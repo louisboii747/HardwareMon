@@ -1,0 +1,12 @@
+{
+  "api_version": 1,
+  "id": "org.hardwaremon.prometheus",
+  "name": "Prometheus Exporter",
+  "version": "1.0.0",
+  "publisher": "HardwareMon",
+  "description": "Publishes approved live telemetry on a local Prometheus metrics endpoint.",
+  "homepage": "https://github.com/louis/HWMonitor",
+  "official": true,
+  "entrypoint": { "type": "python", "path": "plugin.py" },
+  "capabilities": ["telemetry.read", "network.listen"]
+}

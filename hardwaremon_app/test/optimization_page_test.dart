@@ -44,7 +44,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Optimisation'), findsOneWidget);
+    expect(find.text('Maintenance Centre'), findsOneWidget);
+    expect(find.text('Maintenance evidence'), findsOneWidget);
     expect(find.text('Overall health'), findsOneWidget);
     expect(find.text('Startup applications'), findsOneWidget);
     expect(find.text('Storage analysis'), findsOneWidget);

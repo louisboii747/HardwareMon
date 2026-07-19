@@ -4,6 +4,49 @@ import 'package:flutter_gui/windows_ui/models/optimization_models.dart';
 import 'package:flutter_gui/windows_ui/models/telemetry_sample.dart';
 
 void main() {
+  test('maintenance evidence decodes without inventing unavailable values', () {
+    final snapshot = OptimizationSnapshot.fromJson({
+      'platform': 'Linux',
+      'maintenance': {
+        'uptime_seconds': 1296000,
+        'restart_recommended': true,
+        'bios': {'vendor': 'Example', 'version': '1.2.3', 'date': null},
+        'battery': {'percent': 73.5, 'plugged_in': false},
+      },
+    });
+
+    expect(snapshot.uptimeSeconds, 1296000);
+    expect(snapshot.restartRecommended, isTrue);
+    expect(snapshot.biosVendor, 'Example');
+    expect(snapshot.biosVersion, '1.2.3');
+    expect(snapshot.biosDate, isNull);
+    expect(snapshot.batteryPercent, 73.5);
+    expect(snapshot.batteryPluggedIn, isFalse);
+  });
+
+  test('long uptime produces a safe restart recommendation', () {
+    final snapshot = OptimizationSnapshot.fromJson({
+      'maintenance': {
+        'uptime_seconds': 31 * 24 * 60 * 60,
+        'restart_recommended': true,
+      },
+    });
+    final recommendations = const MaintenanceRecommendationEngine().evaluate(
+      OptimizationRecommendationContext(
+        optimization: snapshot,
+        storage: null,
+        averageRam: 0,
+        peakRam: 0,
+        averageCpuTemperature: 0,
+        peakCpuTemperature: 0,
+      ),
+    );
+
+    expect(recommendations, hasLength(1));
+    expect(recommendations.single.id, 'long-uptime');
+    expect(recommendations.single.details, contains('never restarts'));
+  });
+
   test('health scores react to sustained pressure', () {
     final now = DateTime(2026, 6, 21);
     final healthy = OptimizationHealthScores.calculate(

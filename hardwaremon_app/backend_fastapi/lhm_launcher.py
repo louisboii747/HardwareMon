@@ -8,7 +8,6 @@ import time
 import xml.etree.ElementTree as ET
 
 import requests
-
 from process_utils import hidden_process_kwargs
 
 IS_WINDOWS = platform.system() == "Windows"

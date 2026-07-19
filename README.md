@@ -228,6 +228,20 @@ integration.
 
 ---
 
+## Plugin Studio
+
+HardwareMon includes an out-of-process plugin platform with explicit capability
+approval, authenticated IPC, lifecycle supervision, crash recovery, health and
+logs, portable-aware persistence, and staged `.hmp` installation. Official
+Prometheus Exporter and Developer Tools plugins ship disabled and require the
+same review as third-party extensions.
+
+Plugin authors can use the dependency-free Python SDK and package builder under
+`hardwaremon_app/plugin_sdk`. The manifest, protocol, security boundary and
+development workflow are documented in [docs/PLUGIN_SYSTEM.md](docs/PLUGIN_SYSTEM.md).
+
+---
+
 ## Distribution & Packaging
 
 * Native Linux DEB packages

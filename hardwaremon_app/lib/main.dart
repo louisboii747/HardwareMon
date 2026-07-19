@@ -149,6 +149,15 @@ Future<void> startBackend() async {
 
     logBackend('Launching backend: $backendExecutable');
     final childEnvironment = {...Platform.environment, 'PYTHONUNBUFFERED': '1'};
+    final executableDirectory = File(Platform.resolvedExecutable).parent;
+    final portableMarker = File(
+      '${executableDirectory.path}${Platform.pathSeparator}portable.flag',
+    );
+    if (Platform.environment['HARDWAREMON_PORTABLE'] == '1' ||
+        portableMarker.existsSync()) {
+      childEnvironment['HARDWAREMON_PORTABLE_ROOT'] =
+          '${executableDirectory.path}${Platform.pathSeparator}HardwareMonData';
+    }
 
     // Compiled backend binary
     if (!backendExecutable.endsWith('.py')) {

@@ -4,12 +4,12 @@ import hashlib
 import os
 import platform
 import tempfile
+import time
 from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-
 
 router = APIRouter(prefix="/optimization", tags=["optimization"])
 
@@ -42,10 +42,7 @@ def _impact_for(name: str, command: str) -> str:
         )
     ):
         return "high"
-    if any(
-        token in value
-        for token in ("update", "helper", "tray", "security", "driver")
-    ):
+    if any(token in value for token in ("update", "helper", "tray", "security", "driver")):
         return "low"
     return "medium"
 
@@ -172,12 +169,15 @@ def _read_desktop_entry(path: Path) -> dict[str, str]:
 
 def _linux_startup_apps() -> list[dict[str, Any]]:
     entries: list[dict[str, Any]] = []
-    user_dir = Path(
-        os.environ.get(
-            "XDG_CONFIG_HOME",
-            str(Path.home() / ".config"),
+    user_dir = (
+        Path(
+            os.environ.get(
+                "XDG_CONFIG_HOME",
+                str(Path.home() / ".config"),
+            )
         )
-    ) / "autostart"
+        / "autostart"
+    )
     system_dirs = [
         Path(item) / "autostart"
         for item in os.environ.get("XDG_CONFIG_DIRS", "/etc/xdg").split(":")
@@ -196,9 +196,7 @@ def _linux_startup_apps() -> list[dict[str, Any]]:
                 continue
             seen.add(path.name)
             hidden = values.get("Hidden", "false").lower() == "true"
-            autostart_enabled = (
-                values.get("X-GNOME-Autostart-enabled", "true").lower() != "false"
-            )
+            autostart_enabled = values.get("X-GNOME-Autostart-enabled", "true").lower() != "false"
             name = values.get("Name", path.stem)
             command = values.get("Exec", "Unavailable")
             entries.append(
@@ -222,9 +220,7 @@ def _linux_startup_apps() -> list[dict[str, Any]]:
                         "filename": path.name,
                         "name": name,
                         "command": command,
-                        "generated_override": (
-                            values.get("X-HardwareMon-Override") == "true"
-                        ),
+                        "generated_override": (values.get("X-HardwareMon-Override") == "true"),
                     },
                 )
             )
@@ -379,6 +375,63 @@ def _temporary_files() -> dict[str, Any]:
     }
 
 
+def _read_text(path: Path) -> str | None:
+    try:
+        value = path.read_text(encoding="utf-8", errors="replace").strip()
+        return value or None
+    except OSError:
+        return None
+
+
+def _maintenance_facts() -> dict[str, Any]:
+    """Return conservative, read-only maintenance evidence.
+
+    Missing values stay null instead of being guessed. This keeps the UI useful
+    on unsupported hardware and leaves room for driver and backup providers.
+    """
+    try:
+        import psutil
+
+        boot_time = float(psutil.boot_time())
+        battery = psutil.sensors_battery()
+    except (ImportError, OSError, RuntimeError):
+        boot_time = time.time()
+        battery = None
+
+    bios_vendor = None
+    bios_version = None
+    bios_date = None
+    if platform.system() == "Linux":
+        dmi = Path("/sys/class/dmi/id")
+        bios_vendor = _read_text(dmi / "bios_vendor")
+        bios_version = _read_text(dmi / "bios_version")
+        bios_date = _read_text(dmi / "bios_date")
+
+    uptime_seconds = max(0, int(time.time() - boot_time))
+    return {
+        "boot_time": boot_time,
+        "uptime_seconds": uptime_seconds,
+        "restart_recommended": uptime_seconds >= 14 * 24 * 60 * 60,
+        "bios": {
+            "vendor": bios_vendor,
+            "version": bios_version,
+            "date": bios_date,
+        },
+        "battery": None
+        if battery is None
+        else {
+            "percent": round(float(battery.percent), 1),
+            "plugged_in": bool(battery.power_plugged),
+            "seconds_left": (int(battery.secsleft) if battery.secsleft >= 0 else None),
+        },
+        "providers": {
+            "driver_status": "planned",
+            "backup_status": "planned",
+            "restore_points": "planned",
+        },
+    }
+
+
 @router.get("")
 async def get_optimization_snapshot():
     startup = _startup_apps()
@@ -391,6 +444,7 @@ async def get_optimization_snapshot():
         "startup_score": startup_score,
         "startup_apps": startup,
         "temporary_files": _temporary_files(),
+        "maintenance": _maintenance_facts(),
         "capabilities": {
             "startup_toggle": platform.system() in {"Windows", "Linux"},
             "gaming_mode": True,

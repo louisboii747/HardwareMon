@@ -2,7 +2,6 @@ import importlib.util
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -30,15 +29,11 @@ class ReleaseEvidenceTests(unittest.TestCase):
 
         self.assertEqual(document["bomFormat"], "CycloneDX")
         self.assertEqual(document["specVersion"], "1.5")
-        self.assertTrue(
-            any(item["name"].lower() == "fastapi" for item in components)
-        )
+        self.assertTrue(any(item["name"].lower() == "fastapi" for item in components))
         self.assertTrue(any(item["name"] == "flutter" for item in components))
 
     def test_release_checksum_uses_sha256(self):
-        expected = (
-            "834bb27a3f186922f5fc5c4da2d12afcf2476a82b6f61237f92e4f63c5ba5f4c"
-        )
+        expected = "834bb27a3f186922f5fc5c4da2d12afcf2476a82b6f61237f92e4f63c5ba5f4c"
         self.assertEqual(metadata.sha256(Path(__file__)), self._current_file_hash())
         self.assertEqual(len(expected), 64)
 

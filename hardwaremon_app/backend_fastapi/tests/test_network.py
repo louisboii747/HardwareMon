@@ -127,7 +127,7 @@ class NetworkTelemetryTests(unittest.TestCase):
         _gateway_mock,
         _outbound_mock,
     ):
-        counter = lambda received, sent: Mock(
+        counter = lambda received, sent: Mock(  # noqa: E731
             bytes_recv=received,
             bytes_sent=sent,
             packets_recv=1,
@@ -141,7 +141,7 @@ class NetworkTelemetryTests(unittest.TestCase):
             "Ethernet 2": Mock(isup=True, speed=1000, mtu=1500),
             "WiFi": Mock(isup=True, speed=866, mtu=1500),
         }
-        address = lambda value: Mock(family=__import__("socket").AF_INET, address=value)
+        address = lambda value: Mock(family=__import__("socket").AF_INET, address=value)  # noqa: E731
         addresses_mock.return_value = {
             "Ethernet 2": [address("192.168.56.1")],
             "WiFi": [address("192.168.1.249")],

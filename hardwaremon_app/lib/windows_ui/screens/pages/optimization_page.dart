@@ -12,6 +12,7 @@ import '../../models/telemetry_sample.dart';
 import '../../services/optimization_service.dart';
 import '../../services/storage_service.dart';
 import '../../services/telemetry_service.dart';
+import '../../widgets/glass_panel.dart';
 
 class OptimizationPage extends StatefulWidget {
   final TelemetryService telemetry;
@@ -170,6 +171,8 @@ class _OptimizationPageState extends State<OptimizationPage> {
               onOpenStorage: widget.onOpenStorage,
             ),
             const SizedBox(height: 20),
+            _MaintenanceFactsCard(snapshot: _optimization),
+            const SizedBox(height: 20),
             LayoutBuilder(
               builder: (context, constraints) {
                 final twoColumns = constraints.maxWidth >= 980;
@@ -250,6 +253,140 @@ class _OptimizationPageState extends State<OptimizationPage> {
   }
 }
 
+class _MaintenanceFactsCard extends StatelessWidget {
+  final OptimizationSnapshot? snapshot;
+
+  const _MaintenanceFactsCard({required this.snapshot});
+
+  @override
+  Widget build(BuildContext context) {
+    final value = snapshot;
+    final days = (value?.uptimeSeconds ?? 0) ~/ (24 * 60 * 60);
+    final bios = [
+      value?.biosVendor,
+      value?.biosVersion,
+      value?.biosDate,
+    ].whereType<String>().join(' · ');
+    return GlassPanel(
+      padding: const EdgeInsets.all(20),
+      glowColor: Colors.tealAccent,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Maintenance evidence',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Read-only facts from this PC. Unavailable values are never guessed.',
+            style: TextStyle(
+              color: AppColors.textSecondary(context),
+              fontSize: 10,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _MaintenanceFact(
+                icon: Icons.restart_alt_rounded,
+                label: 'System uptime',
+                value: value == null ? 'Loading…' : '$days days',
+                detail: value?.restartRecommended == true
+                    ? 'Restart recommended'
+                    : 'Within the 14-day guidance',
+              ),
+              _MaintenanceFact(
+                icon: Icons.developer_board_rounded,
+                label: 'BIOS',
+                value: bios.isEmpty ? 'Unavailable' : bios,
+                detail: 'Firmware identity reported by the operating system',
+              ),
+              _MaintenanceFact(
+                icon: Icons.battery_5_bar_rounded,
+                label: 'Battery',
+                value: value?.batteryPercent == null
+                    ? 'Desktop or unavailable'
+                    : '${value!.batteryPercent!.round()}%',
+                detail: value?.batteryPluggedIn == null
+                    ? 'No battery was reported'
+                    : value!.batteryPluggedIn!
+                    ? 'Connected to power'
+                    : 'Running on battery',
+              ),
+              const _MaintenanceFact(
+                icon: Icons.extension_rounded,
+                label: 'Provider readiness',
+                value: 'Extensible',
+                detail:
+                    'Driver, backup, and restore-point providers are isolated',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MaintenanceFact extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final String detail;
+
+  const _MaintenanceFact({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.detail,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 230,
+      constraints: const BoxConstraints(minHeight: 112),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.overlay(context, 0.04),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border(context)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: Colors.tealAccent),
+          const SizedBox(height: 10),
+          Text(
+            label,
+            style: TextStyle(color: AppColors.textMuted(context), fontSize: 9),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            value,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            detail,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: AppColors.textSecondary(context),
+              fontSize: 9,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _PageHeading extends StatelessWidget {
   final bool loading;
   final Future<void> Function() onRefresh;
@@ -265,7 +402,7 @@ class _PageHeading extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Optimisation',
+                'Maintenance Centre',
                 style: TextStyle(
                   fontSize: 40,
                   fontWeight: FontWeight.w700,
@@ -274,7 +411,7 @@ class _PageHeading extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                'System health, intelligent recommendations, and performance preparation.',
+                'Evidence-based upkeep, hardware health, and clear recommendations.',
                 style: TextStyle(
                   color: AppColors.textSecondary(context),
                   fontSize: 14,

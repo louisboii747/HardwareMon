@@ -8,13 +8,19 @@ lhm_datas = [
     for path in lhm_dir.rglob('*')
     if path.is_file()
 ]
+plugin_dir = Path('official_plugins')
+plugin_datas = [
+    (str(path), str(plugin_dir / path.relative_to(plugin_dir).parent))
+    for path in plugin_dir.rglob('*')
+    if path.is_file()
+]
 
 a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=lhm_datas,
-    hiddenimports=[],
+    datas=lhm_datas + plugin_datas,
+    hiddenimports=['http.server', 'queue'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

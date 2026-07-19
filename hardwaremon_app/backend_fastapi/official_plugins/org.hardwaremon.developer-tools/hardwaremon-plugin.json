@@ -1,0 +1,11 @@
+{
+  "api_version": 1,
+  "id": "org.hardwaremon.developer-tools",
+  "name": "Developer Tools",
+  "version": "1.0.0",
+  "publisher": "HardwareMon",
+  "description": "Validates the plugin protocol and records telemetry delivery health without exporting data.",
+  "official": true,
+  "entrypoint": { "type": "python", "path": "plugin.py" },
+  "capabilities": ["telemetry.read", "events.publish"]
+}

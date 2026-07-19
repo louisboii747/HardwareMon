@@ -1,7 +1,7 @@
+import json
 import os
 import tempfile
 import unittest
-import json
 from unittest.mock import patch
 
 from telemetry.storage import (

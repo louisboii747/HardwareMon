@@ -16,6 +16,7 @@ import '../../services/update_prompt_service.dart';
 import '../../services/update_service.dart';
 import '../utils/telemetry_chart.dart';
 import '../services/desktop_integration_service.dart';
+import '../services/companion_service.dart';
 import '../widgets/glass_panel.dart';
 import '../widgets/hardware_skeleton.dart';
 import '../widgets/metric_card.dart';
@@ -38,6 +39,8 @@ import 'pages/reliability_page.dart';
 import 'pages/benchmark_page.dart';
 import 'pages/customization_page.dart';
 import 'pages/settings_page.dart';
+import 'pages/companion_page.dart';
+import 'pages/plugins_page.dart';
 import '../services/telemetry_service.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/hardware_palette.dart';
@@ -59,6 +62,7 @@ class _ShellScreenState extends State<ShellScreen> {
   late CustomizationPreferences customizationPreferences;
   late MonitoringLensPreferences monitoringLensPreferences;
   late SessionJournal sessionJournal;
+  late CompanionService companionService;
   StreamSubscription<DesktopCommand>? _desktopCommandSubscription;
 
   int selectedIndex = 0;
@@ -78,6 +82,7 @@ class _ShellScreenState extends State<ShellScreen> {
     customizationPreferences = CustomizationPreferences();
     monitoringLensPreferences = MonitoringLensPreferences();
     sessionJournal = SessionJournal();
+    companionService = CompanionService(snapshotProvider: _liveSnapshot);
 
     telemetry.start();
     chartPreferences.load();
@@ -85,6 +90,7 @@ class _ShellScreenState extends State<ShellScreen> {
     customizationPreferences.load();
     monitoringLensPreferences.load();
     sessionJournal.load();
+    companionService.initialise();
     DesktopIntegrationService.instance.attachTelemetry(telemetry);
     _desktopCommandSubscription = DesktopIntegrationService.instance.commands
         .listen(_handleDesktopCommand);
@@ -141,6 +147,7 @@ class _ShellScreenState extends State<ShellScreen> {
     customizationPreferences.dispose();
     monitoringLensPreferences.dispose();
     sessionJournal.dispose();
+    companionService.dispose();
     super.dispose();
   }
 
@@ -224,6 +231,29 @@ class _ShellScreenState extends State<ShellScreen> {
     paused: telemetry.isPaused,
     hasError: telemetry.lastError != null,
   );
+
+  Map<String, Object?> _liveSnapshot() => {
+    'cpu_usage': '${telemetry.cpuUsage}%',
+    'cpu_temperature': telemetry.capabilities.supportsCpuTemperature
+        ? '${telemetry.cpuTemp}°C'
+        : null,
+    'gpu_usage': telemetry.capabilities.supportsGpuUsage
+        ? '${telemetry.gpuUsage}%'
+        : null,
+    'gpu_temperature': telemetry.capabilities.supportsGpuTemperature
+        ? '${telemetry.gpuTemp}°C'
+        : null,
+    'ram_usage': '${telemetry.ramUsage}%',
+    'storage_usage': '${telemetry.diskUsage}%',
+    'cpu_power': telemetry.capabilities.supportsPowerMetrics
+        ? '${telemetry.cpuPower.toStringAsFixed(1)} W'
+        : null,
+    'gpu_power': telemetry.capabilities.supportsPowerMetrics
+        ? '${telemetry.gpuPower.toStringAsFixed(1)} W'
+        : null,
+    'status': _systemCondition.label,
+    'updated_at': DateTime.now().toUtc().toIso8601String(),
+  };
 
   Future<void> _copySystemSnapshot() async {
     final capturedAt = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
@@ -441,8 +471,9 @@ Disk: ${telemetry.diskUsage}%
       ),
       CommandPaletteAction(
         id: 'optimization',
-        title: 'Open Optimisation',
-        description: 'Review system health, recommendations, and opportunities',
+        title: 'Open Maintenance Centre',
+        description:
+            'Review system upkeep, health evidence, and recommendations',
         section: 'Navigate',
         shortcut: 'Alt 6',
         icon: Icons.auto_awesome_rounded,
@@ -521,6 +552,42 @@ Disk: ${telemetry.diskUsage}%
         selected: selectedIndex == 10,
         keywords: const ['preferences', 'configure'],
         run: () => _selectPage(10),
+      ),
+      CommandPaletteAction(
+        id: 'companion-centre',
+        title: 'Open Companion Centre',
+        description: 'Share, export, pair devices, and inspect extensions',
+        section: 'Navigate',
+        icon: Icons.hub_rounded,
+        selected: selectedIndex == 11,
+        keywords: const [
+          'snapshot',
+          'inventory',
+          'export',
+          'web dashboard',
+          'qr',
+          'portable',
+          'plugins',
+          'widgets',
+        ],
+        run: () => _selectPage(11),
+      ),
+      CommandPaletteAction(
+        id: 'plugin-studio',
+        title: 'Open Plugin Studio',
+        description: 'Manage extensions, permissions, health, and logs',
+        section: 'Navigate',
+        icon: Icons.extension_rounded,
+        selected: selectedIndex == 12,
+        keywords: const [
+          'plugin',
+          'extension',
+          'prometheus',
+          'developer',
+          'permissions',
+          'capabilities',
+        ],
+        run: () => _selectPage(12),
       ),
       for (final workspace in DashboardWorkspace.values)
         CommandPaletteAction(
@@ -1040,6 +1107,12 @@ Disk: ${telemetry.diskUsage}%
           customizationPreferences: customizationPreferences,
         );
 
+      case 11:
+        return CompanionPage(telemetry: telemetry, service: companionService);
+
+      case 12:
+        return PluginsPage(service: companionService);
+
       default:
         return buildDashboard();
     }
@@ -1386,7 +1459,7 @@ Disk: ${telemetry.diskUsage}%
 
                                         _DockItem(
                                           icon: Icons.auto_awesome_rounded,
-                                          label: 'Optimisation',
+                                          label: 'Maintenance',
                                           shortcut: 'Alt+6',
                                           active: selectedIndex == 6,
                                           onTap: () => _selectPage(6),
@@ -1470,6 +1543,46 @@ Disk: ${telemetry.diskUsage}%
                                           shortcut: 'Alt+9',
                                           active: selectedIndex == 10,
                                           onTap: () => _selectPage(10),
+                                          showLabel:
+                                              customizationPreferences
+                                                  .showSidebarLabels ||
+                                              customizationPreferences
+                                                      .sidebarMode ==
+                                                  SidebarMode.expanded,
+                                          iconSize: customizationPreferences
+                                              .sidebarIconSize,
+                                          hoverEffects: customizationPreferences
+                                              .hoverEffects,
+                                        ),
+
+                                        const SizedBox(height: 12),
+
+                                        _DockItem(
+                                          icon: Icons.hub_rounded,
+                                          label: 'Companion',
+                                          shortcut: 'Ctrl+K',
+                                          active: selectedIndex == 11,
+                                          onTap: () => _selectPage(11),
+                                          showLabel:
+                                              customizationPreferences
+                                                  .showSidebarLabels ||
+                                              customizationPreferences
+                                                      .sidebarMode ==
+                                                  SidebarMode.expanded,
+                                          iconSize: customizationPreferences
+                                              .sidebarIconSize,
+                                          hoverEffects: customizationPreferences
+                                              .hoverEffects,
+                                        ),
+
+                                        const SizedBox(height: 12),
+
+                                        _DockItem(
+                                          icon: Icons.extension_rounded,
+                                          label: 'Plugins',
+                                          shortcut: 'Ctrl+K',
+                                          active: selectedIndex == 12,
+                                          onTap: () => _selectPage(12),
                                           showLabel:
                                               customizationPreferences
                                                   .showSidebarLabels ||

@@ -5,7 +5,10 @@ from pathlib import Path
 
 
 def get_data_dir():
-    if platform.system() == "Windows":
+    portable_root = os.environ.get("HARDWAREMON_PORTABLE_ROOT")
+    if portable_root:
+        data_dir = Path(portable_root)
+    elif platform.system() == "Windows":
         base = os.environ.get("LOCALAPPDATA") or os.environ.get("APPDATA")
         if base:
             data_dir = Path(base) / "HardwareMon"

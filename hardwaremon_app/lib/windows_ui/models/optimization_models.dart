@@ -3,6 +3,11 @@ import 'dart:math' as math;
 import 'storage_models.dart';
 import 'telemetry_sample.dart';
 
+String? _nullableText(dynamic value) {
+  final text = value?.toString().trim();
+  return text == null || text.isEmpty ? null : text;
+}
+
 enum OptimizationSeverity { info, warning, critical }
 
 class StartupApplication {
@@ -74,6 +79,13 @@ class OptimizationSnapshot {
   final bool startupToggleSupported;
   final bool gamingModeSupported;
   final bool cleanupSupported;
+  final int uptimeSeconds;
+  final bool restartRecommended;
+  final String? biosVendor;
+  final String? biosVersion;
+  final String? biosDate;
+  final double? batteryPercent;
+  final bool? batteryPluggedIn;
 
   const OptimizationSnapshot({
     required this.platform,
@@ -86,6 +98,13 @@ class OptimizationSnapshot {
     required this.startupToggleSupported,
     required this.gamingModeSupported,
     required this.cleanupSupported,
+    this.uptimeSeconds = 0,
+    this.restartRecommended = false,
+    this.biosVendor,
+    this.biosVersion,
+    this.biosDate,
+    this.batteryPercent,
+    this.batteryPluggedIn,
   });
 
   factory OptimizationSnapshot.fromJson(Map<String, dynamic> json) {
@@ -95,6 +114,15 @@ class OptimizationSnapshot {
     final capabilities = Map<String, dynamic>.from(
       json['capabilities'] as Map? ?? const {},
     );
+    final maintenance = Map<String, dynamic>.from(
+      json['maintenance'] as Map? ?? const {},
+    );
+    final bios = Map<String, dynamic>.from(
+      maintenance['bios'] as Map? ?? const {},
+    );
+    final battery = maintenance['battery'] is Map
+        ? Map<String, dynamic>.from(maintenance['battery'] as Map)
+        : null;
     return OptimizationSnapshot(
       platform: json['platform']?.toString() ?? 'Unknown',
       startupScore: (json['startup_score'] as num?)?.toInt() ?? 0,
@@ -118,6 +146,13 @@ class OptimizationSnapshot {
       startupToggleSupported: capabilities['startup_toggle'] == true,
       gamingModeSupported: capabilities['gaming_mode'] == true,
       cleanupSupported: capabilities['cleanup'] == true,
+      uptimeSeconds: (maintenance['uptime_seconds'] as num?)?.toInt() ?? 0,
+      restartRecommended: maintenance['restart_recommended'] == true,
+      biosVendor: _nullableText(bios['vendor']),
+      biosVersion: _nullableText(bios['version']),
+      biosDate: _nullableText(bios['date']),
+      batteryPercent: (battery?['percent'] as num?)?.toDouble(),
+      batteryPluggedIn: battery?['plugged_in'] as bool?,
     );
   }
 }
@@ -370,6 +405,32 @@ class ThermalRecommendationEngine extends OptimizationRecommendationEngine {
   }
 }
 
+class MaintenanceRecommendationEngine extends OptimizationRecommendationEngine {
+  const MaintenanceRecommendationEngine();
+
+  @override
+  List<OptimizationRecommendation> evaluate(
+    OptimizationRecommendationContext context,
+  ) {
+    final snapshot = context.optimization;
+    if (snapshot == null || !snapshot.restartRecommended) return const [];
+    final days = snapshot.uptimeSeconds ~/ (24 * 60 * 60);
+    return [
+      OptimizationRecommendation(
+        id: 'long-uptime',
+        severity: days >= 30
+            ? OptimizationSeverity.warning
+            : OptimizationSeverity.info,
+        title: 'A restart is recommended',
+        description: 'This PC has been running for $days days.',
+        action: 'Plan a restart',
+        details:
+            'A normal restart can complete pending maintenance, refresh drivers, and clear stale system state. Save your work first; HardwareMon never restarts the PC automatically.',
+      ),
+    ];
+  }
+}
+
 List<OptimizationRecommendation> buildOptimizationRecommendations(
   OptimizationRecommendationContext context, {
   List<OptimizationRecommendationEngine> engines = const [
@@ -377,6 +438,7 @@ List<OptimizationRecommendation> buildOptimizationRecommendations(
     StorageRecommendationEngine(),
     MemoryRecommendationEngine(),
     ThermalRecommendationEngine(),
+    MaintenanceRecommendationEngine(),
   ],
 }) {
   return [
