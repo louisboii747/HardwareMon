@@ -44,6 +44,7 @@ import 'pages/customization_page.dart';
 import 'pages/settings_page.dart';
 import 'pages/companion_page.dart';
 import 'pages/plugins_page.dart';
+import 'pages/bug_report_page.dart';
 import '../services/telemetry_service.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/hardware_palette.dart';
@@ -764,6 +765,25 @@ Disk: ${telemetry.diskUsage}%
         selected: chartPreferences.gridLines,
         keywords: const ['graph', 'chart'],
         run: () => _toggleChartPreference(ChartPreference.gridLines),
+      ),
+      CommandPaletteAction(
+        id: 'report-bug',
+        title: 'Report a Bug',
+        description: 'Send feedback with privacy-controlled diagnostics',
+        section: 'Help',
+        icon: Icons.bug_report_rounded,
+        keywords: const ['crash', 'error', 'feedback', 'support'],
+        run: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => BugReportPage(
+              onShowPending: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const PendingReportsPage(),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
       CommandPaletteAction(
         id: 'shortcuts',

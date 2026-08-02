@@ -19,6 +19,7 @@ import '../../../services/alert_service.dart';
 import '../../../services/build_info_service.dart';
 import '../../../services/update_service.dart';
 import '../../../widgets/alert_settings_widgets.dart';
+import 'bug_report_page.dart';
 
 String _formatSettingState(bool value) => value ? 'On' : 'Off';
 
@@ -693,6 +694,42 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               const SizedBox(height: 8),
               const UpdateSettingsPanel(),
+            ]),
+
+          if (_showSection('Help & Support', _SettingsCategory.system, const [
+            'help support report bug pending crash feedback',
+          ]))
+            _buildSection('Help & Support', [
+              _settingRow(
+                'Report a Bug',
+                FilledButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => BugReportPage(
+                        onShowPending: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const PendingReportsPage(),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  icon: const Icon(Icons.bug_report_rounded),
+                  label: const Text('Report'),
+                ),
+              ),
+              _settingRow(
+                'Pending Reports',
+                OutlinedButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const PendingReportsPage(),
+                    ),
+                  ),
+                  icon: const Icon(Icons.schedule_send_rounded),
+                  label: const Text('View'),
+                ),
+              ),
             ]),
 
           if (_showSection('Advanced', _SettingsCategory.system, const [

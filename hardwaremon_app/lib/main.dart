@@ -17,6 +17,8 @@ import 'package:flutter_gui/windows_ui/services/gaming_overlay_controller.dart';
 import 'package:flutter_gui/services/alert_service.dart';
 import 'package:flutter_gui/services/update_service.dart';
 import 'package:flutter_gui/widgets/alert_settings_widgets.dart';
+import 'package:flutter_gui/bug_reporting/bug_report_services.dart';
+import 'package:flutter_gui/windows_ui/screens/pages/bug_report_page.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
@@ -262,6 +264,19 @@ Future<bool> waitForBackend() async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  final previousFlutterError = FlutterError.onError;
+  FlutterError.onError = (details) {
+    previousFlutterError?.call(details);
+    CrashCollector.record(
+      details.exception,
+      details.stack ?? StackTrace.current,
+    );
+  };
+  PlatformDispatcher.instance.onError = (error, stack) {
+    CrashCollector.record(error, stack);
+    return false;
+  };
+
   await AppThemeController.instance.load();
   await UpdateService.instance.initialize();
 
@@ -326,7 +341,7 @@ class _HardwareMonAppState extends State<HardwareMonApp>
           theme: AppTheme.lightTheme(AppThemeController.instance.accent),
           darkTheme: AppTheme.darkTheme(AppThemeController.instance.accent),
           themeMode: AppThemeController.instance.themeMode,
-          home: const ShellScreen(),
+          home: const CrashRecoveryGate(child: ShellScreen()),
         );
       },
     );
