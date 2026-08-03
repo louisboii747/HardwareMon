@@ -5,26 +5,66 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Europe/London"
     labels:
-      - dependencies
+      - "dependencies"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
 
   - package-ecosystem: "pip"
     directory: "/hardwaremon_app/backend_fastapi"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "09:15"
+      timezone: "Europe/London"
     labels:
-      - dependencies
+      - "dependencies"
+      - "python"
+    open-pull-requests-limit: 10
+    groups:
+      python-production:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: "pub"
     directory: "/hardwaremon_app"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "09:30"
+      timezone: "Europe/London"
     labels:
-      - dependencies
+      - "dependencies"
+      - "flutter"
+    open-pull-requests-limit: 10
+    groups:
+      flutter-production:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: "gradle"
     directory: "/android"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "09:45"
+      timezone: "Europe/London"
     labels:
-      - dependencies
+      - "dependencies"
+      - "android"
+    open-pull-requests-limit: 10
+    groups:
+      android-production:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
