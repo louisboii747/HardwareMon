@@ -169,11 +169,13 @@ def _read_desktop_entry(path: Path) -> dict[str, str]:
 
 def _linux_startup_apps() -> list[dict[str, Any]]:
     entries: list[dict[str, Any]] = []
+    home = os.environ.get("HOME")
+    default_config = str(Path(home) / ".config") if home else str(Path(tempfile.gettempdir()) / "hardwaremon-config")
     user_dir = (
         Path(
             os.environ.get(
                 "XDG_CONFIG_HOME",
-                str(Path.home() / ".config"),
+                default_config,
             )
         )
         / "autostart"
@@ -338,12 +340,9 @@ def _temporary_files() -> dict[str, Any]:
         if local:
             candidates.append(("Windows temporary files", Path(local) / "Temp"))
     elif platform.system() == "Linux":
-        candidates.extend(
-            [
-                ("Shared temporary files", Path("/var/tmp")),
-                ("User cache", Path.home() / ".cache"),
-            ]
-        )
+        candidates.append(("Shared temporary files", Path("/var/tmp")))
+        if os.environ.get("HOME"):
+            candidates.append(("User cache", Path(os.environ["HOME"]) / ".cache"))
 
     unique: dict[str, tuple[str, Path]] = {}
     for label, path in candidates:

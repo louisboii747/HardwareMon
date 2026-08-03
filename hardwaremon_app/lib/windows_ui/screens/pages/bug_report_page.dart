@@ -48,6 +48,7 @@ class _BugReportPageState extends State<BugReportPage> {
   late final GitHubApiClient _githubApi;
   late final GitHubDeviceFlowAuthService _githubAuth;
   late final BugReportService _service;
+  late Future<GitHubReportingCapability> _githubCapability;
 
   @override
   void initState() {
@@ -65,6 +66,7 @@ class _BugReportPageState extends State<BugReportPage> {
         api: _githubApi,
       ),
     );
+    _githubCapability = _githubAuth.getCapability();
     if (widget.crashData != null) {
       _category = BugCategory.crash;
       _severity = BugSeverity.high;
@@ -335,6 +337,53 @@ class _BugReportPageState extends State<BugReportPage> {
         child: ListView(
           padding: const EdgeInsets.all(28),
           children: [
+            FutureBuilder<GitHubReportingCapability>(
+              future: _githubCapability,
+              builder: (context, snapshot) {
+                final capability = snapshot.data;
+                final loading = capability == null;
+                final signedOut =
+                    capability?.state ==
+                    GitHubReportingAvailability.availableSignedOut;
+                final ready =
+                    capability?.state ==
+                    GitHubReportingAvailability.signedInReady;
+                return Card(
+                  child: ListTile(
+                    leading: loading
+                        ? const SizedBox.square(
+                            dimension: 22,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Icon(
+                            ready
+                                ? Icons.check_circle_outline
+                                : Icons.cloud_outlined,
+                          ),
+                    title: Text(
+                      loading
+                          ? 'Checking GitHub reporting…'
+                          : capability.message,
+                    ),
+                    subtitle: signedOut
+                        ? const Text(
+                            'You can compose and preview the report before signing in.',
+                          )
+                        : null,
+                    trailing: loading || ready || signedOut
+                        ? null
+                        : TextButton(
+                            onPressed: () => setState(
+                              () => _githubCapability = _githubAuth
+                                  .getCapability(),
+                            ),
+                            child: const Text('Retry availability check'),
+                          ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
             Semantics(
               header: true,
               child: Row(

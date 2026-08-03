@@ -1,6 +1,6 @@
 # HardwareMon Privacy Policy
 
-_Last updated: 30 June 2026_
+_Last updated: 3 August 2026_
 
 ## Overview
 
@@ -33,8 +33,9 @@ HardwareMon stores certain data locally to provide its features, including:
 - Historical telemetry (if enabled)
 - Benchmark history
 - User-generated diagnostic reports
+- Plugin manifests, approvals, and local plugin logs
 
-These files are stored only on your device and can be removed by uninstalling the application or deleting its data.
+These files are stored only on your device. Settings reset intentionally preserves the privacy-notice acknowledgement; locally stored reports, history, and plugin data are not silently deleted by that action. They can be removed through supported in-app controls where provided, or by uninstalling HardwareMon and deleting its per-user application-data directory.
 
 ## Internet Connectivity
 
@@ -42,6 +43,18 @@ Some HardwareMon features require an internet connection, including:
 
 - Checking for application updates
 - Downloading new releases when requested by the user
+- Weather lookups, when the weather summary is enabled
+- GitHub Device Flow authentication and GitHub issue submission, when requested by the user
+
+The companion dashboard communicates over the local network. HardwareMon does not provide a HardwareMon-operated relay or cloud tunnel for that feature.
+
+## GitHub issue reporting and diagnostic exports
+
+HardwareMon can authenticate to GitHub using GitHub's Device Authorization Flow. The resulting OAuth token is stored using the operating system's protected credential storage; it is not stored in application settings or diagnostic exports.
+
+Before creating an issue, HardwareMon displays the exact Markdown issue body for review. Only that reviewed text is submitted. Optional textual diagnostics are sanitized and size-limited. GitHub Issues does not offer a general API for uploading arbitrary binary attachments, so locally exported ZIP files and screenshots remain on the device unless the user separately uploads them through GitHub.
+
+HardwareMon does not embed a personal access token, OAuth client secret, device code, or user credential in its application binaries.
 
 These connections are used solely for their intended purpose and are not used to collect hardware telemetry or benchmark data.
 

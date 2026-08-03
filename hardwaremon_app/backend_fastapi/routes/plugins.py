@@ -3,13 +3,18 @@ from __future__ import annotations
 import base64
 
 from pydantic import BaseModel, Field
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
 from plugins.broker import KNOWN_CAPABILITIES, PLUGIN_API_VERSION, PluginBroker, PluginError
 
 
 router = APIRouter(prefix="/plugins", tags=["plugins"])
-plugin_broker = PluginBroker()
+
+
+def get_plugin_broker(request: Request | None = None) -> PluginBroker:
+    if request is not None and hasattr(request.app.state, "plugin_broker"):
+        return request.app.state.plugin_broker
+    raise HTTPException(status_code=503, detail="Plugin subsystem is not ready")
 
 
 class GrantRequest(BaseModel):
@@ -32,7 +37,8 @@ def _translate(action):
 
 
 @router.get("")
-async def list_plugins():
+async def list_plugins(request: Request):
+    plugin_broker = get_plugin_broker(request)
     return {
         "api_version": PLUGIN_API_VERSION,
         "known_capabilities": sorted(KNOWN_CAPABILITIES),
@@ -41,7 +47,8 @@ async def list_plugins():
 
 
 @router.post("/install")
-async def install_plugin(request: InstallRequest):
+async def install_plugin(request: InstallRequest, http_request: Request):
+    plugin_broker = get_plugin_broker(http_request)
     try:
         payload = base64.b64decode(request.content_base64, validate=True)
     except ValueError as exc:
@@ -50,22 +57,24 @@ async def install_plugin(request: InstallRequest):
 
 
 @router.get("/{plugin_id}")
-async def plugin_details(plugin_id: str):
+async def plugin_details(plugin_id: str, request: Request):
+    plugin_broker = get_plugin_broker(request)
     return _translate(lambda: plugin_broker.plugin_details(plugin_id))
 
 
 @router.put("/{plugin_id}/grants")
-async def set_plugin_grants(plugin_id: str, request: GrantRequest):
-    return _translate(lambda: plugin_broker.set_grants(plugin_id, request.capabilities))
+async def set_plugin_grants(plugin_id: str, request: GrantRequest, http_request: Request):
+    return _translate(lambda: get_plugin_broker(http_request).set_grants(plugin_id, request.capabilities))
 
 
 @router.put("/{plugin_id}/enabled")
-async def set_plugin_enabled(plugin_id: str, request: EnableRequest):
-    return _translate(lambda: plugin_broker.set_enabled(plugin_id, request.enabled))
+async def set_plugin_enabled(plugin_id: str, request: EnableRequest, http_request: Request):
+    return _translate(lambda: get_plugin_broker(http_request).set_enabled(plugin_id, request.enabled))
 
 
 @router.post("/{plugin_id}/restart")
-async def restart_plugin(plugin_id: str):
+async def restart_plugin(plugin_id: str, request: Request):
+    plugin_broker = get_plugin_broker(request)
     def restart():
         plugin_broker.stop_plugin(plugin_id)
         plugin_broker.launch(plugin_id)
@@ -74,6 +83,7 @@ async def restart_plugin(plugin_id: str):
 
 
 @router.delete("/{plugin_id}")
-async def remove_plugin(plugin_id: str):
+async def remove_plugin(plugin_id: str, request: Request):
+    plugin_broker = get_plugin_broker(request)
     _translate(lambda: plugin_broker.remove_plugin(plugin_id))
     return {"removed": True, "id": plugin_id}

@@ -45,10 +45,19 @@ else {
 $flutterMetadata = flutter --version --machine | ConvertFrom-Json
 $flutterFrameworkVersion = $flutterMetadata.frameworkVersion
 
-flutter build windows --release `
-    --build-name="$flutterVersion" `
-    --dart-define="APP_VERSION=$flutterVersion" `
-    --dart-define="HARDWAREMON_FLUTTER_VERSION=$flutterFrameworkVersion"
+$flutterBuildArguments = @(
+    "build", "windows", "--release",
+    "--build-name=$flutterVersion",
+    "--dart-define=APP_VERSION=$flutterVersion",
+    "--dart-define=HARDWAREMON_FLUTTER_VERSION=$flutterFrameworkVersion"
+)
+if ($env:HARDWAREMON_GITHUB_CLIENT_ID) {
+    $flutterBuildArguments += "--dart-define=HARDWAREMON_GITHUB_CLIENT_ID=$($env:HARDWAREMON_GITHUB_CLIENT_ID)"
+}
+else {
+    Write-Warning "HARDWAREMON_GITHUB_CLIENT_ID is absent; this build will report GitHub issue submission as not configured."
+}
+flutter @flutterBuildArguments
 
 # Return to installer folder
 Set-Location "../installer"

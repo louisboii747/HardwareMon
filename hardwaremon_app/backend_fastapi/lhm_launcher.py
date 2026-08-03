@@ -8,6 +8,7 @@ import time
 import xml.etree.ElementTree as ET
 
 import requests
+from app_paths import ensure_app_paths
 from process_utils import hidden_process_kwargs
 
 IS_WINDOWS = platform.system() == "Windows"
@@ -22,17 +23,7 @@ def get_base_path():
 
 
 def get_lhm_runtime_dir():
-    local_app_data = os.environ.get("LOCALAPPDATA") or os.environ.get("APPDATA")
-    if local_app_data:
-        return os.path.join(local_app_data, "HardwareMon", "LibreHardwareMonitor")
-
-    return os.path.join(
-        os.path.expanduser("~"),
-        "AppData",
-        "Local",
-        "HardwareMon",
-        "LibreHardwareMonitor",
-    )
+    return str(ensure_app_paths().data_dir / "LibreHardwareMonitor")
 
 
 def prepare_lhm_runtime(source_dir):

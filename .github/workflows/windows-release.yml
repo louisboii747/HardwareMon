@@ -22,6 +22,9 @@ jobs:
 
     env:
       APP_VERSION: ${{ github.ref_name }}
+      # Public OAuth App identifier; configure as a repository Actions variable.
+      # Never place a client secret or personal access token in the desktop app.
+      HARDWAREMON_GITHUB_CLIENT_ID: ${{ vars.HARDWAREMON_GITHUB_CLIENT_ID }}
 
     steps:
       - name: Checkout repository
@@ -78,6 +81,11 @@ jobs:
         run: |
           cd installer
           ./build_installer.ps1
+
+      - name: Verify GitHub reporting build configuration
+        if: ${{ vars.HARDWAREMON_GITHUB_CLIENT_ID == '' }}
+        shell: pwsh
+        run: throw "Repository variable HARDWAREMON_GITHUB_CLIENT_ID must be configured for release builds."
 
       - name: Generate Windows checksums and release metadata
         shell: pwsh

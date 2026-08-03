@@ -135,7 +135,7 @@ class _ShellScreenState extends State<ShellScreen> {
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      StartupPrivacyNotice.show(context);
+      unawaited(StartupPrivacyNotice.showIfRequired(context));
       final updateState = UpdateService.instance.state;
       if (updateState.stage == UpdateStage.complete ||
           updateState.stage == UpdateStage.failed) {

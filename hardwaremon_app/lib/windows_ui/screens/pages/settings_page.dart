@@ -7,12 +7,14 @@ import '../../models/chart_preferences.dart';
 import '../../models/customization_preferences.dart';
 import '../../models/dashboard_preferences.dart';
 import '../../services/settings_service.dart';
+import '../../services/privacy_notice_service.dart';
 import '../../services/telemetry_service.dart';
 import '../../services/desktop_integration_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme_controller.dart';
 import '../../core/theme/hardware_palette.dart';
 import '../../widgets/update_center.dart';
+import '../../widgets/startup_privacy_notice.dart';
 import '../../../services/log_service.dart';
 import '../../../services/diagnostics_service.dart';
 import '../../../services/alert_service.dart';
@@ -79,6 +81,9 @@ class _SettingsPageState extends State<SettingsPage> {
   late final TextEditingController _weatherLocationController;
   String _searchQuery = '';
   _SettingsCategory _category = _SettingsCategory.all;
+  final PrivacyNoticeService _privacyNotices = PrivacyNoticeService();
+  PrivacyAcknowledgement _privacyAcknowledgement =
+      const PrivacyAcknowledgement();
 
   @override
   void initState() {
@@ -89,6 +94,7 @@ class _SettingsPageState extends State<SettingsPage> {
     desktopIntegration.addListener(_onDesktopIntegrationChanged);
     _loadSettings();
     _loadBuildInfo();
+    _loadPrivacyAcknowledgement();
   }
 
   @override
@@ -141,6 +147,9 @@ class _SettingsPageState extends State<SettingsPage> {
       _showSection('Updates', _SettingsCategory.updates, const [
         'version channel auto check',
       ]) ||
+      _showSection('Privacy & Data', _SettingsCategory.system, const [
+        'local data policy github diagnostics telemetry',
+      ]) ||
       _showSection('Advanced', _SettingsCategory.system, const [
         'logs diagnostics export reset summary',
       ]) ||
@@ -168,6 +177,11 @@ class _SettingsPageState extends State<SettingsPage> {
     final loaded = await BuildInfoService().load();
     if (!mounted) return;
     setState(() => buildInfo = loaded);
+  }
+
+  Future<void> _loadPrivacyAcknowledgement() async {
+    final value = await _privacyNotices.load();
+    if (mounted) setState(() => _privacyAcknowledgement = value);
   }
 
   Future<void> _updateSettings(AppSettings updatedSettings) async {
@@ -728,6 +742,44 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   icon: const Icon(Icons.schedule_send_rounded),
                   label: const Text('View'),
+                ),
+              ),
+            ]),
+
+          if (_showSection('Privacy & Data', _SettingsCategory.system, const [
+            'local data policy github diagnostics telemetry',
+          ]))
+            _buildSection('Privacy & Data', [
+              const ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text('Local data handling'),
+                subtitle: Text(
+                  'Telemetry, settings, history, benchmarks, diagnostics, and plugin metadata are stored locally. Network features are identified before use.',
+                ),
+              ),
+              _settingRow(
+                'Accepted notice version',
+                Text(
+                  _privacyAcknowledgement.acceptedVersion?.toString() ??
+                      'Not yet acknowledged',
+                ),
+              ),
+              _settingRow(
+                'Privacy notice',
+                FilledButton.tonalIcon(
+                  onPressed: () async {
+                    await StartupPrivacyNotice.showDetails(context);
+                    await _loadPrivacyAcknowledgement();
+                  },
+                  icon: const Icon(Icons.shield_outlined),
+                  label: const Text('Review'),
+                ),
+              ),
+              const ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text('GitHub reports and exports'),
+                subtitle: Text(
+                  'Only reviewed Markdown is submitted to GitHub. Diagnostic exports and local binary files stay on this device and are not uploaded as issue attachments.',
                 ),
               ),
             ]),

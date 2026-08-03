@@ -52,6 +52,24 @@ enum GitHubAuthStatus {
   failed,
 }
 
+enum GitHubReportingAvailability {
+  checking,
+  availableSignedOut,
+  signedInReady,
+  missingConfiguration,
+  credentialStorageUnavailable,
+  networkUnavailable,
+  apiUnavailable,
+  authenticationExpired,
+}
+
+class GitHubReportingCapability {
+  const GitHubReportingCapability(this.state, this.message, {this.user});
+  final GitHubReportingAvailability state;
+  final String message;
+  final GitHubUser? user;
+}
+
 class GitHubUser {
   const GitHubUser({required this.login, this.avatarUrl});
   final String login;
@@ -238,7 +256,24 @@ class GitHubDeviceFlowAuthService implements GitHubAuthService {
 
   @override
   Future<GitHubAuthState> getAuthState() async {
-    final token = await tokenStore.read();
+    if (!config.isConfigured) {
+      return GitHubAuthState(
+        GitHubAuthStatus.failed,
+        message: config.configurationMessage,
+      );
+    }
+    String? token;
+    try {
+      token = await tokenStore.read();
+    } catch (_) {
+      _emit(
+        const GitHubAuthState(
+          GitHubAuthStatus.failed,
+          message: 'Protected credential storage is unavailable.',
+        ),
+      );
+      return _state;
+    }
     if (token == null) {
       _emit(const GitHubAuthState(GitHubAuthStatus.signedOut));
       return _state;
@@ -261,6 +296,47 @@ class GitHubDeviceFlowAuthService implements GitHubAuthService {
       }
     }
     return _state;
+  }
+
+  Future<GitHubReportingCapability> getCapability() async {
+    if (!config.isConfigured) {
+      return GitHubReportingCapability(
+        GitHubReportingAvailability.missingConfiguration,
+        config.configurationMessage,
+      );
+    }
+    final state = await getAuthState();
+    return switch (state.status) {
+      GitHubAuthStatus.signedOut => const GitHubReportingCapability(
+        GitHubReportingAvailability.availableSignedOut,
+        'GitHub reporting is available. Connect GitHub to submit a report.',
+      ),
+      GitHubAuthStatus.signedIn => GitHubReportingCapability(
+        GitHubReportingAvailability.signedInReady,
+        'Signed in and ready to submit.',
+        user: state.user,
+      ),
+      GitHubAuthStatus.expiredOrRevoked => GitHubReportingCapability(
+        GitHubReportingAvailability.authenticationExpired,
+        state.message ?? 'Reconnect GitHub to continue.',
+      ),
+      GitHubAuthStatus.failed
+          when state.message ==
+              'Protected credential storage is unavailable.' =>
+        GitHubReportingCapability(
+          GitHubReportingAvailability.credentialStorageUnavailable,
+          state.message!,
+        ),
+      GitHubAuthStatus.failed => GitHubReportingCapability(
+        GitHubReportingAvailability.networkUnavailable,
+        state.message ??
+            'GitHub could not be reached. Retry the availability check.',
+      ),
+      _ => const GitHubReportingCapability(
+        GitHubReportingAvailability.checking,
+        'Checking GitHub reporting…',
+      ),
+    };
   }
 
   @override

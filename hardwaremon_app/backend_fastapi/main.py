@@ -1,9 +1,11 @@
 import os
 import sys
 import threading
+import logging
 from contextlib import asynccontextmanager
 from multiprocessing import freeze_support
 
+from app_paths import ensure_app_paths, startup_diagnostics
 from database.database import init_database
 from database.logging_service import start_logging
 from fastapi import FastAPI
@@ -14,7 +16,7 @@ from routes.gaming import router as gaming_router
 from routes.history import router as history_router
 from routes.inventory import router as inventory_router
 from routes.optimization import router as optimization_router
-from routes.plugins import plugin_broker
+from plugins.broker import PluginBroker
 from routes.plugins import router as plugins_router
 from routes.processes import router as processes_router
 from telemetry.network import router as network_router
@@ -29,20 +31,36 @@ freeze_support()  # Ensure compatibility with Windows
 
 @asynccontextmanager
 async def lifespan(_app):
+    paths = ensure_app_paths()
+    diagnostics = startup_diagnostics(paths)
+    logging.getLogger("hardwaremon.startup").info("startup_paths %s", diagnostics)
+    _app.state.startup_diagnostics = diagnostics
+    _app.state.database_ready = False
+    _app.state.plugin_status = {"state": "initializing", "error": None}
     init_database()
+    _app.state.database_ready = True
 
     # LHM can require elevation and may take several seconds to expose its web
     # server. It must not delay FastAPI from accepting the GUI's health checks.
     threading.Thread(target=start_lhm, daemon=True, name="lhm-launcher").start()
     start_logging()
     gaming_service.start()
-    plugin_broker.start()
+    plugin_broker = None
+    try:
+        plugin_broker = PluginBroker(data_dir=paths.data_dir)
+        plugin_broker.start()
+        _app.state.plugin_broker = plugin_broker
+        _app.state.plugin_status = {"state": "ready", "error": None}
+    except Exception as exc:
+        logging.getLogger("hardwaremon.startup").exception("Plugin subsystem degraded")
+        _app.state.plugin_status = {"state": "degraded", "error": str(exc)}
 
     try:
         yield
     finally:
         gaming_service.stop()
-        plugin_broker.stop()
+        if plugin_broker is not None:
+            plugin_broker.stop()
 
 
 app = FastAPI(
@@ -69,6 +87,17 @@ async def root():
         "status": "online",
         "backend": "HardwareMon FastAPI",
         "version": BACKEND_VERSION,
+    }
+
+
+@app.get("/health")
+async def health():
+    return {
+        "status": "healthy",
+        "core": "ready",
+        "database": "ready" if app.state.database_ready else "not_ready",
+        "plugins": app.state.plugin_status,
+        "startup": app.state.startup_diagnostics,
     }
 
 
