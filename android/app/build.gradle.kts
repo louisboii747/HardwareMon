@@ -56,7 +56,7 @@ android {
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2025.08.01")
     val activityVersion = "1.13.0"
-    val lifecycleVersion = "2.9.4"
+    val lifecycleVersion = "2.11.0"
 
     implementation(composeBom)
     androidTestImplementation(composeBom)
@@ -75,6 +75,6 @@ dependencies {
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
 }
