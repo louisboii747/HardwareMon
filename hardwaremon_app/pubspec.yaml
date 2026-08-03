@@ -35,7 +35,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   fl_chart: ^1.2.0
-  intl: ^0.20.2
+  intl: ^0.20.3
   http: ^1.6.0
 
   google_fonts: ^8.2.0
@@ -43,7 +43,7 @@ dependencies:
   window_manager: ^0.5.2
   animations: ^2.0.11
   shared_preferences: ^2.5.3
-  path_provider: ^2.1.5
+  path_provider: ^2.1.6
   package_info_plus: ^10.2.1
   local_notifier: ^0.1.6
   tray_manager: ^0.5.3
