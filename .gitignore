@@ -38,6 +38,9 @@ __pycache__/
 
 hardwaremon_app/build/
 
+# Sentry Native / Crashpad runtime database
+hardwaremon_app/.sentry-native/
+
 # Generated Windows Flutter files
 hardwaremon_app/windows/flutter/generated_plugin_registrant.cc
 hardwaremon_app/windows/flutter/generated_plugins.cmake
