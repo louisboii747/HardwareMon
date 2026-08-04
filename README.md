@@ -33,6 +33,9 @@
 
 <img src="https://img.shields.io/github/v/release/louisboii747/HardwareMon" alt="Release">
 <img src="https://img.shields.io/github/downloads/louisboii747/HardwareMon/total" alt="Downloads">
+<a href="https://sourceforge.net/projects/hardwaremon/" aria-label="HardwareMon on SourceForge">
+<img src="https://img.shields.io/badge/SourceForge-Rising%20Star-ff6600?logo=sourceforge&logoColor=white" alt="SourceForge Rising Star Award">
+</a>
 
 <img src="https://img.shields.io/badge/Linux-supported-2bbc8a?logo=linux" alt="Linux">
 <img src="https://img.shields.io/badge/Windows-supported-0078D6?logo=windows" alt="Windows">
