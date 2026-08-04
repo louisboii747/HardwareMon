@@ -20,7 +20,8 @@ import 'package:flutter_gui/widgets/alert_settings_widgets.dart';
 import 'package:flutter_gui/bug_reporting/bug_report_services.dart';
 import 'package:flutter_gui/windows_ui/screens/pages/bug_report_page.dart';
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart';import 'package:sentry_flutter/sentry_flutter.dart';
+
 
 // ─── Global hardware info ────────────────────────────────────────────────────
 String cpuName = "—";
@@ -298,7 +299,20 @@ Future<void> main() async {
     logBackend('Starting the UI without a backend connection');
   }
 
-  runApp(const HardwareMonApp());
+  await SentryFlutter.init(
+    (options) {
+      options.dsn = 'https://fdb4a98d7a18212211a470810900a69f@o4511852377931776.ingest.de.sentry.io/4511852384223312';
+      // Set tracesSampleRate to 1.0 to capture 100% of transactions for tracing.
+      // We recommend adjusting this value in production.
+      options.tracesSampleRate = 1.0;
+      // The sampling rate for profiling is relative to tracesSampleRate
+      // Setting to 1.0 will profile 100% of sampled transactions:
+      options.profilesSampleRate = 1.0;
+    },
+    appRunner: () => runApp(SentryWidget(child: const HardwareMonApp())),
+  );
+  // TODO: Remove this line after sending the first sample event to sentry.
+  await Sentry.captureException(Exception('This is a sample exception.'));
 }
 
 // ─── App root ─────────────────────────────────────────────────────────────────
