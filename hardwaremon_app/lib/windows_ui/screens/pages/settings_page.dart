@@ -785,7 +785,7 @@ class _SettingsPageState extends State<SettingsPage> {
             ]),
 
           if (_showSection('Advanced', _SettingsCategory.system, const [
-            'logs diagnostics export reset summary',
+            'logs diagnostics export reset summary sentry error monitoring',
           ]))
             _buildSection('Advanced', [
               _settingRow(
@@ -874,6 +874,16 @@ class _SettingsPageState extends State<SettingsPage> {
                 ElevatedButton(
                   onPressed: _copySettingsSummary,
                   child: const Text('Copy'),
+                ),
+              ),
+
+              _settingRow(
+                'Verify Sentry Setup',
+                ElevatedButton(
+                  onPressed: () {
+                    throw StateError('This is test exception');
+                  },
+                  child: const Text('Send test error'),
                 ),
               ),
 
