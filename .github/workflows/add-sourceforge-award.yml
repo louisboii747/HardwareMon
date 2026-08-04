@@ -1,0 +1,46 @@
+name: Add SourceForge award badge
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/add-sourceforge-award.yml
+
+permissions:
+  contents: write
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Add responsive award badge
+        shell: python
+        run: |
+          from pathlib import Path
+
+          readme = Path("README.md")
+          content = readme.read_text(encoding="utf-8")
+          anchor = '<img src="https://img.shields.io/github/downloads/louisboii747/HardwareMon/total" alt="Downloads">'
+          badge = '''<a href="https://sourceforge.net/projects/hardwaremon/" aria-label="HardwareMon on SourceForge">
+          <img src="https://img.shields.io/badge/SourceForge-Rising%20Star-ff6600?logo=sourceforge&logoColor=white" alt="SourceForge Rising Star Award">
+          </a>'''
+
+          if "SourceForge Rising Star Award" not in content:
+              if anchor not in content:
+                  raise SystemExit("Could not find the existing downloads badge anchor")
+              content = content.replace(anchor, f"{anchor}\n{badge}", 1)
+              readme.write_text(content, encoding="utf-8")
+
+          Path(".github/workflows/add-sourceforge-award.yml").unlink()
+
+      - name: Commit README update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md .github/workflows/add-sourceforge-award.yml
+          git commit -m "docs: add SourceForge Rising Star badge"
+          git push
