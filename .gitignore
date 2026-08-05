@@ -90,3 +90,9 @@ hardwaremon.db
 LibreHardwareMonitor.config
 hardwaremon-private.asc
 private-key-base64.txt
+
+# ─────────────────────────────────────────────
+# Local Agent Skills
+# ─────────────────────────────────────────────
+
+/.agents/
