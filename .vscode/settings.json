@@ -7,15 +7,12 @@
         {
           "name": "HardwareMon Backend",
           "commands": [
-            "cd backend_fastapi",
-            "python main.py"
+            "cd backend_fastapi"
           ]
         },
         {
-          "name": "HardwareMon Windows",
-          "commands": [
-            "flutter run -d windows"
-          ]
+          "name": "HardwareMon App",
+          "commands": []
         }
       ]
     }
