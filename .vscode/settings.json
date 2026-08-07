@@ -1,0 +1,23 @@
+{
+  "restoreTerminals.runOnStartup": true,
+  "restoreTerminals.terminals": [
+    {
+      "cwd": "${workspaceFolder}/hardwaremon_app",
+      "splitTerminals": [
+        {
+          "name": "HardwareMon Backend",
+          "commands": [
+            "cd backend_fastapi",
+            "python main.py"
+          ]
+        },
+        {
+          "name": "HardwareMon Windows",
+          "commands": [
+            "flutter run -d windows"
+          ]
+        }
+      ]
+    }
+  ]
+}
