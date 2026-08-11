@@ -53,7 +53,7 @@ dependencies:
   pdf: ^3.11.3
   file_selector: ^1.0.4
   archive: ^4.0.7
-  flutter_secure_storage: ^10.3.1
+  flutter_secure_storage: ^11.0.0
   url_launcher: ^6.3.2
 
 dev_dependencies:
