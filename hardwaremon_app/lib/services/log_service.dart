@@ -14,20 +14,55 @@ class LogService {
       await Process.run('explorer.exe', [logsPath]);
     } else if (Platform.isLinux) {
       await Process.run('xdg-open', [logsPath]);
+    } else if (Platform.isMacOS) {
+      await Process.run('open', [logsPath]);
+    } else {
+      throw UnsupportedError('Platform not supported');
     }
   }
 
   static Future<String> getLogsDirectory() async {
-    if (Platform.isWindows) {
-      final appData = Platform.environment['LOCALAPPDATA'];
-      return '$appData\\HardwareMon\\logs';
-    }
+    return logsDirectoryFor(
+      operatingSystem: Platform.operatingSystem,
+      environment: Platform.environment,
+    );
+  }
 
-    if (Platform.isLinux) {
-      final home = Platform.environment['HOME'];
-      return '$home/.local/share/hardwaremon/logs';
+  static String logsDirectoryFor({
+    required String operatingSystem,
+    required Map<String, String> environment,
+  }) {
+    switch (operatingSystem.toLowerCase()) {
+      case 'windows':
+        final appData = _requiredDirectory(
+          environment,
+          'LOCALAPPDATA',
+          operatingSystem,
+        );
+        return '$appData\\HardwareMon\\logs';
+      case 'linux':
+        final home = _requiredDirectory(environment, 'HOME', operatingSystem);
+        return '$home/.local/share/hardwaremon/logs';
+      case 'macos':
+        final home = _requiredDirectory(environment, 'HOME', operatingSystem);
+        return '$home/Library/Logs/HardwareMon';
+      default:
+        throw UnsupportedError('Platform not supported: $operatingSystem');
     }
+  }
 
-    throw UnsupportedError('Platform not supported');
+  static String _requiredDirectory(
+    Map<String, String> environment,
+    String key,
+    String operatingSystem,
+  ) {
+    final value = environment[key]?.trim();
+    if (value == null || value.isEmpty) {
+      throw StateError(
+        '$key is unavailable; cannot resolve HardwareMon logs on '
+        '$operatingSystem.',
+      );
+    }
+    return value;
   }
 }

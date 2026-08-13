@@ -69,6 +69,13 @@ jobs:
         working-directory: ${{ env.APP_PATH }}
         run: flutter pub get
 
+      - name: Test macOS updater and log paths
+        working-directory: ${{ env.APP_PATH }}
+        run: >-
+          flutter test
+          test/log_service_test.dart
+          test/update_service_test.dart
+
       - name: Build Flutter macOS app
         working-directory: ${{ env.APP_PATH }}
         run: >-

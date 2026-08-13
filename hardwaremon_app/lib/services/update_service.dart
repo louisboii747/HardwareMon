@@ -354,7 +354,7 @@ class UpdateService extends ChangeNotifier {
           packageType: _runtime.platform == UpdatePlatform.windows
               ? UpdatePackageType.windowsInstaller
               : _runtime.platform == UpdatePlatform.macos
-              ? UpdatePackageType.macosDmg
+              ? _macosPackageTypeForExecutable(_runtime.executablePath)
               : UpdatePackageType.manual,
           channel: _runtime.isDebug
               ? UpdateBuildChannel.localDebug
@@ -674,6 +674,14 @@ class UpdateService extends ChangeNotifier {
         _state.latestVersion,
       ], ProcessStartMode.detached);
     } else if (_state.packageType == UpdatePackageType.macosDmg) {
+      if (_macosPackageTypeForExecutable(_runtime.executablePath) !=
+          UpdatePackageType.macosDmg) {
+        throw StateError(
+          'HardwareMon must be copied out of the disk image before it can '
+          'update itself.',
+        );
+      }
+      final targetApp = _macosAppBundlePath(_runtime.executablePath);
       final helper = await _writeMacosHelper(
         packageFile: packageFile,
         marker: marker,
@@ -681,7 +689,7 @@ class UpdateService extends ChangeNotifier {
       await _processStarter('/bin/sh', [
         helper.path,
         packageFile.path,
-        _macosAppBundlePath(_runtime.executablePath),
+        targetApp,
         '${_runtime.processId}',
         marker.path,
         _state.latestVersion,
@@ -811,7 +819,7 @@ class UpdateService extends ChangeNotifier {
     if (_runtime.platform == UpdatePlatform.windows) {
       packageType = UpdatePackageType.windowsInstaller;
     } else if (_runtime.platform == UpdatePlatform.macos) {
-      packageType = UpdatePackageType.macosDmg;
+      packageType = _macosPackageTypeForExecutable(_runtime.executablePath);
     } else if (_runtime.platform == UpdatePlatform.linux) {
       final linuxPackage = await _detectLinuxPackage();
       packageType = linuxPackage.type;
@@ -1079,29 +1087,54 @@ TARGET_APP="$2"
 APP_PID="$3"
 MARKER_PATH="$4"
 VERSION="$5"
-LOG_PATH="$(dirname "$MARKER_PATH")/updater-helper.log"
-WORK_PATH="$(dirname "$PACKAGE_PATH")/macos-install"
+LOG_PATH="$(/usr/bin/dirname "$MARKER_PATH")/updater-helper.log"
+WORK_PATH="$(/usr/bin/dirname "$PACKAGE_PATH")/macos-install"
 MOUNT_PATH="$WORK_PATH/mount"
 STAGED_APP="$WORK_PATH/HardwareMon.app"
 PRIVILEGED_HELPER="$WORK_PATH/replace-app.sh"
+MOUNTED=false
+
+/bin/mkdir -p "$(/usr/bin/dirname "$LOG_PATH")"
+exec >> "$LOG_PATH" 2>&1
 
 log_update() {
-  mkdir -p "$(dirname "$LOG_PATH")"
-  printf '%s %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$1" >> "$LOG_PATH"
+  printf '%s %s\n' "$(/bin/date -u '+%Y-%m-%dT%H:%M:%SZ')" "$1"
 }
 
 write_result() {
-  mkdir -p "$(dirname "$MARKER_PATH")"
+  /bin/mkdir -p "$(/usr/bin/dirname "$MARKER_PATH")"
   TEMP_MARKER="$MARKER_PATH.tmp"
   printf '%s\n%s\n%s\n' "$1" "$VERSION" "$2" > "$TEMP_MARKER"
-  mv -f "$TEMP_MARKER" "$MARKER_PATH"
+  /bin/mv -f "$TEMP_MARKER" "$MARKER_PATH"
   log_update "$2"
 }
 
-log_update "Helper started for version $VERSION; waiting for PID $APP_PID."
+cleanup() {
+  if [ "$MOUNTED" = true ]; then
+    /usr/bin/hdiutil detach "$MOUNT_PATH" >/dev/null 2>&1 ||
+      /usr/bin/hdiutil detach "$MOUNT_PATH" -force >/dev/null 2>&1
+  fi
+  /bin/rm -rf "$WORK_PATH"
+}
+trap cleanup EXIT
+trap 'exit 1' HUP INT TERM
+
+case "$TARGET_APP" in
+  /Volumes/*|*/AppTranslocation/*)
+    write_result failed "HardwareMon must be copied out of the disk image before it can update itself."
+    exit 1
+    ;;
+  /*.app) ;;
+  *)
+    write_result failed "The current HardwareMon app location is not safe to replace."
+    exit 1
+    ;;
+esac
+
+log_update "Helper started for version $VERSION; target=$TARGET_APP; waiting for PID $APP_PID."
 WAIT_COUNT=0
 while kill -0 "$APP_PID" 2>/dev/null && [ "$WAIT_COUNT" -lt 360 ]; do
-  sleep 0.25
+  /bin/sleep 0.25
   WAIT_COUNT=$((WAIT_COUNT + 1))
 done
 
@@ -1110,57 +1143,120 @@ if kill -0 "$APP_PID" 2>/dev/null; then
   exit 1
 fi
 
-rm -rf "$WORK_PATH"
-mkdir -p "$MOUNT_PATH"
-if ! hdiutil attach "$PACKAGE_PATH" -nobrowse -readonly -mountpoint "$MOUNT_PATH" >/dev/null; then
+/bin/rm -rf "$WORK_PATH"
+/bin/mkdir -p "$MOUNT_PATH"
+
+if ! /usr/bin/hdiutil verify "$PACKAGE_PATH"; then
+  write_result failed "The macOS disk image failed its integrity check."
+  exit 1
+fi
+
+if ! /usr/bin/hdiutil attach "$PACKAGE_PATH" -nobrowse -readonly -mountpoint "$MOUNT_PATH"; then
   write_result failed "The macOS disk image could not be mounted."
   exit 1
 fi
+MOUNTED=true
 
-SOURCE_APP="$(find "$MOUNT_PATH" -maxdepth 2 -type d -name 'HardwareMon.app' -print -quit)"
-if [ -z "$SOURCE_APP" ]; then
-  hdiutil detach "$MOUNT_PATH" -force >/dev/null 2>&1
-  write_result failed "HardwareMon.app was not found in the disk image."
+# The release workflow puts HardwareMon.app at the DMG root. Requiring that
+# exact layout avoids GNU-only find flags and prevents selecting an unexpected
+# nested application bundle.
+SOURCE_APP="$MOUNT_PATH/HardwareMon.app"
+INFO_PLIST="$SOURCE_APP/Contents/Info.plist"
+if [ ! -d "$SOURCE_APP" ] || [ ! -f "$INFO_PLIST" ]; then
+  write_result failed "HardwareMon.app was not found at the expected location in the disk image."
   exit 1
 fi
 
-if ! ditto "$SOURCE_APP" "$STAGED_APP"; then
-  hdiutil detach "$MOUNT_PATH" -force >/dev/null 2>&1
+BUNDLE_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$INFO_PLIST" 2>/dev/null)"
+SOURCE_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$INFO_PLIST" 2>/dev/null)"
+if [ "$BUNDLE_ID" != "com.hardwaremon.HardwareMon" ]; then
+  write_result failed "The disk image contains an unexpected application bundle."
+  exit 1
+fi
+if [ "$SOURCE_VERSION" != "$VERSION" ]; then
+  write_result failed "The disk image version does not match the requested update."
+  exit 1
+fi
+if ! /usr/bin/codesign --verify --deep --strict --verbose=2 "$SOURCE_APP"; then
+  write_result failed "The HardwareMon application signature is invalid."
+  exit 1
+fi
+
+if ! /usr/bin/ditto "$SOURCE_APP" "$STAGED_APP"; then
   write_result failed "HardwareMon.app could not be copied from the disk image."
   exit 1
 fi
-hdiutil detach "$MOUNT_PATH" >/dev/null 2>&1 || hdiutil detach "$MOUNT_PATH" -force >/dev/null 2>&1
+if ! /usr/bin/codesign --verify --deep --strict --verbose=2 "$STAGED_APP"; then
+  write_result failed "The staged HardwareMon application signature is invalid."
+  exit 1
+fi
+
+/usr/bin/hdiutil detach "$MOUNT_PATH" >/dev/null 2>&1 ||
+  /usr/bin/hdiutil detach "$MOUNT_PATH" -force >/dev/null 2>&1
+MOUNTED=false
 
 cat > "$PRIVILEGED_HELPER" <<'INSTALL_SCRIPT'
 #!/bin/sh
-set -e
+set -eu
 SOURCE_APP="$1"
 TARGET_APP="$2"
-TARGET_PARENT="$(dirname "$TARGET_APP")"
-mkdir -p "$TARGET_PARENT"
-rm -rf "$TARGET_APP"
-ditto "$SOURCE_APP" "$TARGET_APP"
+TARGET_PARENT="$(/usr/bin/dirname "$TARGET_APP")"
+NEW_APP="$TARGET_PARENT/.HardwareMon.update.$$"
+BACKUP_APP="$TARGET_PARENT/.HardwareMon.backup.$$"
+
+rollback() {
+  EXIT_CODE=$?
+  trap - EXIT
+  /bin/rm -rf "$NEW_APP"
+  if [ -d "$BACKUP_APP" ]; then
+    /bin/rm -rf "$TARGET_APP"
+    /bin/mv "$BACKUP_APP" "$TARGET_APP"
+  fi
+  exit "$EXIT_CODE"
+}
+trap rollback EXIT
+
+/bin/mkdir -p "$TARGET_PARENT"
+/bin/rm -rf "$NEW_APP" "$BACKUP_APP"
+/usr/bin/ditto "$SOURCE_APP" "$NEW_APP"
+/usr/bin/codesign --verify --deep --strict --verbose=2 "$NEW_APP"
+
+if [ -d "$TARGET_APP" ]; then
+  /bin/mv "$TARGET_APP" "$BACKUP_APP"
+elif [ -e "$TARGET_APP" ]; then
+  echo "The HardwareMon install target exists but is not an app bundle." >&2
+  exit 1
+fi
+
+/bin/mv "$NEW_APP" "$TARGET_APP"
+/usr/bin/codesign --verify --deep --strict --verbose=2 "$TARGET_APP"
+/bin/rm -rf "$BACKUP_APP"
+trap - EXIT
 INSTALL_SCRIPT
-chmod 700 "$PRIVILEGED_HELPER"
+/bin/chmod 700 "$PRIVILEGED_HELPER"
 
 if ! /usr/bin/osascript - "$PRIVILEGED_HELPER" "$STAGED_APP" "$TARGET_APP" <<'APPLESCRIPT'
 on run argv
   set helperPath to item 1 of argv
   set sourcePath to item 2 of argv
   set targetPath to item 3 of argv
-  do shell script quoted form of helperPath & " " & quoted form of sourcePath & " " & quoted form of targetPath with administrator privileges
+  set installCommand to quoted form of helperPath & " " & quoted form of sourcePath & " " & quoted form of targetPath
+  do shell script installCommand with administrator privileges
 end run
 APPLESCRIPT
 then
-  write_result failed "The macOS installation was cancelled or failed."
+  write_result failed "The macOS installation was cancelled or failed. The previous app was preserved."
   exit 1
 fi
 
-write_result success "HardwareMon was updated successfully."
-log_update "Restarting HardwareMon from $TARGET_APP."
-open "$TARGET_APP"
-rm -f -- "$PACKAGE_PATH"
-rm -rf "$WORK_PATH"
+if /usr/bin/open "$TARGET_APP"; then
+  write_result success "HardwareMon was updated successfully."
+  log_update "Restarted HardwareMon from $TARGET_APP."
+else
+  write_result success "HardwareMon was updated, but macOS could not relaunch it automatically."
+  log_update "Automatic relaunch failed; the installed app remains at $TARGET_APP."
+fi
+/bin/rm -f "$PACKAGE_PATH"
 ''');
     return helper;
   }
@@ -1226,6 +1322,11 @@ rm -rf "$WORK_PATH"
     }
     if (!updateAvailable) {
       return 'HardwareMon is up to date.';
+    }
+    if (packageType == UpdatePackageType.manual &&
+        _runtime.platform == UpdatePlatform.macos) {
+      return 'Copy HardwareMon to Applications, open that copy, then check '
+          'again to update safely.';
     }
     if (packageType == UpdatePackageType.manual || !hasMatchingAsset) {
       return 'A newer release is available, but this installation must be '
@@ -1444,4 +1545,20 @@ String _macosAppBundlePath(String executablePath) {
     throw StateError('HardwareMon is not running from a macOS app bundle.');
   }
   return executablePath.substring(0, boundary + '.app'.length);
+}
+
+UpdatePackageType _macosPackageTypeForExecutable(String executablePath) {
+  try {
+    final bundlePath = _macosAppBundlePath(
+      executablePath,
+    ).replaceAll('\\', '/');
+    final normalized = bundlePath.toLowerCase();
+    if (normalized.startsWith('/volumes/') ||
+        normalized.contains('/apptranslocation/')) {
+      return UpdatePackageType.manual;
+    }
+    return UpdatePackageType.macosDmg;
+  } on StateError {
+    return UpdatePackageType.manual;
+  }
 }

@@ -111,6 +111,46 @@ void main() {
   });
 
   test(
+    'macOS build launched from a mounted DMG requires manual install',
+    () async {
+      final fixture = await _fixture(
+        version: '18.2.3',
+        platform: UpdatePlatform.macos,
+        executablePath:
+            '/Volumes/HardwareMon/HardwareMon.app/Contents/MacOS/HardwareMon',
+      );
+      addTearDown(fixture.dispose);
+
+      final state = await fixture.service.checkForUpdates();
+
+      expect(state.platform, UpdatePlatform.macos);
+      expect(state.packageType, UpdatePackageType.manual);
+      expect(state.updateAvailable, isTrue);
+      expect(state.asset, isNull);
+      expect(state.canInstallAutomatically, isFalse);
+      expect(state.statusMessage, contains('Copy HardwareMon to Applications'));
+    },
+  );
+
+  test(
+    'translocated macOS build does not replace its ephemeral bundle',
+    () async {
+      final fixture = await _fixture(
+        version: '18.2.3',
+        platform: UpdatePlatform.macos,
+        executablePath:
+            '/private/var/folders/AppTranslocation/HardwareMon.app/Contents/MacOS/HardwareMon',
+      );
+      addTearDown(fixture.dispose);
+
+      final state = await fixture.service.checkForUpdates();
+
+      expect(state.packageType, UpdatePackageType.manual);
+      expect(state.canInstallAutomatically, isFalse);
+    },
+  );
+
+  test(
     'development builds are not marked outdated by stable releases',
     () async {
       final fixture = await _fixture(
@@ -371,10 +411,17 @@ void main() {
       expect(starts.single.executable, '/bin/sh');
       expect(starts.single.arguments[2], '/Applications/HardwareMon.app');
       final helper = await File(starts.single.arguments.first).readAsString();
+      expect(helper, contains('/usr/bin/hdiutil verify'));
       expect(helper, contains('hdiutil attach'));
       expect(helper, contains('with administrator privileges'));
-      expect(helper, contains('ditto "\$SOURCE_APP" "\$STAGED_APP"'));
-      expect(helper, contains('open "\$TARGET_APP"'));
+      expect(helper, contains('SOURCE_APP="\$MOUNT_PATH/HardwareMon.app"'));
+      expect(helper, isNot(contains('-maxdepth')));
+      expect(helper, contains('CFBundleIdentifier'));
+      expect(helper, contains('codesign --verify --deep --strict'));
+      expect(helper, contains('BACKUP_APP='));
+      expect(helper, contains('trap rollback EXIT'));
+      expect(helper, contains('/usr/bin/ditto "\$SOURCE_APP" "\$STAGED_APP"'));
+      expect(helper, contains('/usr/bin/open "\$TARGET_APP"'));
       final shellPath = Platform.isWindows
           ? r'C:\Program Files\Git\bin\sh.exe'
           : '/bin/sh';
@@ -405,6 +452,7 @@ Future<_UpdateFixture> _fixture({
   ProcessRunner? processRunner,
   ProcessStarter? processStarter,
   List<int>? packageBytes,
+  String? executablePath,
 }) async {
   final tempDirectory = await Directory.systemTemp.createTemp(
     'hardwaremon-updater-test-',
@@ -463,11 +511,13 @@ Future<_UpdateFixture> _fixture({
       platform: platform,
       isDebug: false,
       environment: const {},
-      executablePath: platform == UpdatePlatform.windows
-          ? r'C:\Program Files\HardwareMon\flutter_gui.exe'
-          : platform == UpdatePlatform.macos
-          ? '/Applications/HardwareMon.app/Contents/MacOS/HardwareMon'
-          : '/usr/lib/hardwaremon/hardwaremon-bin',
+      executablePath:
+          executablePath ??
+          (platform == UpdatePlatform.windows
+              ? r'C:\Program Files\HardwareMon\flutter_gui.exe'
+              : platform == UpdatePlatform.macos
+              ? '/Applications/HardwareMon.app/Contents/MacOS/HardwareMon'
+              : '/usr/lib/hardwaremon/hardwaremon-bin'),
       processId: 42,
     ),
     processRunner:

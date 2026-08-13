@@ -30,6 +30,20 @@ It performs these operations in order:
 DMG creation cannot run if signing or verification fails. Nothing inside the
 app bundle is changed after its final signature is applied.
 
+## In-app updates
+
+Automatic updates work only when HardwareMon is running from a persistent app
+bundle, such as `/Applications/HardwareMon.app`. A copy launched directly from
+the mounted DMG, or from macOS App Translocation, is offered the manual release
+path instead because that location cannot be replaced safely.
+
+Before replacing the installed app, the updater verifies the DMG, requires the
+expected root-level `HardwareMon.app`, checks its bundle identifier and version,
+and validates its code signature. Replacement is transactional: the current app
+is moved to a temporary backup and restored if staging or validation fails. The
+updater never removes the macOS quarantine attribute. Helper diagnostics and the
+completion marker are stored in `~/Library/Logs/HardwareMon`.
+
 ## Ad-hoc signing status
 
 Current CI builds are ad-hoc signed because the project does not yet have an
