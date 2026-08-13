@@ -151,6 +151,18 @@ jobs:
           chmod +x .github/scripts/macos-*.sh
           xattr -cr "$PREFERRED_APP_BUNDLE"
 
+          # SwiftPM can preserve its temporary build directory as the install
+          # id of Sentry's macOS framework. Replace it with the framework's
+          # relocatable bundle path before applying the final signature.
+          SENTRY_BINARY="$PREFERRED_APP_BUNDLE/Contents/Frameworks/Sentry.framework/Versions/A/Sentry"
+          if [[ -f "$SENTRY_BINARY" ]]; then
+            install_name_tool \
+              -id "@rpath/Sentry.framework/Versions/A/Sentry" \
+              "$SENTRY_BINARY"
+            echo "Normalized Sentry framework install name:"
+            otool -D "$SENTRY_BINARY"
+          fi
+
           echo "Ad-hoc signing the complete app bundle, including embedded frameworks and helpers:"
           echo "  $PREFERRED_APP_BUNDLE"
           codesign --force --deep --sign - "$PREFERRED_APP_BUNDLE"

@@ -57,7 +57,7 @@ class StartupService {
 
   Future<StartupConfigurationStatus> detect() async {
     try {
-      return switch (platform) {
+      return await switch (platform) {
         StartupPlatform.windows => _detectWindows(),
         StartupPlatform.linux => _detectLinux(),
         StartupPlatform.unsupported => Future.value(
@@ -79,7 +79,7 @@ class StartupService {
 
   Future<StartupConfigurationResult> setEnabled(bool enabled) async {
     try {
-      return switch (platform) {
+      return await switch (platform) {
         StartupPlatform.windows => _setWindowsEnabled(enabled),
         StartupPlatform.linux => _setLinuxEnabled(enabled),
         StartupPlatform.unsupported => Future.value(

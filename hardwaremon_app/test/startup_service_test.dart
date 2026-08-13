@@ -81,4 +81,43 @@ void main() {
       contains(r'"C:\Program Files\HardwareMon\flutter_gui.exe" --startup'),
     );
   });
+
+  test('detect reports asynchronous platform failures', () async {
+    final service = StartupService(
+      platform: StartupPlatform.windows,
+      environment: const {},
+      processRunner: (executable, arguments) async {
+        throw ProcessException(executable, arguments, 'registry unavailable');
+      },
+    );
+
+    final result = await service.detect();
+
+    expect(result.supported, isFalse);
+    expect(result.enabled, isFalse);
+    expect(
+      result.description,
+      contains('Startup configuration is unavailable'),
+    );
+  });
+
+  test('setEnabled reports asynchronous platform failures', () async {
+    final service = StartupService(
+      platform: StartupPlatform.windows,
+      environment: const {},
+      processRunner: (executable, arguments) async {
+        throw ProcessException(executable, arguments, 'registry unavailable');
+      },
+    );
+
+    final result = await service.setEnabled(true);
+
+    expect(result.supported, isTrue);
+    expect(result.enabled, isFalse);
+    expect(result.success, isFalse);
+    expect(
+      result.description,
+      contains('Could not update startup configuration'),
+    );
+  });
 }
