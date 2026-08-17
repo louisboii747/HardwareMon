@@ -54,7 +54,7 @@ android {
 }
 
 dependencies {
-    val composeBom = platform("androidx.compose:compose-bom:2025.08.01")
+    val composeBom = platform("androidx.compose:compose-bom:2026.08.00")
     val activityVersion = "1.13.0"
     val lifecycleVersion = "2.11.0"
 
