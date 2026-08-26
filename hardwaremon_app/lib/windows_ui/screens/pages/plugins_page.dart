@@ -270,7 +270,7 @@ class _PluginCard extends StatelessWidget {
                 height: 44,
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: .1),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(Icons.extension_rounded, color: color),
               ),
@@ -600,7 +600,7 @@ class _SummaryTile extends StatelessWidget {
     padding: const EdgeInsets.all(15),
     decoration: BoxDecoration(
       color: AppColors.overlay(context, .04),
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(6),
       border: Border.all(color: AppColors.border(context)),
     ),
     child: Row(
@@ -644,7 +644,7 @@ class _Pill extends StatelessWidget {
     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
     decoration: BoxDecoration(
       color: color.withValues(alpha: .08),
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(6),
       border: Border.all(color: color.withValues(alpha: .22)),
     ),
     child: Text(
@@ -685,7 +685,7 @@ class _ErrorBanner extends StatelessWidget {
     padding: const EdgeInsets.all(13),
     decoration: BoxDecoration(
       color: Colors.orangeAccent.withValues(alpha: .08),
-      borderRadius: BorderRadius.circular(13),
+      borderRadius: BorderRadius.circular(6),
       border: Border.all(color: Colors.orangeAccent.withValues(alpha: .25)),
     ),
     child: Row(

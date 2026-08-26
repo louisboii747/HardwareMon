@@ -42,7 +42,7 @@ class _HardwareSkeletonCardState extends State<HardwareSkeletonCard>
           return Container(
             padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(26),
+              borderRadius: BorderRadius.circular(6),
               border: Border.all(color: AppColors.border(context)),
               gradient: LinearGradient(
                 begin: Alignment(-1.4 + phase * 2.8, -0.4),

@@ -1,18 +1,18 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:fl_chart/fl_chart.dart';
 
 import '../core/theme/app_colors.dart';
+import '../core/theme/app_typography.dart';
 import '../models/chart_preferences.dart';
 import '../models/telemetry_sample.dart';
 import '../models/telemetry_statistics.dart';
 import '../screens/metric_focus_screen.dart';
 import '../utils/telemetry_chart.dart';
 import '../utils/time_axis.dart';
-import 'glass_panel.dart';
 import 'metric_alert_action.dart';
-import 'smooth_telemetry_series.dart';
 import 'rolling_metric_text.dart';
+import 'smooth_telemetry_series.dart';
 
 class MetricCard extends StatefulWidget {
   final String title;
@@ -43,7 +43,7 @@ class MetricCard extends StatefulWidget {
     this.alertKind,
     this.alertValue,
     this.hoverEffects = true,
-    this.transitionDuration = const Duration(milliseconds: 220),
+    this.transitionDuration = const Duration(milliseconds: 180),
   });
 
   @override
@@ -58,31 +58,34 @@ class _MetricCardState extends State<MetricCard> {
     Navigator.push(
       context,
       PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 700),
-        reverseTransitionDuration: const Duration(milliseconds: 500),
+        transitionDuration: const Duration(milliseconds: 280),
+        reverseTransitionDuration: const Duration(milliseconds: 220),
         opaque: false,
-        pageBuilder: (_, _, _) {
-          return MetricFocusScreen(
-            title: widget.title,
-            value: widget.value,
-            subtitle: widget.subtitle,
-            accent: widget.accent,
-            icon: widget.icon,
-            graphPoints: widget.graphPoints,
-            chartPreferences: widget.chartPreferences,
-            metricKind: widget.metricKind,
-            statisticsSince: widget.statisticsSince,
-          );
-        },
+        pageBuilder: (_, _, _) => MetricFocusScreen(
+          title: widget.title,
+          value: widget.value,
+          subtitle: widget.subtitle,
+          accent: widget.accent,
+          icon: widget.icon,
+          graphPoints: widget.graphPoints,
+          chartPreferences: widget.chartPreferences,
+          metricKind: widget.metricKind,
+          statisticsSince: widget.statisticsSince,
+        ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return AnimatedBuilder(
-            animation: animation,
-            builder: (context, _) {
-              return Transform.scale(
-                scale: 0.98 + (animation.value * 0.02),
-                child: Opacity(opacity: animation.value, child: child),
-              );
-            },
+          final curved = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+          );
+          return FadeTransition(
+            opacity: curved,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0.018, 0),
+                end: Offset.zero,
+              ).animate(curved),
+              child: child,
+            ),
           );
         },
       ),
@@ -94,7 +97,6 @@ class _MetricCardState extends State<MetricCard> {
       ClipboardData(text: '${widget.title}: ${widget.value}'),
     );
     if (!mounted) return;
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('${widget.title} copied'),
@@ -104,17 +106,16 @@ class _MetricCardState extends State<MetricCard> {
   }
 
   Future<void> _configureAlert() async {
-    final alertKind = widget.alertKind;
-    final alertValue = widget.alertValue;
-    if (alertKind == null || alertValue == null) return;
+    final kind = widget.alertKind;
+    final value = widget.alertValue;
+    if (kind == null || value == null) return;
 
     final applied = await showMetricAlertDialog(
       context: context,
-      kind: alertKind,
-      currentValue: alertValue,
+      kind: kind,
+      currentValue: value,
     );
     if (!mounted || !applied) return;
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('${widget.title} watch applied'),
@@ -150,35 +151,24 @@ class _MetricCardState extends State<MetricCard> {
 
   @override
   Widget build(BuildContext context) {
-    final titleColor = AppColors.textSecondary(context);
-    final subtitleColor = AppColors.textMuted(context);
     final statistics = calculateTelemetryStatistics(
       widget.graphPoints,
       since: widget.statisticsSince,
     );
+    final active = widget.hoverEffects && (hovering || focused);
 
     return AnimatedBuilder(
       animation: widget.chartPreferences,
       builder: (context, _) => LayoutBuilder(
         builder: (context, constraints) {
           final compact =
-              constraints.hasBoundedHeight && constraints.maxHeight < 270;
-          final panelPadding = compact ? 16.0 : 24.0;
-          final headerSize = compact ? 36.0 : 42.0;
-          final chartHeight = compact ? 28.0 : 36.0;
-          final sectionGap = compact ? 6.0 : 10.0;
-          final hoverEffectsActive =
-              widget.hoverEffects && (hovering || focused);
-          final valueSize = compact
-              ? (hoverEffectsActive ? 32.0 : 28.0)
-              : (hoverEffectsActive ? 38.0 : 32.0);
-
+              constraints.hasBoundedHeight && constraints.maxHeight < 260;
           return Semantics(
             button: true,
             label: '${widget.title}, ${widget.value}. Open detailed chart.',
             child: Tooltip(
               message: 'Open ${widget.title} details  •  Enter',
-              waitDuration: const Duration(milliseconds: 550),
+              waitDuration: const Duration(milliseconds: 520),
               child: FocusableActionDetector(
                 mouseCursor: SystemMouseCursors.click,
                 onShowFocusHighlight: (value) =>
@@ -201,293 +191,107 @@ class _MetricCardState extends State<MetricCard> {
                   child: GestureDetector(
                     onTap: _openMetric,
                     onSecondaryTapDown: _showContextMenu,
-                    child: AnimatedScale(
-                      duration: widget.transitionDuration,
-                      curve: Curves.easeOutCubic,
-                      scale: hoverEffectsActive ? 1.01 : 1,
+                    child: Hero(
+                      tag: widget.title,
                       child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 180),
-                        padding: const EdgeInsets.all(2),
+                        duration: widget.transitionDuration,
+                        curve: Curves.easeOutCubic,
+                        padding: EdgeInsets.all(compact ? 14 : 18),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(26),
+                          color: active
+                              ? Color.alphaBlend(
+                                  widget.accent.withValues(alpha: 0.045),
+                                  AppColors.surface(context),
+                                )
+                              : AppColors.surface(context),
+                          borderRadius: BorderRadius.circular(4),
                           border: Border.all(
                             color: focused
-                                ? widget.accent.withValues(alpha: 0.75)
-                                : Colors.transparent,
-                            width: 2,
+                                ? widget.accent
+                                : AppColors.rule(context),
+                            width: focused ? 1.5 : 1,
                           ),
                         ),
-                        child: Hero(
-                          tag: widget.title,
-                          child: GlassPanel(
-                            padding: EdgeInsets.all(panelPadding),
-                            glowColor: widget.accent,
-                            interactive: widget.hoverEffects,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      width: headerSize,
-                                      height: headerSize,
-
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(14),
-                                        color: widget.accent.withValues(
-                                          alpha: 0.12,
-                                        ),
-                                      ),
-
-                                      child: Icon(
-                                        widget.icon,
-                                        color: widget.accent,
-                                        size: 20,
-                                      ),
-                                    ),
-
-                                    const Spacer(),
-
-                                    if (statistics.sampleCount > 1) ...[
-                                      _TrendBadge(
-                                        statistics: statistics,
-                                        metricKind: widget.metricKind,
-                                      ),
-                                      const SizedBox(width: 6),
-                                    ],
-
-                                    AnimatedSwitcher(
-                                      duration: const Duration(
-                                        milliseconds: 160,
-                                      ),
-                                      child: hoverEffectsActive
-                                          ? Row(
-                                              key: const ValueKey('actions'),
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                if (widget.alertKind != null)
-                                                  Tooltip(
-                                                    message:
-                                                        'Create or edit a metric watch',
-                                                    child: IconButton(
-                                                      onPressed:
-                                                          _configureAlert,
-                                                      visualDensity:
-                                                          VisualDensity.compact,
-                                                      iconSize: 15,
-                                                      icon: const Icon(
-                                                        Icons
-                                                            .notifications_none_rounded,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                Tooltip(
-                                                  message: 'Copy current value',
-                                                  child: IconButton(
-                                                    onPressed: _copyValue,
-                                                    visualDensity:
-                                                        VisualDensity.compact,
-                                                    iconSize: 15,
-                                                    icon: const Icon(
-                                                      Icons.copy_rounded,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            )
-                                          : const SizedBox.shrink(
-                                              key: ValueKey('hidden'),
-                                            ),
-                                    ),
-
-                                    const SizedBox(width: 4),
-
-                                    Container(
-                                      width: 8,
-                                      height: 8,
-
-                                      decoration: BoxDecoration(
-                                        color: widget.accent,
-                                        shape: BoxShape.circle,
-
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: widget.accent.withValues(
-                                              alpha: 0.45,
-                                            ),
-                                            blurRadius: 10,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-
-                                SizedBox(height: sectionGap),
-
-                                SizedBox(
-                                  height: chartHeight,
-                                  child: SmoothTelemetrySeries(
-                                    samples: widget.graphPoints,
-                                    duration: widget
-                                        .chartPreferences
-                                        .animationDuration,
-                                    builder: (context, animatedSamples) {
-                                      return LayoutBuilder(
-                                        builder: (context, constraints) {
-                                          final scale = generateTimeAxisTicks(
-                                            samples: animatedSamples,
-                                            width: constraints.maxWidth,
-                                            density: widget
-                                                .chartPreferences
-                                                .timelineDensity,
-                                          );
-                                          final chartMaxY = telemetryChartMaxY(
-                                            animatedSamples,
-                                            widget.metricKind,
-                                          );
-
-                                          return LineChart(
-                                            LineChartData(
-                                              minX: 0,
-                                              maxX: scale.maxX,
-                                              minY: 0,
-                                              maxY: chartMaxY,
-                                              gridData: FlGridData(
-                                                show: widget
-                                                    .chartPreferences
-                                                    .gridLines,
-                                                drawHorizontalLine: true,
-                                                horizontalInterval:
-                                                    chartMaxY / 2,
-                                                drawVerticalLine: true,
-                                                verticalInterval:
-                                                    scale.tickInterval,
-                                                getDrawingHorizontalLine: (_) =>
-                                                    FlLine(
-                                                      color: AppColors.overlay(
-                                                        context,
-                                                        0.025,
-                                                      ),
-                                                      strokeWidth: 1,
-                                                    ),
-                                                getDrawingVerticalLine: (_) =>
-                                                    FlLine(
-                                                      color: AppColors.overlay(
-                                                        context,
-                                                        0.03,
-                                                      ),
-                                                      strokeWidth: 1,
-                                                    ),
-                                              ),
-                                              titlesData: const FlTitlesData(
-                                                show: false,
-                                              ),
-                                              borderData: FlBorderData(
-                                                show: false,
-                                              ),
-                                              lineTouchData:
-                                                  const LineTouchData(
-                                                    enabled: false,
-                                                  ),
-                                              lineBarsData: [
-                                                LineChartBarData(
-                                                  isCurved: widget
-                                                      .chartPreferences
-                                                      .smoothLines,
-                                                  curveSmoothness: widget
-                                                      .chartPreferences
-                                                      .smoothness,
-                                                  preventCurveOverShooting:
-                                                      true,
-                                                  spots: animatedSamples
-                                                      .map(
-                                                        (sample) => FlSpot(
-                                                          scale.xFor(
-                                                            sample.timestamp,
-                                                          ),
-                                                          sample.value,
-                                                        ),
-                                                      )
-                                                      .toList(growable: false),
-                                                  color: widget.accent,
-                                                  barWidth: widget
-                                                      .chartPreferences
-                                                      .thickness,
-                                                  isStrokeCapRound: true,
-                                                  dotData: const FlDotData(
-                                                    show: false,
-                                                  ),
-                                                  belowBarData: BarAreaData(
-                                                    show: widget
-                                                        .chartPreferences
-                                                        .areaFill,
-                                                    gradient: LinearGradient(
-                                                      begin:
-                                                          Alignment.topCenter,
-                                                      end: Alignment
-                                                          .bottomCenter,
-                                                      colors: [
-                                                        widget.accent
-                                                            .withValues(
-                                                              alpha: 0.18,
-                                                            ),
-                                                        widget.accent
-                                                            .withValues(
-                                                              alpha: 0,
-                                                            ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            duration: Duration.zero,
-                                          );
-                                        },
-                                      );
-                                    },
-                                  ),
-                                ),
-
-                                SizedBox(height: sectionGap),
-
-                                Text(
-                                  widget.title,
-                                  style: TextStyle(
-                                    color: titleColor,
-                                    fontSize: compact ? 13 : 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-
-                                SizedBox(height: compact ? 2 : 4),
-
-                                RollingMetricText(
-                                  value: widget.value,
-                                  style: TextStyle(
-                                    fontSize: valueSize,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: -2,
-                                    color: AppColors.textPrimary(context),
-                                  ),
-                                ),
-
-                                SizedBox(height: compact ? 2 : 4),
-
-                                Text(
-                                  widget.subtitle,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: subtitleColor,
-                                    fontSize: compact ? 11 : 12,
-                                    height: 1.1,
-                                  ),
-                                ),
-                              ],
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _Header(
+                              title: widget.title,
+                              icon: widget.icon,
+                              accent: widget.accent,
+                              statistics: statistics,
+                              metricKind: widget.metricKind,
+                              actionsVisible: active,
+                              hasAlert: widget.alertKind != null,
+                              onAlert: _configureAlert,
+                              onCopy: _copyValue,
                             ),
-                          ),
+                            SizedBox(height: compact ? 10 : 14),
+                            Expanded(
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  SizedBox(
+                                    width: compact ? 112 : 132,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        RollingMetricText(
+                                          value: widget.value,
+                                          style: AppTypography.metric.copyWith(
+                                            color: AppColors.textPrimary(
+                                              context,
+                                            ),
+                                            fontSize: compact ? 27 : 34,
+                                            height: 1,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          widget.subtitle,
+                                          maxLines: compact ? 1 : 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: AppTypography.metadata
+                                              .copyWith(
+                                                color: AppColors.textMuted(
+                                                  context,
+                                                ),
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Container(
+                                    width: 1,
+                                    margin: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                    ),
+                                    color: AppColors.rule(context),
+                                  ),
+                                  Expanded(
+                                    child: _MetricPlot(
+                                      samples: widget.graphPoints,
+                                      preferences: widget.chartPreferences,
+                                      kind: widget.metricKind,
+                                      accent: widget.accent,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (!compact && statistics.sampleCount > 1) ...[
+                              const SizedBox(height: 10),
+                              Divider(color: AppColors.rule(context)),
+                              const SizedBox(height: 8),
+                              _StatisticsLine(
+                                statistics: statistics,
+                                kind: widget.metricKind,
+                              ),
+                            ],
+                          ],
                         ),
                       ),
                     ),
@@ -502,26 +306,255 @@ class _MetricCardState extends State<MetricCard> {
   }
 }
 
-class _TrendBadge extends StatelessWidget {
+class _Header extends StatelessWidget {
+  const _Header({
+    required this.title,
+    required this.icon,
+    required this.accent,
+    required this.statistics,
+    required this.metricKind,
+    required this.actionsVisible,
+    required this.hasAlert,
+    required this.onAlert,
+    required this.onCopy,
+  });
+
+  final String title;
+  final IconData icon;
+  final Color accent;
   final TelemetryStatistics statistics;
   final TelemetryMetricKind metricKind;
+  final bool actionsVisible;
+  final bool hasAlert;
+  final VoidCallback onAlert;
+  final VoidCallback onCopy;
 
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(width: 3, height: 18, color: accent),
+        const SizedBox(width: 9),
+        Icon(icon, size: 18, color: AppColors.textSecondary(context)),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: AppTypography.heading.copyWith(
+            color: AppColors.textPrimary(context),
+            fontSize: 18,
+          ),
+        ),
+        const Spacer(),
+        if (statistics.sampleCount > 1)
+          _TrendBadge(statistics: statistics, metricKind: metricKind),
+        const SizedBox(width: 6),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 140),
+          child: actionsVisible
+              ? Row(
+                  key: const ValueKey('metric-actions'),
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (hasAlert)
+                      _SmallAction(
+                        tooltip: 'Create or edit a metric watch',
+                        icon: Icons.notifications_none_rounded,
+                        onPressed: onAlert,
+                      ),
+                    _SmallAction(
+                      tooltip: 'Copy current value',
+                      icon: Icons.copy_rounded,
+                      onPressed: onCopy,
+                    ),
+                  ],
+                )
+              : Text(
+                  'LIVE',
+                  key: const ValueKey('metric-live'),
+                  style: AppTypography.sectionLabel.copyWith(color: accent),
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SmallAction extends StatelessWidget {
+  const _SmallAction({
+    required this.tooltip,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: IconButton(
+        onPressed: onPressed,
+        visualDensity: VisualDensity.compact,
+        constraints: const BoxConstraints.tightFor(width: 30, height: 30),
+        iconSize: 15,
+        icon: Icon(icon),
+      ),
+    );
+  }
+}
+
+class _MetricPlot extends StatelessWidget {
+  const _MetricPlot({
+    required this.samples,
+    required this.preferences,
+    required this.kind,
+    required this.accent,
+  });
+
+  final List<TelemetrySample> samples;
+  final ChartPreferences preferences;
+  final TelemetryMetricKind kind;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return SmoothTelemetrySeries(
+      samples: samples,
+      duration: preferences.animationDuration,
+      builder: (context, animatedSamples) {
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final scale = generateTimeAxisTicks(
+              samples: animatedSamples,
+              width: constraints.maxWidth,
+              density: preferences.timelineDensity,
+            );
+            final maxY = telemetryChartMaxY(animatedSamples, kind);
+            final spots = animatedSamples.isEmpty
+                ? const <FlSpot>[]
+                : animatedSamples
+                      .asMap()
+                      .entries
+                      .map(
+                        (entry) =>
+                            FlSpot(entry.key.toDouble(), entry.value.value),
+                      )
+                      .toList(growable: false);
+
+            return LineChart(
+              LineChartData(
+                minX: 0,
+                maxX: scale.maxX,
+                minY: 0,
+                maxY: maxY,
+                clipData: const FlClipData.all(),
+                gridData: FlGridData(
+                  show: preferences.gridLines,
+                  drawHorizontalLine: true,
+                  horizontalInterval: maxY / 2,
+                  drawVerticalLine: true,
+                  verticalInterval: scale.tickInterval,
+                  getDrawingHorizontalLine: (_) => FlLine(
+                    color: AppColors.rule(context).withValues(alpha: 0.55),
+                    strokeWidth: 1,
+                  ),
+                  getDrawingVerticalLine: (_) => FlLine(
+                    color: AppColors.rule(context).withValues(alpha: 0.38),
+                    strokeWidth: 1,
+                  ),
+                ),
+                titlesData: const FlTitlesData(show: false),
+                borderData: FlBorderData(show: false),
+                lineTouchData: const LineTouchData(enabled: false),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: spots,
+                    isCurved: preferences.smoothLines,
+                    curveSmoothness: 0.2,
+                    color: accent,
+                    barWidth: 1.7,
+                    isStrokeCapRound: false,
+                    dotData: const FlDotData(show: false),
+                    belowBarData: BarAreaData(
+                      show: preferences.areaFill,
+                      color: accent.withValues(alpha: 0.055),
+                    ),
+                  ),
+                ],
+              ),
+              duration: Duration.zero,
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _StatisticsLine extends StatelessWidget {
+  const _StatisticsLine({required this.statistics, required this.kind});
+
+  final TelemetryStatistics statistics;
+  final TelemetryMetricKind kind;
+
+  @override
+  Widget build(BuildContext context) {
+    TextSpan stat(String label, double value) {
+      return TextSpan(
+        children: [
+          TextSpan(text: '$label '),
+          TextSpan(
+            text: formatTelemetryValue(value, kind),
+            style: AppTypography.metric.copyWith(
+              color: AppColors.textPrimary(context),
+              fontSize: 11,
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Text.rich(
+      TextSpan(
+        style: AppTypography.metadata.copyWith(
+          color: AppColors.textMuted(context),
+        ),
+        children: [
+          stat('MIN', statistics.minimum),
+          const TextSpan(text: '     '),
+          stat('AVG', statistics.average),
+          const TextSpan(text: '     '),
+          stat('MAX', statistics.maximum),
+        ],
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+}
+
+class _TrendBadge extends StatelessWidget {
   const _TrendBadge({required this.statistics, required this.metricKind});
+
+  final TelemetryStatistics statistics;
+  final TelemetryMetricKind metricKind;
 
   @override
   Widget build(BuildContext context) {
     final rising = statistics.isRising;
     final falling = statistics.isFalling;
     final color = rising
-        ? Colors.orangeAccent
+        ? const Color(0xFF9A7338)
         : falling
-        ? Colors.lightBlueAccent
+        ? AppColors.accent
         : AppColors.textMuted(context);
     final icon = rising
-        ? Icons.trending_up_rounded
+        ? Icons.north_east_rounded
         : falling
-        ? Icons.trending_down_rounded
-        : Icons.trending_flat_rounded;
+        ? Icons.south_east_rounded
+        : Icons.east_rounded;
     final delta = statistics.delta.abs();
 
     return Tooltip(
@@ -532,12 +565,22 @@ class _TrendBadge extends StatelessWidget {
               ? '−'
               : ''}${formatTelemetryValue(delta, metricKind)}',
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.rule(context)),
+          borderRadius: BorderRadius.circular(3),
         ),
-        child: Icon(icon, size: 14, color: color),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 12, color: color),
+            const SizedBox(width: 3),
+            Text(
+              formatTelemetryValue(delta, metricKind),
+              style: AppTypography.metric.copyWith(color: color, fontSize: 9),
+            ),
+          ],
+        ),
       ),
     );
   }

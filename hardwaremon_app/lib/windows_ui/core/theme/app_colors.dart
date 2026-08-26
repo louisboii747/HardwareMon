@@ -1,15 +1,27 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const darkBackground = Color(0xFF050505);
-  static const darkBackgroundSecondary = Color(0xFF090909);
-  static const darkBackgroundTertiary = Color(0xFF04070D);
+  static const darkBackground = Color(0xFF171A1D);
+  static const darkBackgroundSecondary = Color(0xFF1D2226);
+  static const darkBackgroundTertiary = Color(0xFF232A2F);
 
-  static const lightBackground = Color(0xFFF6F8FB);
-  static const lightBackgroundSecondary = Color(0xFFFFFFFF);
-  static const lightBackgroundTertiary = Color(0xFFEAF2F8);
+  static const lightBackground = Color(0xFFE8E3D8);
+  static const lightBackgroundSecondary = Color(0xFFF0ECE3);
+  static const lightBackgroundTertiary = Color(0xFFDDD9CF);
 
-  static Color accent = const Color(0xFF0891B2);
+  static const workOrderBlue = Color.from(
+    alpha: 1,
+    red: 0.145,
+    green: 0.369,
+    blue: 0.522,
+  );
+  static const warningRed = Color(0xFFB5483B);
+  static const healthyGreen = Color(0xFF39764B);
+  static const binderRail = Color(0xFF303941);
+  static const binderRailDark = Color(0xFF222A30);
+  static const ink = Color(0xFF1C252B);
+
+  static Color accent = workOrderBlue;
   static double sidebarMotionIntensity = 1;
 
   static const cyan = Colors.cyan;
@@ -17,7 +29,7 @@ class AppColors {
   static const orange = Colors.orange;
   static const red = Colors.redAccent;
 
-  static Color get glow => accent.withValues(alpha: 0.14);
+  static Color get glow => accent.withValues(alpha: 0.06);
 
   static void setAccent(Color color) {
     accent = color;
@@ -46,27 +58,29 @@ class AppColors {
   }
 
   static Color surface(BuildContext context) {
-    return isLight(context) ? const Color(0xEFFFFFFF) : const Color(0xCC111111);
+    return isLight(context)
+        ? lightBackgroundSecondary
+        : darkBackgroundSecondary;
   }
 
   static Color surfaceElevated(BuildContext context) {
-    return isLight(context) ? const Color(0xFFFFFFFF) : const Color(0xDD181818);
+    return isLight(context) ? const Color(0xFFF7F3EA) : darkBackgroundTertiary;
   }
 
   static Color border(BuildContext context) {
-    return isLight(context) ? const Color(0x2231495F) : const Color(0x1FFFFFFF);
+    return isLight(context) ? const Color(0xFFBEC3C2) : const Color(0xFF465159);
   }
 
   static Color textPrimary(BuildContext context) {
-    return isLight(context) ? const Color(0xFF111827) : const Color(0xFFF5F5F5);
+    return isLight(context) ? ink : const Color(0xFFF0F1ED);
   }
 
   static Color textSecondary(BuildContext context) {
-    return isLight(context) ? const Color(0xFF607080) : const Color(0xFF9E9E9E);
+    return isLight(context) ? const Color(0xFF43525B) : const Color(0xFFC1C8C7);
   }
 
   static Color textMuted(BuildContext context) {
-    return isLight(context) ? const Color(0xFF7A8794) : Colors.white54;
+    return isLight(context) ? const Color(0xFF657177) : const Color(0xFF929D9F);
   }
 
   static Color overlay(BuildContext context, double darkOpacity) {
@@ -77,15 +91,28 @@ class AppColors {
 
   static Color shadow(BuildContext context) {
     return isLight(context)
-        ? const Color(0x2831495F)
-        : Colors.black.withValues(alpha: 0.18);
+        ? const Color(0x26262A2C)
+        : Colors.black.withValues(alpha: 0.28);
+  }
+
+  static Color frame(BuildContext context) {
+    return isLight(context) ? const Color(0xFF15191C) : const Color(0xFF0E1113);
+  }
+
+  static Color rail(BuildContext context) {
+    return isLight(context) ? binderRail : binderRailDark;
+  }
+
+  static Color rule(BuildContext context) {
+    return isLight(context) ? const Color(0xFFB7BEBD) : const Color(0xFF465159);
+  }
+
+  static Color controlFill(BuildContext context) {
+    return isLight(context) ? const Color(0xFFE2DED5) : const Color(0xFF272E33);
   }
 
   static List<Color> pageGradient(BuildContext context) {
-    return [
-      background(context),
-      backgroundSecondary(context),
-      backgroundTertiary(context),
-    ];
+    final color = background(context);
+    return [color, color, color];
   }
 }

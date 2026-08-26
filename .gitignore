@@ -92,6 +92,16 @@ hardwaremon-private.asc
 private-key-base64.txt
 
 # ─────────────────────────────────────────────
+# Bruno API Client
+# ─────────────────────────────────────────────
+
+# Machine-specific Bruno state
+.bruno-state/
+
+# Generated FastAPI OpenAPI export
+hardwaremon_app/backend_fastapi/hardwaremon-openapi.json
+
+# ─────────────────────────────────────────────
 # Local Agent Skills
 # ─────────────────────────────────────────────
 

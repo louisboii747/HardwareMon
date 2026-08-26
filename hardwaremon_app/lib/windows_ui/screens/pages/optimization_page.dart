@@ -372,7 +372,7 @@ class _MaintenanceFact extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.overlay(context, 0.04),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.border(context)),
       ),
       child: Column(
@@ -476,7 +476,7 @@ class _HealthHero extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(26),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(6),
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -763,7 +763,7 @@ class _RecommendationTile extends StatelessWidget {
       OptimizationSeverity.critical => Colors.redAccent,
     };
     return ClipRRect(
-      borderRadius: BorderRadius.circular(15),
+      borderRadius: BorderRadius.circular(6),
       child: Material(
         color: color.withValues(alpha: 0.055),
         child: ExpansionTile(
@@ -1353,7 +1353,7 @@ class _GamingModeCardState extends State<_GamingModeCard> {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(6),
           gradient: LinearGradient(
             colors: [
               Colors.purple.withValues(alpha: 0.14),
@@ -1375,7 +1375,7 @@ class _GamingModeCardState extends State<_GamingModeCard> {
                       height: 48,
                       decoration: BoxDecoration(
                         color: Colors.purpleAccent.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(15),
+                        borderRadius: BorderRadius.circular(6),
                       ),
                       child: const Icon(
                         Icons.sports_esports_rounded,
@@ -1517,7 +1517,7 @@ class _PremiumCardState extends State<_PremiumCard> {
         padding: widget.padding,
         decoration: BoxDecoration(
           color: AppColors.surface(context),
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(
             color: _hovering
                 ? AppColors.accent.withValues(alpha: 0.35)
@@ -1563,7 +1563,7 @@ class _SectionHeader extends StatelessWidget {
           height: 40,
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.11),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(6),
           ),
           child: Icon(icon, color: color, size: 20),
         ),
@@ -1615,7 +1615,7 @@ class _InsightMetric extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.055),
-        borderRadius: BorderRadius.circular(13),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: color.withValues(alpha: 0.12)),
       ),
       child: Column(
@@ -1851,7 +1851,7 @@ class _UnavailableMessage extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.overlay(context, 0.035),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
         children: [
@@ -1896,7 +1896,7 @@ class _EmptyRecommendation extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.greenAccent.withValues(alpha: 0.045),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.12)),
       ),
       child: const Row(

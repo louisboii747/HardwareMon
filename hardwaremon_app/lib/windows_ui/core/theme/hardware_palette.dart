@@ -30,15 +30,15 @@ extension HardwareDomainVisuals on HardwareDomain {
   };
 
   Color get color => switch (this) {
-    HardwareDomain.cpu => const Color(0xFF22D3EE),
-    HardwareDomain.memory => const Color(0xFFA78BFA),
-    HardwareDomain.gpu => const Color(0xFF60A5FA),
-    HardwareDomain.network => const Color(0xFF2DD4BF),
-    HardwareDomain.storage => const Color(0xFFF59E0B),
-    HardwareDomain.battery => const Color(0xFF84CC16),
-    HardwareDomain.thermal => const Color(0xFFFB7185),
-    HardwareDomain.power => const Color(0xFFFACC15),
-    HardwareDomain.cooling => const Color(0xFF38BDF8),
+    HardwareDomain.cpu => const Color(0xFF255E85),
+    HardwareDomain.memory => const Color(0xFF66879C),
+    HardwareDomain.gpu => const Color(0xFF3F7562),
+    HardwareDomain.network => const Color(0xFF8B6D3D),
+    HardwareDomain.storage => const Color(0xFF87584C),
+    HardwareDomain.battery => const Color(0xFF557A55),
+    HardwareDomain.thermal => const Color(0xFFB5483B),
+    HardwareDomain.power => const Color(0xFF967B3D),
+    HardwareDomain.cooling => const Color(0xFF4D7887),
   };
 
   IconData get icon => switch (this) {
@@ -55,10 +55,10 @@ extension HardwareDomainVisuals on HardwareDomain {
 }
 
 class HardwareStatusColors {
-  static const healthy = Color(0xFF34D399);
-  static const informative = Color(0xFF38BDF8);
-  static const caution = Color(0xFFFBBF24);
-  static const critical = Color(0xFFFB7185);
+  static const healthy = Color(0xFF39764B);
+  static const informative = Color(0xFF255E85);
+  static const caution = Color(0xFF9A7338);
+  static const critical = Color(0xFFB5483B);
 
   static Color forScore(int score) {
     if (score >= 82) return healthy;

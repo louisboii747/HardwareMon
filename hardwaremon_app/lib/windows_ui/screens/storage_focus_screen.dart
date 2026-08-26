@@ -1,7 +1,5 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:ui';
-
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -254,58 +252,35 @@ class _StorageFocusScreenState extends State<StorageFocusScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final color = storageHealthColor(_drive.health);
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.background(context),
-                  Color.lerp(
-                    AppColors.backgroundSecondary(context),
-                    color,
-                    0.045,
-                  )!,
-                  AppColors.backgroundTertiary(context),
-                ],
+      backgroundColor: AppColors.frame(context),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildTopBar(),
+            Expanded(
+              child: SingleChildScrollView(
+                controller: _scrollController,
+                padding: const EdgeInsets.fromLTRB(28, 8, 28, 42),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildHero(),
+                    const SizedBox(height: 20),
+                    _buildPrimaryAnalytics(),
+                    const SizedBox(height: 20),
+                    _buildActivityAnalytics(),
+                    const SizedBox(height: 20),
+                    _buildHealthAndForecast(),
+                    const SizedBox(height: 20),
+                    _buildScanner(),
+                    const SizedBox(height: 20),
+                    _buildBenchmark(),
+                  ],
+                ),
               ),
             ),
-            child: SafeArea(
-              child: Column(
-                children: [
-                  _buildTopBar(),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.fromLTRB(28, 8, 28, 42),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildHero(),
-                          const SizedBox(height: 20),
-                          _buildPrimaryAnalytics(),
-                          const SizedBox(height: 20),
-                          _buildActivityAnalytics(),
-                          const SizedBox(height: 20),
-                          _buildHealthAndForecast(),
-                          const SizedBox(height: 20),
-                          _buildScanner(),
-                          const SizedBox(height: 20),
-                          _buildBenchmark(),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          ],
         ),
       ),
     );
@@ -378,17 +353,9 @@ class _StorageFocusScreenState extends State<StorageFocusScreen> {
         width: double.infinity,
         padding: const EdgeInsets.all(26),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: color.withValues(alpha: 0.22)),
-          gradient: LinearGradient(
-            colors: [
-              color.withValues(alpha: 0.075),
-              AppColors.surface(context),
-            ],
-          ),
-          boxShadow: [
-            BoxShadow(color: color.withValues(alpha: 0.08), blurRadius: 42),
-          ],
+          borderRadius: BorderRadius.circular(6),
+          color: AppColors.surface(context),
+          border: Border.all(color: AppColors.rule(context)),
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -402,7 +369,7 @@ class _StorageFocusScreenState extends State<StorageFocusScreen> {
                       width: 62,
                       height: 62,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(6),
                         color: color.withValues(alpha: 0.12),
                         border: Border.all(color: color.withValues(alpha: 0.3)),
                       ),
@@ -1126,7 +1093,7 @@ class _MiniStatRow extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.overlay(context, 0.025),
-        borderRadius: BorderRadius.circular(13),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.border(context)),
       ),
       child: Row(
@@ -1180,7 +1147,7 @@ class _ThroughputCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.035),
-        borderRadius: BorderRadius.circular(17),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: color.withValues(alpha: 0.14)),
       ),
       child: Row(
@@ -1190,7 +1157,7 @@ class _ThroughputCard extends StatelessWidget {
             height: 42,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(13),
+              borderRadius: BorderRadius.circular(6),
             ),
             child: Icon(icon, color: color, size: 20),
           ),
@@ -1280,7 +1247,7 @@ class _ScannerEmptyState extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(6),
         color: AppColors.overlay(context, 0.025),
         border: Border.all(color: AppColors.border(context)),
       ),
@@ -1322,7 +1289,7 @@ class _ScanProgress extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(17),
+        borderRadius: BorderRadius.circular(6),
         color: Colors.cyanAccent.withValues(alpha: 0.035),
         border: Border.all(color: Colors.cyanAccent.withValues(alpha: 0.16)),
       ),
@@ -1423,7 +1390,7 @@ class _SummaryChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(13),
+          borderRadius: BorderRadius.circular(6),
           color: AppColors.overlay(context, 0.03),
           border: Border.all(color: AppColors.border(context)),
         ),
@@ -1467,7 +1434,7 @@ class _UsageTree extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.overlay(context, 0.02),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.border(context)),
       ),
       child: Column(
@@ -1562,7 +1529,7 @@ class _LargestFilesTable extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.overlay(context, 0.02),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.border(context)),
       ),
       child: Column(
@@ -1674,7 +1641,7 @@ class _BenchmarkEmptyState extends StatelessWidget {
       padding: const EdgeInsets.all(26),
       decoration: BoxDecoration(
         color: AppColors.overlay(context, 0.025),
-        borderRadius: BorderRadius.circular(17),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.border(context)),
       ),
       child: Column(
@@ -1707,7 +1674,7 @@ class _BenchmarkProgress extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.purpleAccent.withValues(alpha: 0.035),
-        borderRadius: BorderRadius.circular(17),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: Colors.purpleAccent.withValues(alpha: 0.16)),
       ),
       child: Column(
@@ -1814,7 +1781,7 @@ class _BenchmarkResultCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.045),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: color.withValues(alpha: 0.16)),
       ),
       child: Column(
@@ -1876,7 +1843,7 @@ class _InlineError extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.redAccent.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: Colors.redAccent.withValues(alpha: 0.2)),
       ),
       child: Row(
@@ -1916,7 +1883,7 @@ class _FocusSectionHeader extends StatelessWidget {
           height: 38,
           decoration: BoxDecoration(
             color: Colors.cyanAccent.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(6),
           ),
           child: Icon(icon, color: Colors.cyanAccent, size: 19),
         ),

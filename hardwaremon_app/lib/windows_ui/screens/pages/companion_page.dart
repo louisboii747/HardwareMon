@@ -241,7 +241,7 @@ class _SnapshotStudio extends StatelessWidget {
                   Color.lerp(const Color(0xff0c111c), accent, .18)!,
                 ],
               ),
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(6),
               border: Border.all(color: accent.withValues(alpha: .42)),
             ),
             child: Column(
@@ -511,7 +511,7 @@ class _Fact extends StatelessWidget {
     padding: const EdgeInsets.all(13),
     decoration: BoxDecoration(
       color: AppColors.overlay(context, .04),
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(6),
       border: Border.all(color: AppColors.border(context)),
     ),
     child: Column(
@@ -651,7 +651,7 @@ class _StatusBanner extends StatelessWidget {
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
       color: Colors.tealAccent.withValues(alpha: .08),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(6),
       border: Border.all(color: Colors.tealAccent.withValues(alpha: .2)),
     ),
     child: SelectableText(message),

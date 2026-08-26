@@ -1,3 +1,26 @@
+/*
+THESIS
+HardwareMon is a field service binder for a live machine: orderly, legible,
+repairable, and quietly precise rather than theatrical.
+
+OWN-WORLD
+Graphite hardware, warm laminated work sheets, ruled registers, work-order blue,
+and a small warning bracket make the product feel built for actual operators.
+
+STORY
+The rail identifies the instrument. The header names the current register. The
+telemetry strip answers whether the machine is healthy. The sheet holds the work.
+
+FIRST VIEWPORT
+Show orientation, current condition, primary controls, and the opening dashboard
+readings without a decorative hero or hidden navigation.
+
+FORM
+seed d2edd8ce
+
+FINISH
+unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+*/
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -19,7 +42,6 @@ import '../utils/telemetry_chart.dart';
 import '../services/desktop_integration_service.dart';
 import '../services/companion_service.dart';
 import '../services/gaming_overlay_controller.dart';
-import '../widgets/glass_panel.dart';
 import '../widgets/hardware_skeleton.dart';
 import '../widgets/metric_card.dart';
 import '../widgets/metric_alert_action.dart';
@@ -47,7 +69,29 @@ import 'pages/plugins_page.dart';
 import 'pages/bug_report_page.dart';
 import '../services/telemetry_service.dart';
 import '../core/theme/app_colors.dart';
+import '../core/theme/app_typography.dart';
 import '../core/theme/hardware_palette.dart';
+
+class _NavigationDestination {
+  final int index;
+  final String label;
+  final String shortcut;
+  final IconData icon;
+
+  const _NavigationDestination(
+    this.index,
+    this.label,
+    this.shortcut,
+    this.icon,
+  );
+}
+
+class _NavigationGroup {
+  final String label;
+  final List<_NavigationDestination> destinations;
+
+  const _NavigationGroup({required this.label, required this.destinations});
+}
 
 class ShellScreen extends StatefulWidget {
   const ShellScreen({super.key});
@@ -74,6 +118,78 @@ class _ShellScreenState extends State<ShellScreen> {
   int selectedIndex = 0;
   int _previousIndex = 0;
   int _pageTransitionSerial = 0;
+
+  static const _navigationGroups = <_NavigationGroup>[
+    _NavigationGroup(
+      label: 'Monitor',
+      destinations: [
+        _NavigationDestination(
+          0,
+          'Dashboard',
+          'Alt+1',
+          Icons.dashboard_rounded,
+        ),
+        _NavigationDestination(1, 'Processes', 'Alt+2', Icons.list_rounded),
+        _NavigationDestination(
+          2,
+          'Performance',
+          'Alt+3',
+          Icons.analytics_rounded,
+        ),
+        _NavigationDestination(
+          3,
+          'Gaming',
+          'Alt+G',
+          Icons.sports_esports_rounded,
+        ),
+        _NavigationDestination(4, 'Network', 'Alt+4', Icons.language_rounded),
+        _NavigationDestination(5, 'Storage', 'Alt+5', Icons.storage_rounded),
+      ],
+    ),
+    _NavigationGroup(
+      label: 'Tools',
+      destinations: [
+        _NavigationDestination(6, 'Maintenance', 'Alt+6', Icons.build_rounded),
+        _NavigationDestination(
+          7,
+          'Reliability',
+          'Alt+7',
+          Icons.verified_rounded,
+        ),
+        _NavigationDestination(8, 'Benchmark', 'Alt+B', Icons.speed_rounded),
+      ],
+    ),
+    _NavigationGroup(
+      label: 'System',
+      destinations: [
+        _NavigationDestination(9, 'Customization', 'Alt+8', Icons.tune_rounded),
+        _NavigationDestination(10, 'Settings', 'Alt+9', Icons.settings_rounded),
+        _NavigationDestination(11, 'Companion', 'Ctrl+K', Icons.hub_rounded),
+        _NavigationDestination(
+          12,
+          'Plugins',
+          'Ctrl+K',
+          Icons.extension_rounded,
+        ),
+      ],
+    ),
+  ];
+
+  static const _pageTitles = <String>[
+    'System overview',
+    'Process register',
+    'Performance history',
+    'Gaming sessions',
+    'Network activity',
+    'Storage register',
+    'Maintenance centre',
+    'Reliability record',
+    'Benchmark runs',
+    'Appearance register',
+    'Application settings',
+    'Companion status',
+    'Plugin register',
+  ];
 
   @override
   void initState() {
@@ -1181,6 +1297,136 @@ Disk: ${telemetry.diskUsage}%
     );
   }
 
+  Widget _buildNavigationRail(BuildContext context) {
+    final expanded =
+        customizationPreferences.showSidebarLabels ||
+        customizationPreferences.sidebarMode == SidebarMode.expanded ||
+        customizationPreferences.sidebarWidth >= 150;
+    final width = expanded
+        ? customizationPreferences.sidebarWidth.clamp(176.0, 228.0)
+        : customizationPreferences.sidebarWidth.clamp(68.0, 92.0);
+
+    return SizedBox(
+      width: width,
+      child: ColoredBox(
+        color: AppColors.rail(context),
+        child: Column(
+          children: [
+            SizedBox(
+              height: 72,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: expanded ? 16 : 0),
+                child: Row(
+                  mainAxisAlignment: expanded
+                      ? MainAxisAlignment.start
+                      : MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.memory_rounded,
+                      color: Color(0xFFF0F1ED),
+                      size: 24,
+                    ),
+                    if (expanded) ...[
+                      const SizedBox(width: 10),
+                      Text(
+                        'HardwareMon',
+                        style: AppTypography.heading.copyWith(
+                          color: const Color(0xFFF0F1ED),
+                          fontSize: 20,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            Container(height: 1, color: Colors.white.withValues(alpha: 0.16)),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (final group in _navigationGroups) ...[
+                      if (expanded)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 13, 12, 7),
+                          child: Text(
+                            group.label,
+                            style: AppTypography.sectionLabel.copyWith(
+                              color: Colors.white.withValues(alpha: 0.6),
+                            ),
+                          ),
+                        )
+                      else
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 7),
+                          child: Container(
+                            height: 1,
+                            margin: const EdgeInsets.symmetric(horizontal: 16),
+                            color: Colors.white.withValues(alpha: 0.14),
+                          ),
+                        ),
+                      for (final destination in group.destinations)
+                        _DockItem(
+                          icon: destination.icon,
+                          label: destination.label,
+                          shortcut: destination.shortcut,
+                          active: selectedIndex == destination.index,
+                          onTap: () => _selectPage(destination.index),
+                          showLabel: expanded,
+                          iconSize: customizationPreferences.sidebarIconSize
+                              .clamp(17, 24),
+                          hoverEffects: customizationPreferences.hoverEffects,
+                        ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            Container(height: 1, color: Colors.white.withValues(alpha: 0.16)),
+            Tooltip(
+              message: 'Quick actions  •  Ctrl+K',
+              child: Semantics(
+                button: true,
+                label: 'Quick actions',
+                child: InkWell(
+                  onTap: _showCommandPalette,
+                  child: SizedBox(
+                    height: 54,
+                    child: Row(
+                      mainAxisAlignment: expanded
+                          ? MainAxisAlignment.start
+                          : MainAxisAlignment.center,
+                      children: [
+                        if (expanded) const SizedBox(width: 18),
+                        const Icon(
+                          Icons.search_rounded,
+                          size: 18,
+                          color: Color(0xFFD4DAD8),
+                        ),
+                        if (expanded) ...[
+                          const SizedBox(width: 10),
+                          Text(
+                            'Quick actions',
+                            style: AppTypography.body.copyWith(
+                              color: const Color(0xFFD4DAD8),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildHeader(BuildContext context) {
     final statusText = telemetry.lastError != null
         ? 'Connection issue'
@@ -1237,47 +1483,184 @@ Disk: ${telemetry.diskUsage}%
       ],
     );
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth < 760) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
+      decoration: BoxDecoration(
+        color: AppColors.surface(context),
+        border: Border(bottom: BorderSide(color: AppColors.rule(context))),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final title = Text(
+            _pageTitles[selectedIndex],
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTypography.display.copyWith(
+              color: AppColors.textPrimary(context),
+              fontSize: constraints.maxWidth < 760 ? 25 : 29,
+            ),
+          );
+          if (constraints.maxWidth < 840) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                title,
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: controls,
+                  ),
+                ),
+              ],
+            );
+          }
+
+          return Row(
             children: [
-              const Text(
-                'HardwareMon',
-                style: TextStyle(
-                  fontSize: 34,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -2,
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: controls,
-                ),
-              ),
+              Expanded(child: title),
+              const SizedBox(width: 18),
+              controls,
             ],
           );
-        }
+        },
+      ),
+    );
+  }
 
-        return Row(
-          children: [
-            const Text(
-              'HardwareMon',
-              style: TextStyle(
-                fontSize: 40,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -2,
+  Widget _buildServiceBinderBody(BuildContext context) {
+    return ColoredBox(
+      color: AppColors.frame(context),
+      child: Stack(
+        children: [
+          SystemPulseBackground(
+            cpuUsage: telemetry.cpuUsage,
+            ramUsage: telemetry.ramUsage,
+            gpuTemperature: telemetry.gpuTemp,
+            enabled: chartPreferences.ambientEffects,
+            intensity: customizationPreferences.ambientGlowIntensity,
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.14),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      offset: const Offset(0, 8),
+                      blurRadius: 26,
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    _buildNavigationRail(context),
+                    Container(width: 1, color: AppColors.rule(context)),
+                    Expanded(
+                      child: ColoredBox(
+                        color: AppColors.background(context),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _buildHeader(context),
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 180),
+                              child: chartPreferences.telemetryTicker
+                                  ? TelemetryStrip(
+                                      key: const ValueKey(
+                                        'telemetry-strip-visible',
+                                      ),
+                                      cpuUsage: telemetry.cpuUsage,
+                                      cpuTemperature:
+                                          telemetry
+                                              .capabilities
+                                              .supportsCpuTemperature
+                                          ? telemetry.cpuTemp
+                                          : null,
+                                      ramUsage: telemetry.ramUsage,
+                                      gpuUsage:
+                                          telemetry
+                                              .capabilities
+                                              .supportsGpuUsage
+                                          ? telemetry.gpuUsage
+                                          : null,
+                                      gpuTemperature:
+                                          telemetry
+                                              .capabilities
+                                              .supportsGpuTemperature
+                                          ? telemetry.gpuTemp
+                                          : null,
+                                      diskUsage: telemetry.diskUsage,
+                                      paused: telemetry.isPaused,
+                                      hasError: telemetry.lastError != null,
+                                      onOpenPerformance: () => _selectPage(2),
+                                      onCopySnapshot: _copySystemSnapshot,
+                                    )
+                                  : const SizedBox.shrink(
+                                      key: ValueKey('telemetry-strip-hidden'),
+                                    ),
+                            ),
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  18,
+                                  16,
+                                  18,
+                                  18,
+                                ),
+                                child: ClipRect(
+                                  child: AnimatedSwitcher(
+                                    duration:
+                                        chartPreferences.animations &&
+                                            customizationPreferences
+                                                .animationsEnabled
+                                        ? customizationPreferences
+                                              .transitionDuration
+                                        : Duration.zero,
+                                    switchInCurve: Curves.easeOutCubic,
+                                    switchOutCurve: Curves.easeOutCubic,
+                                    transitionBuilder: (child, animation) {
+                                      final direction =
+                                          selectedIndex >= _previousIndex
+                                          ? 1.0
+                                          : -1.0;
+                                      return FadeTransition(
+                                        opacity: animation,
+                                        child: SlideTransition(
+                                          position: Tween<Offset>(
+                                            begin: Offset(0.012 * direction, 0),
+                                            end: Offset.zero,
+                                          ).animate(animation),
+                                          child: child,
+                                        ),
+                                      );
+                                    },
+                                    child: KeyedSubtree(
+                                      key: ValueKey(
+                                        '$selectedIndex-$_pageTransitionSerial',
+                                      ),
+                                      child: getCurrentPage(),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            const Spacer(),
-            controls,
-          ],
-        );
-      },
+          ),
+        ],
+      ),
     );
   }
 
@@ -1346,447 +1729,7 @@ Disk: ${telemetry.diskUsage}%
       },
       child: Focus(
         autofocus: true,
-        child: Scaffold(
-          body: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-
-                colors: AppColors.pageGradient(context),
-              ),
-            ),
-
-            child: Stack(
-              children: [
-                SystemPulseBackground(
-                  cpuUsage: telemetry.cpuUsage,
-                  ramUsage: telemetry.ramUsage,
-                  gpuTemperature: telemetry.gpuTemp,
-                  enabled: chartPreferences.ambientEffects,
-                  intensity: customizationPreferences.ambientGlowIntensity,
-                ),
-
-                SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: customizationPreferences.sidebarWidth,
-
-                          child: GlassPanel(
-                            padding: const EdgeInsets.symmetric(vertical: 20),
-                            interactive: false,
-
-                            child: Column(
-                              children: [
-                                Icon(
-                                  Icons.memory_rounded,
-                                  color: AppColors.accent,
-                                  size:
-                                      customizationPreferences.sidebarIconSize +
-                                      4,
-                                ),
-
-                                const SizedBox(height: 20),
-
-                                Expanded(
-                                  child: SingleChildScrollView(
-                                    child: Column(
-                                      children: [
-                                        _DockItem(
-                                          icon: Icons.dashboard_rounded,
-                                          label: 'Dashboard',
-                                          shortcut: 'Alt+1',
-                                          active: selectedIndex == 0,
-                                          onTap: () => _selectPage(0),
-                                          showLabel:
-                                              customizationPreferences
-                                                  .showSidebarLabels ||
-                                              customizationPreferences
-                                                      .sidebarMode ==
-                                                  SidebarMode.expanded,
-                                          iconSize: customizationPreferences
-                                              .sidebarIconSize,
-                                          hoverEffects: customizationPreferences
-                                              .hoverEffects,
-                                        ),
-
-                                        const SizedBox(height: 12),
-
-                                        _DockItem(
-                                          icon: Icons.list_rounded,
-                                          label: 'Processes',
-                                          shortcut: 'Alt+2',
-                                          active: selectedIndex == 1,
-                                          onTap: () => _selectPage(1),
-                                          showLabel:
-                                              customizationPreferences
-                                                  .showSidebarLabels ||
-                                              customizationPreferences
-                                                      .sidebarMode ==
-                                                  SidebarMode.expanded,
-                                          iconSize: customizationPreferences
-                                              .sidebarIconSize,
-                                          hoverEffects: customizationPreferences
-                                              .hoverEffects,
-                                        ),
-
-                                        const SizedBox(height: 12),
-
-                                        _DockItem(
-                                          icon: Icons.analytics_rounded,
-                                          label: 'Performance',
-                                          shortcut: 'Alt+3',
-                                          active: selectedIndex == 2,
-                                          onTap: () => _selectPage(2),
-                                          showLabel:
-                                              customizationPreferences
-                                                  .showSidebarLabels ||
-                                              customizationPreferences
-                                                      .sidebarMode ==
-                                                  SidebarMode.expanded,
-                                          iconSize: customizationPreferences
-                                              .sidebarIconSize,
-                                          hoverEffects: customizationPreferences
-                                              .hoverEffects,
-                                        ),
-
-                                        const SizedBox(height: 12),
-
-                                        _DockItem(
-                                          icon: Icons.sports_esports_rounded,
-                                          label: 'Gaming',
-                                          shortcut: 'Alt+G',
-                                          active: selectedIndex == 3,
-                                          onTap: () => _selectPage(3),
-                                          showLabel:
-                                              customizationPreferences
-                                                  .showSidebarLabels ||
-                                              customizationPreferences
-                                                      .sidebarMode ==
-                                                  SidebarMode.expanded,
-                                          iconSize: customizationPreferences
-                                              .sidebarIconSize,
-                                          hoverEffects: customizationPreferences
-                                              .hoverEffects,
-                                        ),
-
-                                        const SizedBox(height: 12),
-
-                                        _DockItem(
-                                          icon: Icons.language_rounded,
-                                          label: 'Network',
-                                          shortcut: 'Alt+4',
-                                          active: selectedIndex == 4,
-                                          onTap: () => _selectPage(4),
-                                          showLabel:
-                                              customizationPreferences
-                                                  .showSidebarLabels ||
-                                              customizationPreferences
-                                                      .sidebarMode ==
-                                                  SidebarMode.expanded,
-                                          iconSize: customizationPreferences
-                                              .sidebarIconSize,
-                                          hoverEffects: customizationPreferences
-                                              .hoverEffects,
-                                        ),
-
-                                        const SizedBox(height: 12),
-
-                                        _DockItem(
-                                          icon: Icons.storage_rounded,
-                                          label: 'Storage',
-                                          shortcut: 'Alt+5',
-                                          active: selectedIndex == 5,
-                                          onTap: () => _selectPage(5),
-                                          showLabel:
-                                              customizationPreferences
-                                                  .showSidebarLabels ||
-                                              customizationPreferences
-                                                      .sidebarMode ==
-                                                  SidebarMode.expanded,
-                                          iconSize: customizationPreferences
-                                              .sidebarIconSize,
-                                          hoverEffects: customizationPreferences
-                                              .hoverEffects,
-                                        ),
-
-                                        const SizedBox(height: 12),
-
-                                        _DockItem(
-                                          icon: Icons.auto_awesome_rounded,
-                                          label: 'Maintenance',
-                                          shortcut: 'Alt+6',
-                                          active: selectedIndex == 6,
-                                          onTap: () => _selectPage(6),
-                                          showLabel:
-                                              customizationPreferences
-                                                  .showSidebarLabels ||
-                                              customizationPreferences
-                                                      .sidebarMode ==
-                                                  SidebarMode.expanded,
-                                          iconSize: customizationPreferences
-                                              .sidebarIconSize,
-                                          hoverEffects: customizationPreferences
-                                              .hoverEffects,
-                                        ),
-
-                                        const SizedBox(height: 12),
-
-                                        _DockItem(
-                                          icon: Icons.verified_rounded,
-                                          label: 'Reliability',
-                                          shortcut: 'Alt+7',
-                                          active: selectedIndex == 7,
-                                          onTap: () => _selectPage(7),
-                                          showLabel:
-                                              customizationPreferences
-                                                  .showSidebarLabels ||
-                                              customizationPreferences
-                                                      .sidebarMode ==
-                                                  SidebarMode.expanded,
-                                          iconSize: customizationPreferences
-                                              .sidebarIconSize,
-                                          hoverEffects: customizationPreferences
-                                              .hoverEffects,
-                                        ),
-
-                                        const SizedBox(height: 12),
-
-                                        _DockItem(
-                                          icon: Icons.speed_rounded,
-                                          label: 'Benchmark',
-                                          shortcut: 'Alt+B',
-                                          active: selectedIndex == 8,
-                                          onTap: () => _selectPage(8),
-                                          showLabel:
-                                              customizationPreferences
-                                                  .showSidebarLabels ||
-                                              customizationPreferences
-                                                      .sidebarMode ==
-                                                  SidebarMode.expanded,
-                                          iconSize: customizationPreferences
-                                              .sidebarIconSize,
-                                          hoverEffects: customizationPreferences
-                                              .hoverEffects,
-                                        ),
-
-                                        const SizedBox(height: 12),
-
-                                        _DockItem(
-                                          icon: Icons.palette_rounded,
-                                          label: 'Customization',
-                                          shortcut: 'Alt+8',
-                                          active: selectedIndex == 9,
-                                          onTap: () => _selectPage(9),
-                                          showLabel:
-                                              customizationPreferences
-                                                  .showSidebarLabels ||
-                                              customizationPreferences
-                                                      .sidebarMode ==
-                                                  SidebarMode.expanded,
-                                          iconSize: customizationPreferences
-                                              .sidebarIconSize,
-                                          hoverEffects: customizationPreferences
-                                              .hoverEffects,
-                                        ),
-
-                                        const SizedBox(height: 12),
-
-                                        _DockItem(
-                                          icon: Icons.settings_rounded,
-                                          label: 'Settings',
-                                          shortcut: 'Alt+9',
-                                          active: selectedIndex == 10,
-                                          onTap: () => _selectPage(10),
-                                          showLabel:
-                                              customizationPreferences
-                                                  .showSidebarLabels ||
-                                              customizationPreferences
-                                                      .sidebarMode ==
-                                                  SidebarMode.expanded,
-                                          iconSize: customizationPreferences
-                                              .sidebarIconSize,
-                                          hoverEffects: customizationPreferences
-                                              .hoverEffects,
-                                        ),
-
-                                        const SizedBox(height: 12),
-
-                                        _DockItem(
-                                          icon: Icons.hub_rounded,
-                                          label: 'Companion',
-                                          shortcut: 'Ctrl+K',
-                                          active: selectedIndex == 11,
-                                          onTap: () => _selectPage(11),
-                                          showLabel:
-                                              customizationPreferences
-                                                  .showSidebarLabels ||
-                                              customizationPreferences
-                                                      .sidebarMode ==
-                                                  SidebarMode.expanded,
-                                          iconSize: customizationPreferences
-                                              .sidebarIconSize,
-                                          hoverEffects: customizationPreferences
-                                              .hoverEffects,
-                                        ),
-
-                                        const SizedBox(height: 12),
-
-                                        _DockItem(
-                                          icon: Icons.extension_rounded,
-                                          label: 'Plugins',
-                                          shortcut: 'Ctrl+K',
-                                          active: selectedIndex == 12,
-                                          onTap: () => _selectPage(12),
-                                          showLabel:
-                                              customizationPreferences
-                                                  .showSidebarLabels ||
-                                              customizationPreferences
-                                                      .sidebarMode ==
-                                                  SidebarMode.expanded,
-                                          iconSize: customizationPreferences
-                                              .sidebarIconSize,
-                                          hoverEffects: customizationPreferences
-                                              .hoverEffects,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(width: 24),
-
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-
-                            children: [
-                              const SizedBox(height: 8),
-
-                              _buildHeader(context),
-
-                              AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 280),
-                                switchInCurve: Curves.easeOutCubic,
-                                switchOutCurve: Curves.easeInCubic,
-                                transitionBuilder: (child, animation) =>
-                                    FadeTransition(
-                                      opacity: animation,
-                                      child: SizeTransition(
-                                        sizeFactor: animation,
-                                        alignment: Alignment.topCenter,
-                                        child: child,
-                                      ),
-                                    ),
-                                child: chartPreferences.telemetryTicker
-                                    ? Padding(
-                                        key: const ValueKey(
-                                          'telemetry-strip-visible',
-                                        ),
-                                        padding: const EdgeInsets.only(top: 16),
-                                        child: TelemetryStrip(
-                                          cpuUsage: telemetry.cpuUsage,
-                                          cpuTemperature:
-                                              telemetry
-                                                  .capabilities
-                                                  .supportsCpuTemperature
-                                              ? telemetry.cpuTemp
-                                              : null,
-                                          ramUsage: telemetry.ramUsage,
-                                          gpuUsage:
-                                              telemetry
-                                                  .capabilities
-                                                  .supportsGpuUsage
-                                              ? telemetry.gpuUsage
-                                              : null,
-                                          gpuTemperature:
-                                              telemetry
-                                                  .capabilities
-                                                  .supportsGpuTemperature
-                                              ? telemetry.gpuTemp
-                                              : null,
-                                          diskUsage: telemetry.diskUsage,
-                                          paused: telemetry.isPaused,
-                                          hasError: telemetry.lastError != null,
-                                          onOpenPerformance: () =>
-                                              _selectPage(2),
-                                          onCopySnapshot: _copySystemSnapshot,
-                                        ),
-                                      )
-                                    : const SizedBox.shrink(
-                                        key: ValueKey('telemetry-strip-hidden'),
-                                      ),
-                              ),
-
-                              SizedBox(
-                                height: chartPreferences.telemetryTicker
-                                    ? 20
-                                    : 32,
-                              ),
-
-                              Expanded(
-                                child: AnimatedSwitcher(
-                                  duration:
-                                      chartPreferences.animations &&
-                                          customizationPreferences
-                                              .animationsEnabled
-                                      ? customizationPreferences
-                                            .transitionDuration
-                                      : Duration.zero,
-
-                                  switchInCurve: Curves.easeOutCubic,
-                                  switchOutCurve: Curves.easeOutCubic,
-
-                                  transitionBuilder: (child, animation) {
-                                    final direction =
-                                        selectedIndex >= _previousIndex
-                                        ? 1.0
-                                        : -1.0;
-                                    return FadeTransition(
-                                      opacity: animation,
-
-                                      child: SlideTransition(
-                                        position: Tween<Offset>(
-                                          begin: Offset(0.025 * direction, 0),
-                                          end: Offset.zero,
-                                        ).animate(animation),
-
-                                        child: child,
-                                      ),
-                                    );
-                                  },
-
-                                  child: KeyedSubtree(
-                                    // A page can be revisited before its previous
-                                    // switch-out animation has finished. A visit
-                                    // key prevents two outgoing/incoming pages
-                                    // from briefly sharing the same sibling key.
-                                    key: ValueKey(
-                                      '$selectedIndex-$_pageTransitionSerial',
-                                    ),
-                                    child: getCurrentPage(),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        child: Scaffold(body: _buildServiceBinderBody(context)),
       ),
     );
   }
@@ -1825,7 +1768,7 @@ class _InGameOverlay extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
           decoration: BoxDecoration(
             color: const Color(0xED090D13),
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(6),
             border: Border.all(color: AppColors.accent.withValues(alpha: .45)),
             boxShadow: [
               BoxShadow(
@@ -1961,7 +1904,7 @@ class _DashboardEmptyState extends StatelessWidget {
         padding: const EdgeInsets.all(28),
         decoration: BoxDecoration(
           color: AppColors.surface(context),
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(color: AppColors.border(context)),
         ),
         child: Column(
@@ -1972,7 +1915,7 @@ class _DashboardEmptyState extends StatelessWidget {
               height: 56,
               decoration: BoxDecoration(
                 color: AppColors.accent.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(6),
               ),
               child: Icon(
                 Icons.dashboard_customize_rounded,
@@ -2023,7 +1966,7 @@ class _DashboardWorkspaceSelector extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
       decoration: BoxDecoration(
         color: AppColors.surface(context).withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.border(context)),
       ),
       child: Row(
@@ -2122,8 +2065,9 @@ class _DockItemState extends State<_DockItem> {
 
   @override
   Widget build(BuildContext context) {
-    final activeColor = AppColors.textPrimary(context);
-    final inactiveColor = AppColors.textSecondary(context);
+    final activeColor = const Color(0xFFF5F1E8);
+    final inactiveColor = Colors.white.withValues(alpha: 0.72);
+    final interactive = widget.active || hovering || focused;
 
     return Semantics(
       button: true,
@@ -2154,43 +2098,33 @@ class _DockItemState extends State<_DockItem> {
               child: AnimatedContainer(
                 duration: Duration(
                   milliseconds:
-                      (180 * AppColors.sidebarMotionIntensity.clamp(0.1, 1.5))
+                      (150 * AppColors.sidebarMotionIntensity.clamp(0.1, 1.5))
                           .round(),
                 ),
-                transform: Matrix4.translationValues(
-                  0,
-                  widget.hoverEffects && hovering
-                      ? -2 * AppColors.sidebarMotionIntensity
-                      : 0,
-                  0,
-                ),
-                width: widget.showLabel ? 160 : 52,
-                height: 52,
+                width: widget.showLabel ? 228 : 92,
+                height: 42,
                 padding: EdgeInsets.symmetric(
-                  horizontal: widget.showLabel ? 12 : 0,
+                  horizontal: widget.showLabel ? 14 : 0,
                 ),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(18),
-                  color:
-                      widget.active ||
-                          (widget.hoverEffects && hovering) ||
-                          focused
-                      ? AppColors.overlay(context, 0.08)
+                  color: interactive
+                      ? Colors.white.withValues(
+                          alpha: widget.active ? 0.12 : 0.065,
+                        )
                       : Colors.transparent,
-                  border: Border.all(
-                    color: focused
-                        ? AppColors.accent.withValues(alpha: 0.7)
-                        : Colors.transparent,
+                  border: Border(
+                    left: BorderSide(
+                      width: 3,
+                      color: widget.active
+                          ? AppColors.workOrderBlue
+                          : focused
+                          ? Colors.white.withValues(alpha: 0.45)
+                          : Colors.transparent,
+                    ),
+                    bottom: BorderSide(
+                      color: Colors.white.withValues(alpha: 0.07),
+                    ),
                   ),
-                  boxShadow: widget.active
-                      ? [
-                          BoxShadow(
-                            color: Colors.cyan.withValues(alpha: 0.18),
-                            blurRadius: 20,
-                            spreadRadius: 1,
-                          ),
-                        ]
-                      : [],
                 ),
                 child: Row(
                   mainAxisAlignment: widget.showLabel
@@ -2200,23 +2134,30 @@ class _DockItemState extends State<_DockItem> {
                     Icon(
                       widget.icon,
                       size: widget.iconSize,
-                      color: widget.active ? AppColors.accent : inactiveColor,
+                      color: widget.active ? activeColor : inactiveColor,
                     ),
                     if (widget.showLabel) ...[
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 11),
                       Expanded(
                         child: Text(
                           widget.label,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
+                          style: AppTypography.body.copyWith(
                             color: widget.active ? activeColor : inactiveColor,
-                            fontSize: 11,
+                            fontSize: 12,
                             fontWeight: widget.active
                                 ? FontWeight.w700
                                 : FontWeight.w500,
                           ),
                         ),
                       ),
+                      if (widget.active)
+                        CustomPaint(
+                          size: const Size(11, 13),
+                          painter: _IndexNotchPainter(
+                            color: AppColors.workOrderBlue,
+                          ),
+                        ),
                     ],
                   ],
                 ),
@@ -2227,6 +2168,28 @@ class _DockItemState extends State<_DockItem> {
       ),
     );
   }
+}
+
+class _IndexNotchPainter extends CustomPainter {
+  final Color color;
+
+  const _IndexNotchPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = color;
+    final path = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width, 0)
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height * 0.65)
+      ..close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _IndexNotchPainter oldDelegate) =>
+      oldDelegate.color != color;
 }
 
 class _CommandPaletteButton extends StatefulWidget {
@@ -2252,44 +2215,36 @@ class _CommandPaletteButtonState extends State<_CommandPaletteButton> {
         child: GestureDetector(
           onTap: widget.onPressed,
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 160),
-            height: 38,
-            padding: const EdgeInsets.symmetric(horizontal: 11),
+            duration: const Duration(milliseconds: 140),
+            height: 34,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
             decoration: BoxDecoration(
               color: _hovering
-                  ? AppColors.accent.withValues(alpha: 0.13)
-                  : AppColors.overlay(context, 0.045),
-              borderRadius: BorderRadius.circular(12),
+                  ? AppColors.workOrderBlue.withValues(alpha: 0.12)
+                  : AppColors.controlFill(context),
+              borderRadius: BorderRadius.circular(3),
               border: Border.all(
                 color: _hovering
-                    ? AppColors.accent.withValues(alpha: 0.3)
-                    : AppColors.border(context),
+                    ? AppColors.workOrderBlue.withValues(alpha: 0.5)
+                    : AppColors.rule(context),
               ),
-              boxShadow: _hovering
-                  ? [
-                      BoxShadow(
-                        color: AppColors.accent.withValues(alpha: 0.1),
-                        blurRadius: 20,
-                      ),
-                    ]
-                  : null,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   Icons.search_rounded,
-                  size: 17,
+                  size: 16,
                   color: _hovering
-                      ? AppColors.accent
+                      ? AppColors.workOrderBlue
                       : AppColors.textSecondary(context),
                 ),
                 const SizedBox(width: 7),
                 Text(
                   'Quick actions',
-                  style: TextStyle(
+                  style: AppTypography.body.copyWith(
                     color: AppColors.textSecondary(context),
-                    fontSize: 11,
+                    fontSize: 10,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -2314,16 +2269,15 @@ class _ShortcutLabel extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
-        color: AppColors.overlay(context, 0.055),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppColors.border(context)),
+        color: AppColors.background(context),
+        borderRadius: BorderRadius.circular(2),
+        border: Border.all(color: AppColors.rule(context)),
       ),
       child: Text(
         label,
-        style: TextStyle(
+        style: AppTypography.metadata.copyWith(
           color: AppColors.textMuted(context),
           fontSize: 8,
-          fontWeight: FontWeight.w700,
         ),
       ),
     );
@@ -2344,38 +2298,29 @@ class _TelemetryStatus extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = error
-        ? Colors.redAccent
+        ? AppColors.warningRed
         : paused
-        ? Colors.amber
-        : Colors.greenAccent;
+        ? const Color(0xFF987126)
+        : AppColors.healthyGreen;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      height: 34,
+      padding: const EdgeInsets.symmetric(horizontal: 9),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.18)),
+        color: AppColors.controlFill(context),
+        borderRadius: BorderRadius.circular(3),
+        border: Border.all(color: AppColors.rule(context)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 7,
-            height: 7,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 8),
-              ],
-            ),
-          ),
-          const SizedBox(width: 7),
+          Container(width: 3, height: 16, color: color),
+          const SizedBox(width: 8),
           Text(
             label,
-            style: TextStyle(
+            style: AppTypography.body.copyWith(
               color: AppColors.textSecondary(context),
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -2414,19 +2359,19 @@ class _ShellControlButton extends StatelessWidget {
           onPressed: onPressed,
           style: IconButton.styleFrom(
             backgroundColor: active
-                ? AppColors.accent.withValues(alpha: 0.15)
-                : AppColors.overlay(context, 0.045),
+                ? AppColors.workOrderBlue.withValues(alpha: 0.14)
+                : AppColors.controlFill(context),
             foregroundColor: active
-                ? AppColors.accent
+                ? AppColors.workOrderBlue
                 : AppColors.textSecondary(context),
             disabledForegroundColor: AppColors.textMuted(context),
-            minimumSize: const Size(38, 38),
+            minimumSize: const Size(34, 34),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(3),
               side: BorderSide(
                 color: active
-                    ? AppColors.accent.withValues(alpha: 0.3)
-                    : AppColors.border(context),
+                    ? AppColors.workOrderBlue.withValues(alpha: 0.5)
+                    : AppColors.rule(context),
               ),
             ),
           ),
@@ -2436,7 +2381,7 @@ class _ShellControlButton extends StatelessWidget {
                   height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : Icon(icon, size: 18),
+              : Icon(icon, size: 17),
         ),
       ),
     );
@@ -2466,12 +2411,9 @@ class _ChartOptionsButton extends StatelessWidget {
             enabled: false,
             height: 28,
             child: Text(
-              'INTERFACE',
-              style: TextStyle(
+              'WORKSPACE',
+              style: AppTypography.sectionLabel.copyWith(
                 color: AppColors.textMuted(context),
-                fontSize: 9,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.2,
               ),
             ),
           ),
@@ -2491,11 +2433,8 @@ class _ChartOptionsButton extends StatelessWidget {
             height: 28,
             child: Text(
               'CHARTS',
-              style: TextStyle(
+              style: AppTypography.sectionLabel.copyWith(
                 color: AppColors.textMuted(context),
-                fontSize: 9,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.2,
               ),
             ),
           ),
@@ -2521,12 +2460,12 @@ class _ChartOptionsButton extends StatelessWidget {
           ),
         ],
         child: Container(
-          width: 38,
-          height: 38,
+          width: 34,
+          height: 34,
           decoration: BoxDecoration(
-            color: AppColors.overlay(context, 0.045),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border(context)),
+            color: AppColors.controlFill(context),
+            borderRadius: BorderRadius.circular(3),
+            border: Border.all(color: AppColors.rule(context)),
           ),
           child: Icon(
             Icons.tune_rounded,

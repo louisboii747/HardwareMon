@@ -1,0 +1,91 @@
+info:
+  name: Get Storage History
+  type: http
+  seq: 2
+  tags:
+    - storage
+
+http:
+  method: GET
+  url: "{{baseUrl}}/storage/history"
+  params:
+    - name: drive_id
+      value: ""
+      type: query
+      disabled: true
+    - name: range_seconds
+      value: "3600"
+      type: query
+    - name: points
+      value: "360"
+      type: query
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    description: Successful Response
+    request:
+      url: "{{baseUrl}}/storage/history"
+      method: GET
+      params:
+        - name: drive_id
+          value: ""
+          type: query
+          disabled: true
+        - name: range_seconds
+          value: "3600"
+          type: query
+        - name: points
+          value: "360"
+          type: query
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: ""
+  - name: 422 Response
+    description: Validation Error
+    request:
+      url: "{{baseUrl}}/storage/history"
+      method: GET
+      params:
+        - name: drive_id
+          value: ""
+          type: query
+          disabled: true
+        - name: range_seconds
+          value: "3600"
+          type: query
+        - name: points
+          value: "360"
+          type: query
+    response:
+      status: 422
+      statusText: Unprocessable Entity
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "detail": [
+              {
+                "loc": [],
+                "msg": "",
+                "type": "",
+                "input": "",
+                "ctx": {}
+              }
+            ]
+          }

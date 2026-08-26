@@ -357,7 +357,7 @@ class _SummaryCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface(context),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: accent.withValues(alpha: 0.16)),
       ),
       child: Column(

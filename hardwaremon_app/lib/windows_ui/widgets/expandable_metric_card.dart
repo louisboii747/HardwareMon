@@ -36,7 +36,7 @@ class ExpandableMetricCard extends StatelessWidget {
       color: Colors.transparent,
 
       child: InkWell(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(6),
 
         onTap: () {
           Navigator.push(

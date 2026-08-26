@@ -1,0 +1,75 @@
+{
+  "title": "Choose HardwareMon's new visual world",
+  "question": "Keep the service-binder direction, take a challenger, or ask for a new hand.",
+  "options": [
+    {
+      "id": "service-binder",
+      "label": "Service Binder",
+      "kicker": "PROPOSED DIRECTION",
+      "lineage": "repair-bench field manuals and inspection sheets",
+      "thesis": "HardwareMon becomes the calm, well-kept service record beside the machine.",
+      "palette": ["#171A1D", "#303941", "#E8E3D8", "#255E85", "#B5483B"],
+      "materials": ["powder-coated steel", "laminated stock", "blue cloth tabs", "red pencil marks"],
+      "viewport": "A slim tab rail sits beside one continuous work sheet with live readings, a ruled trend plot, and the current condition stamped at the top.",
+      "risk": "The paper details must stay restrained or the app starts to feel themed.",
+      "sketch": ".impeccable/sketches/service-binder.png"
+    },
+    {
+      "id": "split-flap",
+      "label": "Split-Flap Board",
+      "kicker": "CHALLENGER",
+      "lineage": "rail concourse departure boards",
+      "thesis": "Live metrics update as disciplined rows that you can read across the room.",
+      "palette": ["#111211", "#252724", "#F0EFE9", "#D59B31", "#9A3D38"],
+      "materials": ["matte flap faces", "brushed steel", "painted letters"],
+      "viewport": "Fixed metric columns dominate the first view while compact controls and page destinations sit in the steel frame.",
+      "risk": "The row grammar can flatten settings, charts, and long-form diagnostics.",
+      "case": "A near-tie on identification and clarity; the binder supports more kinds of work without losing its character.",
+      "sketch": ".impeccable/sketches/split-flap.png",
+      "hero": "https://impeccable.style/worlds/cards/signals-instruments-split-flap-concourse-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/signals-instruments-split-flap-concourse.webp"
+    },
+    {
+      "id": "one-bit",
+      "label": "One-Bit Desktop",
+      "kicker": "CHALLENGER",
+      "lineage": "early monochrome graphical desktops",
+      "thesis": "HardwareMon reads as a small, opinionated computer utility built from pixels and windows.",
+      "palette": ["#0B0B0B", "#F5F4EC", "#A8A79F"],
+      "materials": ["one-pixel chrome", "ordered dithers", "pixel icons"],
+      "viewport": "Overlapping telemetry windows sit on a dithered desktop with one-pixel title bars and inverted selections.",
+      "risk": "Strict monochrome weakens chart hierarchy, warnings, and long-session comfort.",
+      "case": "It identifies as a hand-built computer tool, but loses product clarity once telemetry states become dense.",
+      "sketch": ".impeccable/sketches/one-bit.png",
+      "hero": "https://impeccable.style/worlds/cards/medium-native-one-bit-desktop-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/medium-native-one-bit-desktop.webp"
+    },
+    {
+      "id": "tensegrity",
+      "label": "Load Map",
+      "kicker": "CHALLENGER",
+      "lineage": "tensegrity models and engineering load diagrams",
+      "thesis": "System pressure appears as connected forces that tighten, slacken, and rebalance.",
+      "palette": ["#E4E1DA", "#171717", "#B73931", "#87837C"],
+      "materials": ["carbon rods", "red cord", "concrete", "pencil annotations"],
+      "viewport": "A live force diagram anchors the view while readings and actions pin to its nodes with leader lines.",
+      "risk": "The metaphor makes basic readings harder to find and compare.",
+      "case": "It carries system relationships well, but the user's frequent monitoring tasks become less direct.",
+      "sketch": ".impeccable/sketches/tensegrity.png",
+      "hero": "https://impeccable.style/worlds/cards/kinetic-sculpture-automata-tensegrity-breathing-column-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/kinetic-sculpture-automata-tensegrity-breathing-column.webp"
+    }
+  ],
+  "reroll": true,
+  "canon": true,
+  "canonCard": {
+    "label": "Polished system monitor",
+    "thesis": "A familiar dark desktop dashboard with navigation, metric cards, and conventional charts.",
+    "palette": ["#111318", "#20242B", "#F5F7FA", "#2B82C9"],
+    "materials": ["flat app surfaces", "subtle separators"],
+    "viewport": "A standard side rail opens onto a grid of metric cards and a wide chart.",
+    "risk": "It remains easy to use but may still resemble the generated dashboard pattern you want removed.",
+    "sketch": ".impeccable/sketches/canon.png"
+  },
+  "steer": true
+}

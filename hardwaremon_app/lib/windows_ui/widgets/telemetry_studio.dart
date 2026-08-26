@@ -229,7 +229,7 @@ class _TelemetryStudioState extends State<TelemetryStudio> {
                     height: 38,
                     decoration: BoxDecoration(
                       color: AppColors.accent.withValues(alpha: 0.13),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(6),
                     ),
                     child: Icon(
                       Icons.monitor_heart_rounded,
@@ -482,7 +482,7 @@ class _TelemetryStudioState extends State<TelemetryStudio> {
                 lineTouchData: LineTouchData(
                   touchSpotThreshold: 20,
                   touchTooltipData: LineTouchTooltipData(
-                    tooltipBorderRadius: BorderRadius.circular(12),
+                    tooltipBorderRadius: BorderRadius.circular(6),
                     tooltipPadding: const EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 9,
@@ -679,7 +679,7 @@ class _StudioMetricTile extends StatelessWidget {
       label: '$label chart series',
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(6),
         child: AnimatedOpacity(
           duration: const Duration(milliseconds: 180),
           opacity: active ? 1 : 0.48,
@@ -690,7 +690,7 @@ class _StudioMetricTile extends StatelessWidget {
               color: active
                   ? color.withValues(alpha: 0.075)
                   : AppColors.overlay(context, 0.02),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(6),
               border: Border.all(
                 color: active
                     ? color.withValues(alpha: 0.24)

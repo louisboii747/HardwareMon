@@ -545,7 +545,7 @@ class _ProcessesPageState extends State<ProcessesPage> {
       height: 56,
       decoration: BoxDecoration(
         color: AppColors.surface(context),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.border(context)),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -590,7 +590,7 @@ class _ProcessesPageState extends State<ProcessesPage> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.overlay(context, 0.025),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.border(context)),
       ),
       child: Wrap(
@@ -681,7 +681,7 @@ class _ProcessesPageState extends State<ProcessesPage> {
         return Container(
           decoration: BoxDecoration(
             color: AppColors.surface(context),
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(6),
             border: Border.all(color: AppColors.border(context)),
           ),
           child: Column(
@@ -893,7 +893,7 @@ class _ProcessSummaryCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.055),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: color.withValues(alpha: 0.14)),
       ),
       child: Row(
@@ -903,7 +903,7 @@ class _ProcessSummaryCard extends StatelessWidget {
             height: 38,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(6),
             ),
             child: Icon(icon, color: color, size: 19),
           ),
@@ -1102,7 +1102,7 @@ class _ProcessTileState extends State<_ProcessTile> {
                     : hovering
                     ? AppColors.overlay(context, 0.045)
                     : AppColors.overlay(context, 0.025),
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(6),
                 border: Border.all(
                   color: widget.watched
                       ? Colors.amberAccent.withValues(alpha: 0.2)
@@ -1415,7 +1415,7 @@ class _ProcessExpandedDetails extends StatelessWidget {
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
         color: AppColors.overlay(context, 0.025),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.border(context)),
       ),
       child: LayoutBuilder(
@@ -1564,7 +1564,7 @@ class _InlineDetail extends StatelessWidget {
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: AppColors.overlay(context, 0.028),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.border(context)),
       ),
       child: Column(
@@ -1631,7 +1631,7 @@ class _ControlChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: AppColors.overlay(context, 0.035),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.border(context)),
       ),
       child: Row(
@@ -1674,7 +1674,7 @@ class _ToggleChip extends StatelessWidget {
           color: value
               ? AppColors.accent.withValues(alpha: 0.09)
               : AppColors.overlay(context, 0.025),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(
             color: value
                 ? AppColors.accent.withValues(alpha: 0.2)
@@ -1727,7 +1727,7 @@ class _StatusPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
@@ -1786,7 +1786,7 @@ class _InlineNotice extends StatelessWidget {
       padding: const EdgeInsets.all(11),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.065),
-        borderRadius: BorderRadius.circular(13),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: color.withValues(alpha: 0.18)),
       ),
       child: Row(
@@ -1827,7 +1827,7 @@ class _ProcessEmptyState extends StatelessWidget {
         padding: const EdgeInsets.all(22),
         decoration: BoxDecoration(
           color: AppColors.surface(context),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(color: AppColors.border(context)),
         ),
         child: Column(

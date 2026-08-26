@@ -22,7 +22,7 @@ class AppSettings {
   final bool autoUpdateChecks;
 
   const AppSettings({
-    this.theme = 'Dark',
+    this.theme = 'Light',
     this.refreshInterval = '1s',
     this.launchOnStartup = true,
     this.minimiseToTray = true,

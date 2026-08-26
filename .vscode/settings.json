@@ -6,15 +6,14 @@
       "splitTerminals": [
         {
           "name": "HardwareMon Backend",
-          "commands": [
-            "cd backend_fastapi"
-          ]
+          "commands": ["cd backend_fastapi"]
         },
         {
           "name": "HardwareMon App",
-          "commands": []
+          "commands": ["cd hardwaremon_app"]
         }
       ]
     }
-  ]
+  ],
+  "cmake.ignoreCMakeListsMissing": true
 }

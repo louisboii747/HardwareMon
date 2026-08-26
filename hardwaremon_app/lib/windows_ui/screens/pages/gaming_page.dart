@@ -243,7 +243,7 @@ class _GamingPageState extends State<GamingPage> {
           height: 44,
           decoration: BoxDecoration(
             color: Colors.deepOrangeAccent.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(6),
           ),
           child: const Icon(
             Icons.sports_esports_rounded,
@@ -482,7 +482,7 @@ class _GamingPageState extends State<GamingPage> {
                       height: 44,
                       decoration: BoxDecoration(
                         color: Colors.greenAccent.withValues(alpha: .1),
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(6),
                       ),
                       child: const Icon(
                         Icons.speed_rounded,
@@ -938,7 +938,7 @@ class _GameArtwork extends StatelessWidget {
       aspectRatio: 1,
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(6),
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -1122,7 +1122,7 @@ class _OverlayStatus extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.overlay(context, .04),
-        borderRadius: BorderRadius.circular(13),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: color.withValues(alpha: .18)),
       ),
       child: Row(
@@ -1378,7 +1378,7 @@ class _GamingMetricCard extends StatelessWidget {
                   height: 35,
                   decoration: BoxDecoration(
                     color: metric.color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(6),
                   ),
                   child: Icon(metric.icon, color: metric.color, size: 18),
                 ),
@@ -1450,7 +1450,7 @@ class _SessionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(6),
       child: GlassPanel(
         padding: const EdgeInsets.all(16),
         glowColor: Colors.deepOrangeAccent,
@@ -1464,7 +1464,7 @@ class _SessionCard extends StatelessWidget {
                   height: 38,
                   decoration: BoxDecoration(
                     color: Colors.deepOrangeAccent.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(13),
+                    borderRadius: BorderRadius.circular(6),
                   ),
                   child: const Icon(
                     Icons.sports_esports_rounded,
@@ -1714,7 +1714,7 @@ class _EmptyState extends StatelessWidget {
         padding: const EdgeInsets.all(28),
         decoration: BoxDecoration(
           color: AppColors.surface(context),
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(color: AppColors.border(context)),
         ),
         child: Column(
@@ -1757,7 +1757,7 @@ class _ErrorBanner extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.orange.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: Colors.orange.withValues(alpha: 0.18)),
       ),
       child: Row(

@@ -1,11 +1,13 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
+import '../core/motion/motion.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_radius.dart';
-import '../core/motion/motion.dart';
 
+/// Shared work-sheet surface used throughout the desktop UI.
+///
+/// The class name remains stable so feature pages keep their existing widget
+/// contracts while the old glass treatment is replaced across the app.
 class GlassPanel extends StatefulWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -17,9 +19,9 @@ class GlassPanel extends StatefulWidget {
   const GlassPanel({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(24),
-    this.blur = 20,
-    this.opacity = 0.75,
+    this.padding = const EdgeInsets.all(20),
+    this.blur = 0,
+    this.opacity = 1,
     this.interactive = true,
     this.glowColor,
   });
@@ -33,8 +35,14 @@ class _GlassPanelState extends State<GlassPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final active = widget.interactive && _hovering;
-    final glow = widget.glowColor ?? AppColors.accent;
+    final hovering = widget.interactive && _hovering;
+    final selectedRule = widget.glowColor ?? AppColors.accent;
+    final base = AppColors.surface(context);
+    final hover = Color.alphaBlend(
+      selectedRule.withValues(alpha: 0.035),
+      AppColors.surfaceElevated(context),
+    );
+
     return RepaintBoundary(
       child: MouseRegion(
         onEnter: widget.interactive
@@ -43,67 +51,16 @@ class _GlassPanelState extends State<GlassPanel> {
         onExit: widget.interactive
             ? (_) => setState(() => _hovering = false)
             : null,
-        child: AnimatedSlide(
-          offset: Offset(0, _hovering ? -0.02 : 0),
+        child: AnimatedContainer(
           duration: Motion.accessible(context, Motion.fast),
           curve: Motion.emphasized,
-          child: AnimatedContainer(
-            duration: Motion.accessible(context, Motion.fast),
-            curve: Motion.emphasized,
-
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-
-              boxShadow: [
-                BoxShadow(
-                  color: active
-                      ? glow.withValues(alpha: 0.14)
-                      : AppColors.shadow(context),
-                  blurRadius: active ? 32 : 18,
-                  spreadRadius: active ? 1 : 0,
-                ),
-              ],
-            ),
-
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-
-              child: BackdropFilter(
-                filter: ImageFilter.blur(
-                  sigmaX: widget.blur,
-                  sigmaY: widget.blur,
-                ),
-
-                child: Container(
-                  padding: widget.padding,
-
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        active
-                            ? glow.withValues(alpha: 0.055)
-                            : AppColors.overlay(context, 0.012),
-                        AppColors.surface(
-                          context,
-                        ).withValues(alpha: widget.opacity.clamp(0, 1)),
-                      ],
-                    ),
-
-                    borderRadius: BorderRadius.circular(AppRadius.lg),
-
-                    border: Border.all(
-                      color: AppColors.border(context),
-                      width: 1,
-                    ),
-                  ),
-
-                  child: widget.child,
-                ),
-              ),
-            ),
+          padding: widget.padding,
+          decoration: BoxDecoration(
+            color: hovering ? hover : base,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(color: AppColors.rule(context)),
           ),
+          child: Material(type: MaterialType.transparency, child: widget.child),
         ),
       ),
     );

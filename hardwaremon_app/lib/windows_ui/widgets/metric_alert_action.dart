@@ -136,7 +136,7 @@ Future<bool> showMetricAlertDialog({
               height: 38,
               decoration: BoxDecoration(
                 color: AppColors.accent.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(6),
               ),
               child: Icon(
                 Icons.notifications_active_rounded,
@@ -166,7 +166,7 @@ Future<bool> showMetricAlertDialog({
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: AppColors.overlay(context, 0.035),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(6),
                   border: Border.all(color: AppColors.border(context)),
                 ),
                 child: Row(

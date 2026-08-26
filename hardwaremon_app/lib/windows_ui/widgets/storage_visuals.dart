@@ -624,7 +624,7 @@ class _StorageFleetTileState extends State<_StorageFleetTile> {
             color: _hovered
                 ? color.withValues(alpha: 0.07)
                 : AppColors.overlay(context, 0.025),
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(6),
             border: Border.all(
               color: _hovered
                   ? color.withValues(alpha: 0.3)

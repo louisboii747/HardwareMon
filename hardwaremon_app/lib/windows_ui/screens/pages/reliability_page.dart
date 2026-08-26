@@ -186,7 +186,7 @@ class _ReliabilityScorePanel extends StatelessWidget {
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: AppColors.surface(context),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(color: AppColors.border(context)),
           boxShadow: [
             BoxShadow(
@@ -378,7 +378,7 @@ class _SignalCard extends StatelessWidget {
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
           color: signal.color.withValues(alpha: 0.055),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(color: signal.color.withValues(alpha: 0.16)),
         ),
         child: Column(
@@ -392,7 +392,7 @@ class _SignalCard extends StatelessWidget {
                   height: 38,
                   decoration: BoxDecoration(
                     color: signal.color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(6),
                   ),
                   child: Icon(signal.icon, color: signal.color, size: 19),
                 ),
@@ -479,7 +479,7 @@ class _ReliabilitySection extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppColors.surface(context),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.border(context)),
       ),
       child: Column(
@@ -668,7 +668,7 @@ class _DriftRow extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.overlay(context, 0.025),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.border(context)),
       ),
       child: Row(
@@ -798,9 +798,7 @@ class _RunbookButton extends StatelessWidget {
           alignment: Alignment.centerLeft,
           padding: const EdgeInsets.all(12),
           side: BorderSide(color: action.color.withValues(alpha: 0.28)),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         ),
         child: Row(
           children: [
@@ -847,7 +845,7 @@ class _FactTile extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: fact.color.withValues(alpha: 0.055),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: fact.color.withValues(alpha: 0.15)),
       ),
       child: Row(

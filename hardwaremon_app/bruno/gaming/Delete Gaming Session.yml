@@ -1,0 +1,70 @@
+info:
+  name: Delete Gaming Session
+  type: http
+  seq: 5
+  tags:
+    - gaming
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/gaming/session/:session_id"
+  params:
+    - name: session_id
+      value: ""
+      type: path
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 202 Response
+    description: Successful Response
+    request:
+      url: "{{baseUrl}}/gaming/session/:session_id"
+      method: DELETE
+      params:
+        - name: session_id
+          value: ""
+          type: path
+    response:
+      status: 202
+      statusText: Accepted
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: ""
+  - name: 422 Response
+    description: Validation Error
+    request:
+      url: "{{baseUrl}}/gaming/session/:session_id"
+      method: DELETE
+      params:
+        - name: session_id
+          value: ""
+          type: path
+    response:
+      status: 422
+      statusText: Unprocessable Entity
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "detail": [
+              {
+                "loc": [],
+                "msg": "",
+                "type": "",
+                "input": "",
+                "ctx": {}
+              }
+            ]
+          }

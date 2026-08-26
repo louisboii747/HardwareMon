@@ -291,7 +291,7 @@ class _BenchmarkPageState extends State<BenchmarkPage> {
           height: 44,
           decoration: BoxDecoration(
             color: AppColors.accent.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(6),
           ),
           child: Icon(Icons.speed_rounded, color: AppColors.accent),
         ),
@@ -531,7 +531,7 @@ class _BenchmarkPageState extends State<BenchmarkPage> {
                 height: 38,
                 decoration: BoxDecoration(
                   color: Colors.purpleAccent.withValues(alpha: 0.09),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: const Icon(
                   Icons.leaderboard_rounded,
@@ -705,7 +705,7 @@ class _BenchmarkPageState extends State<BenchmarkPage> {
               padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
               decoration: BoxDecoration(
                 color: AppColors.overlay(context, 0.035),
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(6),
               ),
               child: Column(
                 children: [
@@ -755,7 +755,7 @@ class _BenchmarkCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.surface(context),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.border(context)),
         boxShadow: [
           BoxShadow(color: AppColors.shadow(context), blurRadius: 18),
@@ -785,7 +785,7 @@ class _ScoreCard extends StatelessWidget {
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.065),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: color.withValues(alpha: 0.16)),
       ),
       child: Column(
@@ -834,7 +834,7 @@ class _ResultRow extends StatelessWidget {
         : result.overallScore - previous!.overallScore;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(6),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 4),
         child: Row(
@@ -845,7 +845,7 @@ class _ResultRow extends StatelessWidget {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: AppColors.accent.withValues(alpha: 0.09),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
                 '${result.overallScore}',
@@ -1147,7 +1147,7 @@ class _ErrorBanner extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.orange.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: Colors.orange.withValues(alpha: 0.18)),
       ),
       child: Row(
@@ -1244,7 +1244,7 @@ class _RankingMetric extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.overlay(context, 0.035),
-        borderRadius: BorderRadius.circular(13),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.border(context)),
       ),
       child: Row(
@@ -1457,7 +1457,7 @@ class _ComparisonUnavailable extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.overlay(context, 0.035),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
         children: [

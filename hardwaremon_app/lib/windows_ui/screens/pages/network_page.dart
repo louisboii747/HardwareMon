@@ -1163,7 +1163,7 @@ Last checked: ${result.checkedAt.toIso8601String()}
                 height: 42,
                 decoration: BoxDecoration(
                   color: Colors.cyanAccent.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: const Icon(
                   Icons.radar_rounded,
@@ -1388,7 +1388,7 @@ Last checked: ${result.checkedAt.toIso8601String()}
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
             color: _pingColor.withValues(alpha: 0.06),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(6),
             border: Border.all(color: _pingColor.withValues(alpha: 0.16)),
           ),
           child: Row(
@@ -1631,7 +1631,7 @@ class _NetworkMetricCardState extends State<_NetworkMetricCard> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: AppColors.surface(context).withValues(alpha: 0.76),
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(6),
               border: Border.all(
                 color: _hovering
                     ? widget.color.withValues(alpha: 0.35)
@@ -1653,7 +1653,7 @@ class _NetworkMetricCardState extends State<_NetworkMetricCard> {
                   height: 38,
                   decoration: BoxDecoration(
                     color: widget.color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(6),
                   ),
                   child: Icon(widget.icon, color: widget.color, size: 19),
                 ),
@@ -1904,15 +1904,15 @@ class _AdapterChip extends StatelessWidget {
       color: selected
           ? AppColors.accent.withValues(alpha: 0.14)
           : AppColors.overlay(context, 0.035),
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(6),
       child: InkWell(
         onTap: onSelected,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(6),
         child: Container(
           constraints: const BoxConstraints(minWidth: 210),
           padding: const EdgeInsets.fromLTRB(12, 9, 6, 9),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(6),
             border: Border.all(
               color: selected
                   ? AppColors.accent.withValues(alpha: 0.45)
@@ -2115,7 +2115,7 @@ class _PingMetricGrid extends StatelessWidget {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: AppColors.overlay(context, 0.035),
-                  borderRadius: BorderRadius.circular(13),
+                  borderRadius: BorderRadius.circular(6),
                   border: Border.all(color: AppColors.border(context)),
                 ),
                 child: Column(
@@ -2158,7 +2158,7 @@ class _PingEmptyState extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 34),
       decoration: BoxDecoration(
         color: AppColors.overlay(context, 0.025),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.border(context)),
       ),
       child: Column(
@@ -2200,7 +2200,7 @@ class _LivePingBanner extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
       decoration: BoxDecoration(
         color: Colors.cyanAccent.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: Colors.cyanAccent.withValues(alpha: 0.18)),
       ),
       child: const Row(
@@ -2266,7 +2266,7 @@ class _StatusPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
@@ -2423,7 +2423,7 @@ class _ErrorBanner extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.redAccent.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(13),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: Colors.redAccent.withValues(alpha: 0.2)),
       ),
       child: Row(

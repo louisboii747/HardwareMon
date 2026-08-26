@@ -80,7 +80,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       decoration: BoxDecoration(
         color: AppColors.surface(context),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(6),
 
         border: Border.all(color: AppColors.border(context)),
 

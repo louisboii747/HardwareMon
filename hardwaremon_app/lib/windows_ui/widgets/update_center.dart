@@ -37,7 +37,7 @@ class UpdateSettingsPanel extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: AppColors.overlay(context, 0.028),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(6),
             border: Border.all(color: AppColors.border(context)),
           ),
           child: Column(
@@ -167,7 +167,7 @@ class _UpdateCenterDialogState extends State<_UpdateCenterDialog> {
               constraints: const BoxConstraints(maxHeight: 720),
               decoration: BoxDecoration(
                 color: AppColors.surfaceElevated(context),
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(6),
                 border: Border.all(color: AppColors.border(context)),
                 boxShadow: [
                   BoxShadow(
@@ -183,7 +183,7 @@ class _UpdateCenterDialogState extends State<_UpdateCenterDialog> {
                 ],
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(6),
                 child: Stack(
                   children: [
                     Positioned(
@@ -290,7 +290,7 @@ class _UpdateCenterDialogState extends State<_UpdateCenterDialog> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.overlay(context, 0.035),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.border(context)),
       ),
       child: Column(
@@ -407,7 +407,7 @@ class _UpdateCenterDialogState extends State<_UpdateCenterDialog> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.overlay(context, 0.025),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.border(context)),
       ),
       child: Column(
@@ -456,7 +456,7 @@ class _UpdateCenterDialogState extends State<_UpdateCenterDialog> {
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
         color: Colors.redAccent.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(13),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: Colors.redAccent.withValues(alpha: 0.24)),
       ),
       child: Row(
@@ -623,7 +623,7 @@ class _UpdateDetailTile extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.overlay(context, 0.028),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.border(context)),
       ),
       child: Row(

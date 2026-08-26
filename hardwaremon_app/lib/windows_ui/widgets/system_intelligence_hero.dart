@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../core/theme/app_colors.dart';
+import '../core/theme/app_typography.dart';
 import '../core/theme/hardware_palette.dart';
 import '../models/telemetry_insights.dart';
 import '../models/monitoring_lens.dart';
@@ -35,39 +36,21 @@ class SystemIntelligenceHero extends StatelessWidget {
       child: Container(
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(26),
-          border: Border.all(color: scoreColor.withValues(alpha: 0.22)),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              scoreColor.withValues(alpha: 0.11),
-              AppColors.surfaceElevated(context).withValues(alpha: 0.92),
-              AppColors.surface(context).withValues(alpha: 0.82),
-            ],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: scoreColor.withValues(alpha: 0.08),
-              blurRadius: 38,
-              spreadRadius: -8,
-            ),
-          ],
+          borderRadius: BorderRadius.circular(6),
+          color: AppColors.surface(context),
+          border: Border.all(color: AppColors.rule(context)),
+          boxShadow: const [],
         ),
         child: Stack(
           children: [
-            Positioned.fill(
-              child: IgnorePointer(
-                child: CustomPaint(
-                  painter: _HeroAtmospherePainter(
-                    color: scoreColor,
-                    brightness: Theme.of(context).brightness,
-                  ),
-                ),
-              ),
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              child: Container(width: 4, color: scoreColor),
             ),
             Padding(
-              padding: const EdgeInsets.all(22),
+              padding: const EdgeInsets.fromLTRB(24, 20, 20, 20),
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   final wide = constraints.maxWidth >= 900;
@@ -159,28 +142,13 @@ class _Overview extends StatelessWidget {
       children: [
         Row(
           children: [
-            Container(
-              width: 7,
-              height: 7,
-              decoration: BoxDecoration(
-                color: scoreColor,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: scoreColor.withValues(alpha: 0.55),
-                    blurRadius: 10,
-                  ),
-                ],
-              ),
-            ),
+            Container(width: 3, height: 17, color: scoreColor),
             const SizedBox(width: 8),
             Text(
               'SYSTEM INTELLIGENCE',
-              style: TextStyle(
+              style: AppTypography.sectionLabel.copyWith(
                 color: scoreColor,
                 fontSize: 9,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.6,
               ),
             ),
             const Spacer(),
@@ -192,12 +160,11 @@ class _Overview extends StatelessWidget {
           profile.observation,
           maxLines: 3,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(
+          style: AppTypography.heading.copyWith(
             color: AppColors.textPrimary(context),
             fontSize: 16,
             fontWeight: FontWeight.w600,
             height: 1.24,
-            letterSpacing: -0.25,
           ),
         ),
         const SizedBox(height: 8),
@@ -449,7 +416,7 @@ class _SignalTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
       decoration: BoxDecoration(
         color: AppColors.overlay(context, 0.035),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: color.withValues(alpha: 0.13)),
       ),
       child: Row(
@@ -558,10 +525,14 @@ class _HeroActionState extends State<_HeroAction> {
               duration: const Duration(milliseconds: 180),
               padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
               decoration: BoxDecoration(
-                color: widget.color.withValues(alpha: _hovered ? 0.14 : 0.08),
-                borderRadius: BorderRadius.circular(11),
+                color: _hovered
+                    ? widget.color.withValues(alpha: 0.12)
+                    : AppColors.controlFill(context),
+                borderRadius: BorderRadius.circular(3),
                 border: Border.all(
-                  color: widget.color.withValues(alpha: _hovered ? 0.34 : 0.18),
+                  color: _hovered
+                      ? widget.color.withValues(alpha: 0.42)
+                      : AppColors.rule(context),
                 ),
               ),
               child: Row(
@@ -607,12 +578,8 @@ class _ScoreRingPainter extends CustomPainter {
     final foreground = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke
-      ..strokeCap = StrokeCap.round
-      ..shader = SweepGradient(
-        startAngle: -math.pi / 2,
-        endAngle: math.pi * 1.5,
-        colors: [color.withValues(alpha: 0.35), color],
-      ).createShader(bounds);
+      ..strokeCap = StrokeCap.square
+      ..color = color;
 
     canvas.drawArc(arcBounds, -math.pi / 2, math.pi * 2, false, background);
     canvas.drawArc(
@@ -627,29 +594,4 @@ class _ScoreRingPainter extends CustomPainter {
   @override
   bool shouldRepaint(_ScoreRingPainter oldDelegate) =>
       oldDelegate.score != score || oldDelegate.color != color;
-}
-
-class _HeroAtmospherePainter extends CustomPainter {
-  final Color color;
-  final Brightness brightness;
-
-  const _HeroAtmospherePainter({required this.color, required this.brightness});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1
-      ..color = color.withValues(
-        alpha: brightness == Brightness.dark ? 0.06 : 0.035,
-      );
-    final centre = Offset(size.width * 0.84, size.height * 0.08);
-    for (var radius = 60.0; radius < size.width * 0.45; radius += 44) {
-      canvas.drawCircle(centre, radius, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_HeroAtmospherePainter oldDelegate) =>
-      oldDelegate.color != color || oldDelegate.brightness != brightness;
 }

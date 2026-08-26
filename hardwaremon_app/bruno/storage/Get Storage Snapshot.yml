@@ -1,0 +1,33 @@
+info:
+  name: Get Storage Snapshot
+  type: http
+  seq: 1
+  tags:
+    - storage
+
+http:
+  method: GET
+  url: "{{baseUrl}}/storage"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    description: Successful Response
+    request:
+      url: "{{baseUrl}}/storage"
+      method: GET
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: ""

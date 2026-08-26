@@ -1,6 +1,4 @@
 import 'dart:math' as math;
-import 'dart:ui';
-
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -64,99 +62,77 @@ class NetworkFocusScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.background(context),
-                  Color.lerp(
-                    AppColors.backgroundSecondary(context),
-                    accent,
-                    0.05,
-                  )!,
-                  AppColors.backgroundTertiary(context),
-                ],
-              ),
-            ),
-            child: SafeArea(
-              child: Column(
+      backgroundColor: AppColors.frame(context),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 12, 18, 8),
+              child: Row(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(18, 12, 18, 8),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          tooltip: 'Back to Network',
-                          onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(Icons.arrow_back_rounded),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'NETWORK FOCUS',
-                          style: TextStyle(
-                            color: AppColors.textMuted(context),
-                            fontSize: 9,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1.8,
-                          ),
-                        ),
-                        const Spacer(),
-                        IconButton(
-                          tooltip: 'Copy analytics',
-                          onPressed: () => _copySummary(context),
-                          icon: const Icon(Icons.copy_rounded, size: 18),
-                        ),
-                        IconButton(
-                          tooltip: 'Close',
-                          onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(Icons.close_rounded),
-                        ),
-                      ],
+                  IconButton(
+                    tooltip: 'Back to Network',
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.arrow_back_rounded),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'NETWORK FOCUS',
+                    style: TextStyle(
+                      color: AppColors.textMuted(context),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.8,
                     ),
                   ),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(28, 8, 28, 40),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _NetworkFocusHero(
-                            title: title,
-                            value: value,
-                            subtitle: subtitle,
-                            icon: icon,
-                            accent: accent,
-                            interfaceInfo: interfaceInfo,
-                          ),
-                          const SizedBox(height: 20),
-                          _NetworkFocusChart(
-                            primarySamples: primarySamples,
-                            secondarySamples: secondarySamples,
-                            primaryLabel: primaryLabel,
-                            secondaryLabel: secondaryLabel,
-                            accent: accent,
-                          ),
-                          if (interfaceInfo != null) ...[
-                            const SizedBox(height: 20),
-                            _AdapterAnalytics(
-                              interface: interfaceInfo!,
-                              snapshot: snapshot,
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
+                  const Spacer(),
+                  IconButton(
+                    tooltip: 'Copy analytics',
+                    onPressed: () => _copySummary(context),
+                    icon: const Icon(Icons.copy_rounded, size: 18),
+                  ),
+                  IconButton(
+                    tooltip: 'Close',
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close_rounded),
                   ),
                 ],
               ),
             ),
-          ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(28, 8, 28, 40),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _NetworkFocusHero(
+                      title: title,
+                      value: value,
+                      subtitle: subtitle,
+                      icon: icon,
+                      accent: accent,
+                      interfaceInfo: interfaceInfo,
+                    ),
+                    const SizedBox(height: 20),
+                    _NetworkFocusChart(
+                      primarySamples: primarySamples,
+                      secondarySamples: secondarySamples,
+                      primaryLabel: primaryLabel,
+                      secondaryLabel: secondaryLabel,
+                      accent: accent,
+                    ),
+                    if (interfaceInfo != null) ...[
+                      const SizedBox(height: 20),
+                      _AdapterAnalytics(
+                        interface: interfaceInfo!,
+                        snapshot: snapshot,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -186,14 +162,9 @@ class _NetworkFocusHero extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(26),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: accent.withValues(alpha: 0.24)),
-        gradient: LinearGradient(
-          colors: [accent.withValues(alpha: 0.08), AppColors.surface(context)],
-        ),
-        boxShadow: [
-          BoxShadow(color: accent.withValues(alpha: 0.08), blurRadius: 42),
-        ],
+        borderRadius: BorderRadius.circular(6),
+        color: AppColors.surface(context),
+        border: Border.all(color: AppColors.rule(context)),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -202,7 +173,7 @@ class _NetworkFocusHero extends StatelessWidget {
             width: compact ? 58 : 72,
             height: compact ? 58 : 72,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(6),
               color: accent.withValues(alpha: 0.12),
               border: Border.all(color: accent.withValues(alpha: 0.28)),
             ),
@@ -325,7 +296,7 @@ class _NetworkFocusChart extends StatelessWidget {
                 height: 38,
                 decoration: BoxDecoration(
                   color: accent.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(Icons.show_chart_rounded, color: accent, size: 19),
               ),
@@ -537,7 +508,7 @@ class _AdapterAnalytics extends StatelessWidget {
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: AppColors.overlay(context, 0.03),
-                          borderRadius: BorderRadius.circular(13),
+                          borderRadius: BorderRadius.circular(6),
                           border: Border.all(color: AppColors.border(context)),
                         ),
                         child: Column(
@@ -632,7 +603,7 @@ class _SeriesStatCard extends StatelessWidget {
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: color.withValues(alpha: 0.16)),
       ),
       child: Column(

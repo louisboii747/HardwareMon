@@ -1,0 +1,33 @@
+info:
+  name: Get Optimization Snapshot
+  type: http
+  seq: 1
+  tags:
+    - optimization
+
+http:
+  method: GET
+  url: "{{baseUrl}}/optimization"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    description: Successful Response
+    request:
+      url: "{{baseUrl}}/optimization"
+      method: GET
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: ""

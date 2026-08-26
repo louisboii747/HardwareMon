@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../core/theme/app_colors.dart';
+import '../core/theme/app_typography.dart';
 
 class CommandPaletteAction {
   final String id;
@@ -44,7 +45,7 @@ Future<void> showHardwareMonCommandPalette({
     barrierDismissible: true,
     barrierLabel: 'Dismiss command palette',
     barrierColor: Colors.black.withValues(alpha: 0.48),
-    transitionDuration: const Duration(milliseconds: 220),
+    transitionDuration: const Duration(milliseconds: 160),
     pageBuilder: (context, _, _) => _CommandPaletteDialog(
       actions: actions,
       systemSummary: systemSummary,
@@ -57,14 +58,7 @@ Future<void> showHardwareMonCommandPalette({
         curve: Curves.easeOutCubic,
         reverseCurve: Curves.easeInCubic,
       );
-      return FadeTransition(
-        opacity: curved,
-        child: ScaleTransition(
-          scale: Tween(begin: 0.975, end: 1.0).animate(curved),
-          alignment: const Alignment(0, -0.55),
-          child: child,
-        ),
-      );
+      return FadeTransition(opacity: curved, child: child);
     },
   );
 }
@@ -188,24 +182,18 @@ class _CommandPaletteDialogState extends State<_CommandPaletteDialog> {
               margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 48),
               decoration: BoxDecoration(
                 color: AppColors.surfaceElevated(context),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: AppColors.border(context)),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: AppColors.rule(context)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.32),
-                    blurRadius: 60,
-                    spreadRadius: 4,
-                    offset: const Offset(0, 22),
-                  ),
-                  BoxShadow(
-                    color: AppColors.accent.withValues(alpha: 0.08),
-                    blurRadius: 90,
-                    spreadRadius: 2,
+                    color: Colors.black.withValues(alpha: 0.24),
+                    blurRadius: 24,
+                    offset: const Offset(0, 10),
                   ),
                 ],
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(6),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -237,12 +225,13 @@ class _CommandPaletteDialogState extends State<_CommandPaletteDialog> {
                                         ),
                                         child: Text(
                                           action.section.toUpperCase(),
-                                          style: TextStyle(
-                                            color: AppColors.textMuted(context),
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w700,
-                                            letterSpacing: 1.3,
-                                          ),
+                                          style: AppTypography.sectionLabel
+                                              .copyWith(
+                                                color: AppColors.textMuted(
+                                                  context,
+                                                ),
+                                                fontSize: 9,
+                                              ),
                                         ),
                                       ),
                                     _CommandRow(
@@ -282,9 +271,9 @@ class _CommandPaletteDialogState extends State<_CommandPaletteDialog> {
           Row(
             children: [
               Icon(
-                Icons.auto_awesome_rounded,
-                size: 21,
-                color: AppColors.accent,
+                Icons.search_rounded,
+                size: 20,
+                color: AppColors.workOrderBlue,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -300,14 +289,14 @@ class _CommandPaletteDialogState extends State<_CommandPaletteDialog> {
                       );
                     }
                   },
-                  style: TextStyle(
+                  style: AppTypography.body.copyWith(
                     color: AppColors.textPrimary(context),
-                    fontSize: 17,
+                    fontSize: 16,
                     fontWeight: FontWeight.w500,
                   ),
                   decoration: InputDecoration(
                     hintText: 'Search pages, telemetry, and actions…',
-                    hintStyle: TextStyle(
+                    hintStyle: AppTypography.body.copyWith(
                       color: AppColors.textMuted(context),
                       fontWeight: FontWeight.w400,
                     ),
@@ -333,8 +322,9 @@ class _CommandPaletteDialogState extends State<_CommandPaletteDialog> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
             decoration: BoxDecoration(
-              color: AppColors.overlay(context, 0.035),
-              borderRadius: BorderRadius.circular(12),
+              color: AppColors.controlFill(context),
+              border: Border.all(color: AppColors.rule(context)),
+              borderRadius: BorderRadius.circular(3),
             ),
             child: Row(
               children: [
@@ -344,7 +334,7 @@ class _CommandPaletteDialogState extends State<_CommandPaletteDialog> {
                   child: Text(
                     widget.systemSummary,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: AppTypography.body.copyWith(
                       color: AppColors.textPrimary(context),
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -353,10 +343,9 @@ class _CommandPaletteDialogState extends State<_CommandPaletteDialog> {
                 ),
                 Text(
                   widget.telemetrySummary,
-                  style: TextStyle(
+                  style: AppTypography.metric.copyWith(
                     color: AppColors.textSecondary(context),
                     fontSize: 11,
-                    fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                 ),
               ],
@@ -442,19 +431,19 @@ class _CommandRow extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
         child: InkWell(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(6),
           onTap: onTap,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 120),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: selected
-                  ? AppColors.accent.withValues(alpha: 0.12)
+                  ? AppColors.workOrderBlue.withValues(alpha: 0.11)
                   : Colors.transparent,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(3),
               border: Border.all(
                 color: selected
-                    ? AppColors.accent.withValues(alpha: 0.22)
+                    ? AppColors.workOrderBlue.withValues(alpha: 0.4)
                     : Colors.transparent,
               ),
             ),
@@ -465,15 +454,16 @@ class _CommandRow extends StatelessWidget {
                   height: 36,
                   decoration: BoxDecoration(
                     color: selected
-                        ? AppColors.accent.withValues(alpha: 0.14)
-                        : AppColors.overlay(context, 0.045),
-                    borderRadius: BorderRadius.circular(11),
+                        ? AppColors.workOrderBlue.withValues(alpha: 0.14)
+                        : AppColors.controlFill(context),
+                    borderRadius: BorderRadius.circular(3),
+                    border: Border.all(color: AppColors.rule(context)),
                   ),
                   child: Icon(
                     action.icon,
                     size: 18,
                     color: selected
-                        ? AppColors.accent
+                        ? AppColors.workOrderBlue
                         : AppColors.textSecondary(context),
                   ),
                 ),
@@ -484,7 +474,7 @@ class _CommandRow extends StatelessWidget {
                     children: [
                       Text(
                         action.title,
-                        style: TextStyle(
+                        style: AppTypography.body.copyWith(
                           color: AppColors.textPrimary(context),
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -495,7 +485,7 @@ class _CommandRow extends StatelessWidget {
                         action.description,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
+                        style: AppTypography.body.copyWith(
                           color: AppColors.textSecondary(context),
                           fontSize: 11,
                         ),
@@ -504,7 +494,11 @@ class _CommandRow extends StatelessWidget {
                   ),
                 ),
                 if (action.selected) ...[
-                  Icon(Icons.check_rounded, size: 17, color: AppColors.accent),
+                  Icon(
+                    Icons.check_rounded,
+                    size: 17,
+                    color: AppColors.workOrderBlue,
+                  ),
                   const SizedBox(width: 9),
                 ],
                 if (action.shortcut != null)
@@ -528,17 +522,15 @@ class _ShortcutChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.overlay(context, 0.05),
-        borderRadius: BorderRadius.circular(7),
-        border: Border.all(color: AppColors.border(context)),
+        color: AppColors.background(context),
+        borderRadius: BorderRadius.circular(2),
+        border: Border.all(color: AppColors.rule(context)),
       ),
       child: Text(
         label,
-        style: TextStyle(
+        style: AppTypography.metadata.copyWith(
           color: AppColors.textSecondary(context),
           fontSize: 9,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.2,
         ),
       ),
     );
@@ -567,53 +559,21 @@ class _FooterHint extends StatelessWidget {
   }
 }
 
-class _LiveDot extends StatefulWidget {
+class _LiveDot extends StatelessWidget {
   final Color color;
 
   const _LiveDot({required this.color});
 
   @override
-  State<_LiveDot> createState() => _LiveDotState();
-}
-
-class _LiveDotState extends State<_LiveDot>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1300),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, _) => Container(
-        width: 7,
-        height: 7,
-        decoration: BoxDecoration(
-          color: widget.color,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: widget.color.withValues(
-                alpha: 0.12 + (_controller.value * 0.32),
-              ),
-              blurRadius: 4 + (_controller.value * 7),
-              spreadRadius: _controller.value,
-            ),
-          ],
+    return Container(
+      width: 7,
+      height: 24,
+      decoration: BoxDecoration(
+        border: Border(
+          left: BorderSide(color: color, width: 2),
+          top: BorderSide(color: color, width: 2),
+          bottom: BorderSide(color: color, width: 2),
         ),
       ),
     );

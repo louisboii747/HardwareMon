@@ -949,7 +949,7 @@ class _SettingsPageState extends State<SettingsPage> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.surface(context),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.border(context)),
       ),
       child: Column(
@@ -962,7 +962,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 height: 38,
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(6),
                   border: Border.all(color: color.withValues(alpha: 0.15)),
                 ),
                 child: Icon(icon, color: color, size: 18),
@@ -1051,7 +1051,7 @@ class _SettingsPageState extends State<SettingsPage> {
             Colors.purple.withValues(alpha: 0.04),
           ],
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.border(context)),
       ),
       child: Column(
@@ -1119,7 +1119,7 @@ class _SettingsPageState extends State<SettingsPage> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.cyan.withValues(alpha: 0.045),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: Colors.cyan.withValues(alpha: 0.18)),
       ),
       child: Column(
@@ -1230,7 +1230,7 @@ class _SettingsPageState extends State<SettingsPage> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.overlay(context, 0.035),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.border(context)),
       ),
       child: Column(
@@ -1278,7 +1278,7 @@ class _SettingsSearch extends StatelessWidget {
       height: 48,
       decoration: BoxDecoration(
         color: AppColors.surface(context),
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(
           color: query.isEmpty
               ? AppColors.border(context)
@@ -1396,7 +1396,7 @@ class _SettingsCategoryButtonState extends State<_SettingsCategoryButton> {
                     alpha: widget.selected ? 0.14 : 0.07,
                   )
                 : AppColors.overlay(context, 0.025),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(6),
             border: Border.all(
               color: widget.selected
                   ? AppColors.accent.withValues(alpha: 0.34)
@@ -1447,7 +1447,7 @@ class _SettingsEmptySearch extends StatelessWidget {
       padding: const EdgeInsets.all(30),
       decoration: BoxDecoration(
         color: AppColors.surface(context),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.border(context)),
       ),
       child: Column(
@@ -1591,7 +1591,7 @@ class _AboutCardState extends State<_AboutCard> {
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
           color: detail.color.withValues(alpha: hovering ? 0.09 : 0.045),
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(
             color: detail.color.withValues(alpha: hovering ? 0.3 : 0.12),
           ),

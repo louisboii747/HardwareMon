@@ -1,0 +1,33 @@
+info:
+  name: Cancel Benchmark
+  type: http
+  seq: 5
+  tags:
+    - benchmark
+
+http:
+  method: POST
+  url: "{{baseUrl}}/benchmark/cancel"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 202 Response
+    description: Successful Response
+    request:
+      url: "{{baseUrl}}/benchmark/cancel"
+      method: POST
+    response:
+      status: 202
+      statusText: Accepted
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: ""

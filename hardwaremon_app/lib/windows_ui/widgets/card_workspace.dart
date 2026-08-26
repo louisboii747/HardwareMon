@@ -232,7 +232,7 @@ class _CardWorkspaceState extends State<CardWorkspace> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(6),
             border: Border.all(
               color: candidates.isNotEmpty || _draggingId == state.id
                   ? AppColors.accent
@@ -328,7 +328,7 @@ class _EditOverlay extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     decoration: BoxDecoration(
       color: Colors.black.withValues(alpha: .32),
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(6),
       border: Border.all(color: AppColors.accent.withValues(alpha: .55)),
     ),
     child: Column(
@@ -388,7 +388,7 @@ class _EmptyWorkspace extends StatelessWidget {
     padding: const EdgeInsets.all(28),
     decoration: BoxDecoration(
       color: AppColors.overlay(context, .03),
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(6),
       border: Border.all(color: AppColors.border(context)),
     ),
     child: Column(

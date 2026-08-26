@@ -256,7 +256,7 @@ class _DashboardLayoutSection extends StatelessWidget {
             height: 330,
             decoration: BoxDecoration(
               color: AppColors.overlay(context, 0.025),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(6),
               border: Border.all(color: AppColors.border(context)),
             ),
             child: ReorderableListView.builder(
@@ -439,7 +439,7 @@ class _ThemeStudioSection extends StatelessWidget {
                     height: 80,
                     decoration: BoxDecoration(
                       color: color,
-                      borderRadius: BorderRadius.circular(18),
+                      borderRadius: BorderRadius.circular(6),
                       boxShadow: [
                         BoxShadow(
                           color: color.withValues(alpha: 0.35),
@@ -548,7 +548,7 @@ class _GraphStudioSection extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(12, 16, 18, 8),
             decoration: BoxDecoration(
               color: AppColors.overlay(context, 0.025),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(6),
               border: Border.all(color: AppColors.border(context)),
             ),
             child: _GraphPreview(samples: samples, charts: charts),
@@ -903,7 +903,7 @@ class _LivePreviewPanel extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface(context),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: accent.withValues(alpha: 0.24)),
         boxShadow: [
           BoxShadow(
@@ -916,7 +916,7 @@ class _LivePreviewPanel extends StatelessWidget {
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(6),
         child: Stack(
           children: [
             Positioned(
@@ -974,7 +974,7 @@ class _LivePreviewPanel extends StatelessWidget {
                     child: Container(
                       decoration: BoxDecoration(
                         color: AppColors.background(context),
-                        borderRadius: BorderRadius.circular(18),
+                        borderRadius: BorderRadius.circular(6),
                         border: Border.all(color: AppColors.border(context)),
                       ),
                       child: Row(
@@ -1144,7 +1144,7 @@ class _StudioSectionState extends State<_StudioSection> {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: AppColors.surface(context),
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(
             color: hovering
                 ? widget.color.withValues(alpha: 0.3)
@@ -1169,7 +1169,7 @@ class _StudioSectionState extends State<_StudioSection> {
                   height: 42,
                   decoration: BoxDecoration(
                     color: widget.color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(13),
+                    borderRadius: BorderRadius.circular(6),
                   ),
                   child: Icon(widget.icon, color: widget.color, size: 21),
                 ),
@@ -1318,7 +1318,7 @@ class _ThemeModeCard extends StatelessWidget {
     final system = label == 'System';
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(15),
+      borderRadius: BorderRadius.circular(6),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
         padding: const EdgeInsets.all(11),
@@ -1326,7 +1326,7 @@ class _ThemeModeCard extends StatelessWidget {
           color: selected
               ? AppColors.accent.withValues(alpha: 0.1)
               : AppColors.overlay(context, 0.025),
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(
             color: selected ? AppColors.accent : AppColors.border(context),
           ),
@@ -1538,7 +1538,7 @@ class _MotionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(6),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(12),
@@ -1546,7 +1546,7 @@ class _MotionCard extends StatelessWidget {
           color: selected
               ? AppColors.accent.withValues(alpha: 0.1)
               : AppColors.overlay(context, 0.025),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(
             color: selected ? AppColors.accent : AppColors.border(context),
           ),
@@ -1614,7 +1614,7 @@ class _ProfileTile extends StatelessWidget {
         color: active
             ? AppColors.accent.withValues(alpha: 0.08)
             : AppColors.overlay(context, 0.025),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(
           color: active ? AppColors.accent : AppColors.border(context),
         ),
@@ -1681,7 +1681,7 @@ class _EmptyProfiles extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.overlay(context, 0.025),
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Column(
         children: [
@@ -1850,7 +1850,7 @@ class _PreviewMetricCard extends StatelessWidget {
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: AppColors.surface(context),
-        borderRadius: BorderRadius.circular(13),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: accent.withValues(alpha: 0.17)),
         boxShadow: customization.hoverEffects
             ? [
@@ -1924,7 +1924,7 @@ class _PreviewHealthCard extends StatelessWidget {
       padding: const EdgeInsets.all(9),
       decoration: BoxDecoration(
         color: AppColors.surface(context),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.border(context)),
       ),
       child: Row(
@@ -1976,7 +1976,7 @@ class _PreviewRecommendationCard extends StatelessWidget {
       padding: const EdgeInsets.all(9),
       decoration: BoxDecoration(
         color: accent.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: accent.withValues(alpha: 0.14)),
       ),
       child: Column(

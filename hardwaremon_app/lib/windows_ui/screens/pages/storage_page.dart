@@ -624,7 +624,7 @@ class _StorageOverviewCardState extends State<_StorageOverviewCard> {
                 height: 36,
                 decoration: BoxDecoration(
                   color: widget.color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(widget.icon, color: widget.color, size: 19),
               ),
@@ -860,7 +860,7 @@ class _DriveCardState extends State<StorageDriveCard> {
                         width: 42,
                         height: 42,
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(6),
                           color: color.withValues(alpha: 0.1),
                           border: Border.all(
                             color: color.withValues(alpha: 0.22),
@@ -1142,7 +1142,7 @@ class _DriveExpandedDetails extends StatelessWidget {
               padding: const EdgeInsets.all(11),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.055),
-                borderRadius: BorderRadius.circular(13),
+                borderRadius: BorderRadius.circular(6),
                 border: Border.all(color: color.withValues(alpha: 0.16)),
               ),
               child: Row(
@@ -1356,7 +1356,7 @@ class _InsightCardState extends State<_InsightCard> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(6),
         color: color.withValues(alpha: 0.045),
         border: Border.all(color: color.withValues(alpha: 0.18)),
         boxShadow: [
@@ -1422,7 +1422,7 @@ class _InsightCardState extends State<_InsightCard> {
                         padding: const EdgeInsets.all(11),
                         decoration: BoxDecoration(
                           color: AppColors.overlay(context, 0.025),
-                          borderRadius: BorderRadius.circular(13),
+                          borderRadius: BorderRadius.circular(6),
                           border: Border.all(color: AppColors.border(context)),
                         ),
                         child: Text(
@@ -1559,7 +1559,7 @@ class _ScorePill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(6),
         color: color.withValues(alpha: 0.08),
         border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
@@ -1597,7 +1597,7 @@ class _SectionHeader extends StatelessWidget {
           height: 38,
           decoration: BoxDecoration(
             color: AppColors.accent.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(6),
           ),
           child: Icon(icon, color: Colors.cyanAccent, size: 19),
         ),
@@ -1701,7 +1701,7 @@ class _StorageErrorBanner extends StatelessWidget {
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
         color: Colors.redAccent.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: Colors.redAccent.withValues(alpha: 0.2)),
       ),
       child: Row(

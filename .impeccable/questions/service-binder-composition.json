@@ -1,0 +1,45 @@
+{
+  "title": "Choose the Service Binder composition",
+  "question": "The visual world and typography are fixed. Choose the dashboard structure that should carry into the app.",
+  "options": [
+    {
+      "id": "work-sheet",
+      "label": "Work Sheet",
+      "kicker": "RECOMMENDED",
+      "lineage": "the approved sketch, resolved as production UI",
+      "thesis": "A main chart anchors one continuous inspection sheet with readings around its edges.",
+      "palette": ["#171A1D", "#303941", "#E8E3D8", "#255E85", "#B5483B"],
+      "materials": ["powder-coated rail", "laminated work sheet", "fine ruled seams"],
+      "viewport": "CPU and memory lead into one large live chart, a condition register, and a lower hardware strip.",
+      "risk": "The dashboard needs a careful compact layout because the chart owns most of the width.",
+      "hero": ".impeccable/mocks/service-binder-work-sheet.png"
+    },
+    {
+      "id": "ledger",
+      "label": "Inspection Ledger",
+      "kicker": "ALTERNATE",
+      "lineage": "service readings arranged as inspection rows",
+      "thesis": "Every core metric receives a row with current, trend, range, and plain status.",
+      "palette": ["#171A1D", "#303941", "#E8E3D8", "#255E85", "#B5483B"],
+      "materials": ["powder-coated rail", "ruled ledger", "status bracket"],
+      "viewport": "Four broad metric rows sit beside a shared chart and watch log.",
+      "risk": "The rigid row rhythm gives the overview less visual contrast.",
+      "hero": ".impeccable/mocks/service-binder-ledger.png"
+    },
+    {
+      "id": "folio",
+      "label": "Two-Page Folio",
+      "kicker": "ALTERNATE",
+      "lineage": "an open service manual with a central seam",
+      "thesis": "A concise inspection summary faces a full live-history page.",
+      "palette": ["#171A1D", "#303941", "#E8E3D8", "#255E85", "#B5483B"],
+      "materials": ["grouped index rail", "paired sheets", "hardware register"],
+      "viewport": "Condition and readings occupy the left page; history and events occupy the right.",
+      "risk": "The book-like split becomes tight in compact windows.",
+      "hero": ".impeccable/mocks/service-binder-folio.png"
+    }
+  ],
+  "reroll": false,
+  "canon": false,
+  "steer": true
+}

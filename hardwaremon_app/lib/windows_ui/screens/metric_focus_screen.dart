@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
-
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -172,35 +170,13 @@ class _MetricFocusScreenState extends State<MetricFocusScreen> {
           body: Stack(
             children: [
               Positioned.fill(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                  child: Container(color: AppColors.overlay(context, 0.08)),
-                ),
+                child: ColoredBox(color: AppColors.frame(context)),
               ),
               Positioned(
-                top: -120,
-                right: -120,
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0.95, end: 1),
-                  duration: const Duration(seconds: 3),
-                  curve: Curves.easeInOut,
-                  builder: (context, value, child) {
-                    return Transform.scale(scale: value, child: child);
-                  },
-                  child: Container(
-                    width: 320,
-                    height: 320,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: [
-                          widget.accent.withValues(alpha: 0.12),
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Container(height: 3, color: widget.accent),
               ),
               SafeArea(
                 child: LayoutBuilder(
@@ -330,23 +306,9 @@ class _MetricFocusScreenState extends State<MetricFocusScreen> {
       height: 300,
       padding: const EdgeInsets.fromLTRB(24, 18, 24, 16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(32),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.overlay(context, 0.05),
-            AppColors.overlay(context, 0.02),
-          ],
-        ),
-        border: Border.all(color: AppColors.border(context)),
-        boxShadow: [
-          BoxShadow(
-            color: widget.accent.withValues(alpha: 0.08),
-            blurRadius: 40,
-            spreadRadius: 1,
-          ),
-        ],
+        borderRadius: BorderRadius.circular(6),
+        color: AppColors.surface(context),
+        border: Border.all(color: AppColors.rule(context)),
       ),
       child: Column(
         children: [
@@ -574,7 +536,7 @@ class _MetricFocusScreenState extends State<MetricFocusScreen> {
                                     .toList(growable: false);
                               },
                               touchTooltipData: LineTouchTooltipData(
-                                tooltipBorderRadius: BorderRadius.circular(12),
+                                tooltipBorderRadius: BorderRadius.circular(6),
                                 tooltipPadding: const EdgeInsets.symmetric(
                                   horizontal: 12,
                                   vertical: 9,

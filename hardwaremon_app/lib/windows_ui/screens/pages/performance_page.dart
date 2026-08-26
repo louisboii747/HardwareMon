@@ -353,7 +353,7 @@ class _MacOSCapabilityNotice extends StatelessWidget {
             AppColors.surface(context),
           ],
         ),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: Colors.cyan.withValues(alpha: 0.2)),
       ),
       child: Row(
@@ -364,7 +364,7 @@ class _MacOSCapabilityNotice extends StatelessWidget {
             height: 42,
             decoration: BoxDecoration(
               color: Colors.cyan.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(13),
+              borderRadius: BorderRadius.circular(6),
             ),
             child: const Icon(Icons.laptop_mac_rounded, color: Colors.cyan),
           ),
@@ -467,7 +467,7 @@ class _SessionIntelligencePanel extends StatelessWidget {
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: AppColors.surface(context),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(color: AppColors.border(context)),
           boxShadow: [
             BoxShadow(
@@ -724,7 +724,7 @@ class _SessionMetricCard extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: metric.color.withValues(alpha: 0.055),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(color: metric.color.withValues(alpha: 0.15)),
         ),
         child: Column(
@@ -815,7 +815,7 @@ class _SessionInsightTile extends StatelessWidget {
         padding: const EdgeInsets.all(11),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.055),
-          borderRadius: BorderRadius.circular(13),
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(color: color.withValues(alpha: 0.15)),
         ),
         child: Row(
@@ -916,7 +916,7 @@ class _PerformanceControls extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.overlay(context, 0.025),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.border(context)),
       ),
       child: Wrap(
@@ -984,7 +984,7 @@ class _PerformanceControls extends StatelessWidget {
                 foregroundColor: AppColors.textSecondary(context),
                 side: BorderSide(color: AppColors.border(context)),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(6),
                 ),
               ),
             ),
@@ -999,7 +999,7 @@ class _PerformanceControls extends StatelessWidget {
                 foregroundColor: AppColors.textSecondary(context),
                 side: BorderSide(color: AppColors.border(context)),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(6),
                 ),
               ),
             ),
@@ -1034,7 +1034,7 @@ class _PreferenceSwitch extends StatelessWidget {
           color: value
               ? AppColors.accent.withValues(alpha: 0.1)
               : AppColors.overlay(context, 0.025),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(
             color: value
                 ? AppColors.accent.withValues(alpha: 0.25)
@@ -1107,7 +1107,7 @@ class _PerformanceSectionState extends State<_PerformanceSection> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.surface(context),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(
           color: focused
               ? widget.accent.withValues(alpha: 0.6)

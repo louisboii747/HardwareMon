@@ -39,7 +39,7 @@ class _SessionJournalDialog extends StatelessWidget {
                     height: 42,
                     decoration: BoxDecoration(
                       color: AppColors.accent.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(13),
+                      borderRadius: BorderRadius.circular(6),
                     ),
                     child: Icon(
                       Icons.bookmarks_rounded,
@@ -150,7 +150,7 @@ class _JournalEntryCard extends StatelessWidget {
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.045),
-        borderRadius: BorderRadius.circular(17),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: color.withValues(alpha: 0.16)),
       ),
       child: Column(

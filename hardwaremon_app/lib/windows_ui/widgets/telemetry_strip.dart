@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme/app_colors.dart';
+import '../core/theme/app_typography.dart';
 
 class SystemCondition {
   final String label;
@@ -28,7 +29,7 @@ SystemCondition evaluateSystemCondition({
     return const SystemCondition(
       label: 'Connection issue',
       description: 'Telemetry needs attention',
-      color: Colors.redAccent,
+      color: AppColors.warningRed,
       icon: Icons.cloud_off_rounded,
     );
   }
@@ -36,7 +37,7 @@ SystemCondition evaluateSystemCondition({
     return const SystemCondition(
       label: 'Telemetry paused',
       description: 'Values are held',
-      color: Colors.amber,
+      color: Color(0xFF987126),
       icon: Icons.pause_rounded,
     );
   }
@@ -51,7 +52,7 @@ SystemCondition evaluateSystemCondition({
     return const SystemCondition(
       label: 'Under pressure',
       description: 'A resource is near its limit',
-      color: Colors.redAccent,
+      color: AppColors.warningRed,
       icon: Icons.warning_amber_rounded,
     );
   }
@@ -59,7 +60,7 @@ SystemCondition evaluateSystemCondition({
     return const SystemCondition(
       label: 'Working hard',
       description: 'Sustained system activity',
-      color: Colors.orangeAccent,
+      color: Color(0xFF987126),
       icon: Icons.local_fire_department_rounded,
     );
   }
@@ -67,15 +68,15 @@ SystemCondition evaluateSystemCondition({
     return const SystemCondition(
       label: 'Coasting',
       description: 'Plenty of headroom',
-      color: Colors.lightBlueAccent,
+      color: AppColors.workOrderBlue,
       icon: Icons.air_rounded,
     );
   }
   return const SystemCondition(
     label: 'Balanced',
     description: 'System looks healthy',
-    color: Colors.greenAccent,
-    icon: Icons.eco_rounded,
+    color: AppColors.healthyGreen,
+    icon: Icons.check_rounded,
   );
 }
 
@@ -130,60 +131,42 @@ class TelemetryStrip extends StatelessWidget {
             onTap: onOpenPerformance,
             onSecondaryTap: onCopySnapshot,
             child: Container(
-              height: 48,
+              height: 54,
               decoration: BoxDecoration(
-                color: AppColors.surface(context).withValues(alpha: 0.72),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border(context)),
+                color: AppColors.surface(context),
+                border: Border(
+                  bottom: BorderSide(color: AppColors.rule(context)),
+                ),
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  physics: const ClampingScrollPhysics(),
-                  child: Row(
-                    children: [
-                      _ConditionChip(condition: condition),
-                      _MetricPulse(
-                        label: 'CPU',
-                        value: cpuUsage,
-                        suffix: '%',
-                        color: Colors.cyanAccent,
-                      ),
-                      _MetricPulse(
-                        label: 'CPU TEMP',
-                        value: cpuTemperature,
-                        suffix: '°',
-                        color: Colors.orangeAccent,
-                        maximum: 100,
-                      ),
-                      _MetricPulse(
-                        label: 'MEMORY',
-                        value: ramUsage,
-                        suffix: '%',
-                        color: Colors.deepPurpleAccent,
-                      ),
-                      _MetricPulse(
-                        label: 'GPU',
-                        value: gpuUsage,
-                        suffix: '%',
-                        color: Colors.lightBlueAccent,
-                      ),
-                      _MetricPulse(
-                        label: 'GPU TEMP',
-                        value: gpuTemperature,
-                        suffix: '°',
-                        color: Colors.deepOrangeAccent,
-                        maximum: 100,
-                      ),
-                      _MetricPulse(
-                        label: 'DISK',
-                        value: diskUsage,
-                        suffix: '%',
-                        color: Colors.tealAccent,
-                      ),
-                    ],
-                  ),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const ClampingScrollPhysics(),
+                child: Row(
+                  children: [
+                    _ConditionCell(condition: condition),
+                    _MetricCell(
+                      label: 'CPU LOAD',
+                      value: cpuUsage,
+                      suffix: '%',
+                    ),
+                    _MetricCell(
+                      label: 'CPU TEMP',
+                      value: cpuTemperature,
+                      suffix: '°',
+                    ),
+                    _MetricCell(label: 'MEMORY', value: ramUsage, suffix: '%'),
+                    _MetricCell(
+                      label: 'GPU LOAD',
+                      value: gpuUsage,
+                      suffix: '%',
+                    ),
+                    _MetricCell(
+                      label: 'GPU TEMP',
+                      value: gpuTemperature,
+                      suffix: '°',
+                    ),
+                    _MetricCell(label: 'DISK', value: diskUsage, suffix: '%'),
+                  ],
                 ),
               ),
             ),
@@ -194,55 +177,55 @@ class TelemetryStrip extends StatelessWidget {
   }
 }
 
-class _ConditionChip extends StatelessWidget {
+class _ConditionCell extends StatelessWidget {
   final SystemCondition condition;
 
-  const _ConditionChip({required this.condition});
+  const _ConditionCell({required this.condition});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 150,
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 13),
+      width: 168,
+      height: 54,
+      padding: const EdgeInsets.fromLTRB(14, 0, 12, 0),
       decoration: BoxDecoration(
-        color: condition.color.withValues(alpha: 0.075),
-        border: Border(right: BorderSide(color: AppColors.border(context))),
+        color: condition.color.withValues(alpha: 0.065),
+        border: Border(right: BorderSide(color: AppColors.rule(context))),
       ),
       child: Row(
         children: [
-          _PulseDot(color: condition.color),
-          const SizedBox(width: 9),
+          _StatusBracket(color: condition.color),
+          const SizedBox(width: 10),
           Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 220),
-                  child: Text(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 160),
+              child: Column(
+                key: ValueKey(condition.label),
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
                     condition.label,
-                    key: ValueKey(condition.label),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: AppTypography.body.copyWith(
                       color: AppColors.textPrimary(context),
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  condition.description,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: AppColors.textMuted(context),
-                    fontSize: 9,
+                  const SizedBox(height: 2),
+                  Text(
+                    condition.description,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.metadata.copyWith(
+                      color: AppColors.textMuted(context),
+                      fontSize: 8,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
@@ -251,101 +234,56 @@ class _ConditionChip extends StatelessWidget {
   }
 }
 
-class _MetricPulse extends StatelessWidget {
+class _MetricCell extends StatelessWidget {
   final String label;
   final num? value;
   final String suffix;
-  final Color color;
-  final double maximum;
 
-  const _MetricPulse({
+  const _MetricCell({
     required this.label,
     required this.value,
     required this.suffix,
-    required this.color,
-    this.maximum = 100,
   });
 
   @override
   Widget build(BuildContext context) {
-    final normalized = value == null
-        ? 0.0
-        : (value!.toDouble() / maximum).clamp(0.0, 1.0);
-    final displayValue = value == null
-        ? 'Unavailable'
+    final display = value == null
+        ? '—'
         : value is double
         ? (value as double).toStringAsFixed(1)
         : value.toString();
-    final displaySuffix = value == null ? '' : suffix;
 
     return Container(
-      width: 104,
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      width: 108,
+      height: 54,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        border: Border(right: BorderSide(color: AppColors.border(context))),
+        border: Border(right: BorderSide(color: AppColors.rule(context))),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: AppColors.textMuted(context),
-                    fontSize: 8,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.7,
-                  ),
-                ),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppTypography.sectionLabel.copyWith(
+                color: AppColors.textMuted(context),
+                fontSize: 8,
               ),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 240),
-                transitionBuilder: (child, animation) => FadeTransition(
-                  opacity: animation,
-                  child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0, 0.3),
-                      end: Offset.zero,
-                    ).animate(animation),
-                    child: child,
-                  ),
-                ),
-                child: Text(
-                  '$displayValue$displaySuffix',
-                  key: ValueKey(displayValue),
-                  style: TextStyle(
-                    color: AppColors.textPrimary(context),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-          const Spacer(),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(2),
-            child: Container(
-              height: 2,
-              color: AppColors.overlay(context, 0.05),
-              alignment: Alignment.centerLeft,
-              child: AnimatedFractionallySizedBox(
-                duration: const Duration(milliseconds: 650),
-                curve: Curves.easeOutCubic,
-                widthFactor: normalized,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [color.withValues(alpha: 0.55), color],
-                    ),
-                  ),
-                ),
+          const SizedBox(width: 8),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 170),
+            child: Text(
+              '$display${value == null ? '' : suffix}',
+              key: ValueKey(display),
+              style: AppTypography.metric.copyWith(
+                color: AppColors.textPrimary(context),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -355,52 +293,22 @@ class _MetricPulse extends StatelessWidget {
   }
 }
 
-class _PulseDot extends StatefulWidget {
+class _StatusBracket extends StatelessWidget {
   final Color color;
 
-  const _PulseDot({required this.color});
-
-  @override
-  State<_PulseDot> createState() => _PulseDotState();
-}
-
-class _PulseDotState extends State<_PulseDot>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1450),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  const _StatusBracket({required this.color});
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, _) => Container(
-        width: 8,
-        height: 8,
-        decoration: BoxDecoration(
-          color: widget.color,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: widget.color.withValues(
-                alpha: 0.15 + (_controller.value * 0.3),
-              ),
-              blurRadius: 5 + (_controller.value * 7),
-            ),
-          ],
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      width: 7,
+      height: 29,
+      decoration: BoxDecoration(
+        border: Border(
+          left: BorderSide(color: color, width: 2),
+          top: BorderSide(color: color, width: 2),
+          bottom: BorderSide(color: color, width: 2),
         ),
       ),
     );

@@ -1,0 +1,33 @@
+info:
+  name: Latest Benchmark Result
+  type: http
+  seq: 3
+  tags:
+    - benchmark
+
+http:
+  method: GET
+  url: "{{baseUrl}}/benchmark/latest"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    description: Successful Response
+    request:
+      url: "{{baseUrl}}/benchmark/latest"
+      method: GET
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: ""

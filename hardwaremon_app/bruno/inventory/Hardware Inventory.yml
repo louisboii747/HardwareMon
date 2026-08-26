@@ -1,0 +1,39 @@
+info:
+  name: Hardware Inventory
+  type: http
+  seq: 1
+  tags:
+    - inventory
+
+http:
+  method: GET
+  url: "{{baseUrl}}/inventory"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    description: Successful Response
+    request:
+      url: "{{baseUrl}}/inventory"
+      method: GET
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: ""
+
+docs: |-
+  Return honest cross-platform inventory data without guessing.
+
+  Detailed Windows device providers can extend the stable category lists
+  later without changing the client contract.
