@@ -126,11 +126,23 @@ jobs:
             android/release/release-metadata-android.json
           if-no-files-found: error
 
+      - name: Prepare release notes
+        # Manual runs can package an older tag that predates the shared script.
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          bash .github/scripts/prepare-release-notes.sh \
+            release-notes.md \
+            "$RELEASE_TAG"
+
       - name: Attach APK to GitHub Release
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ env.RELEASE_TAG }}
-          generate_release_notes: true
+          name: HardwareMon ${{ env.RELEASE_TAG }}
+          body_path: ${{ github.event_name == 'push' && 'release-notes.md' || '' }}
+          append_body: false
           fail_on_unmatched_files: true
           files: |
             android/release/HardwareMon-Android-${{ env.RELEASE_TAG }}.apk

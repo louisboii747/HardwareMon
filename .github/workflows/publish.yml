@@ -518,10 +518,22 @@ jobs:
       # ─────────────────────────────────────────────
       # Create GitHub Release
       # ─────────────────────────────────────────────
+      - name: Prepare release notes
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          bash .github/scripts/prepare-release-notes.sh \
+            release-notes.md \
+            "$GITHUB_REF_NAME"
+
       - name: Create GitHub Release
+        if: github.ref_type == 'tag'
         uses: softprops/action-gh-release@v3
         with:
-          generate_release_notes: true
+          name: HardwareMon ${{ github.ref_name }}
+          body_path: release-notes.md
+          append_body: false
 
           files: |
             dist/hardwaremon.deb

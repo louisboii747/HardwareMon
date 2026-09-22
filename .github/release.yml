@@ -1,0 +1,22 @@
+changelog:
+  exclude:
+    labels:
+      - dependencies
+      - skip-changelog
+    authors:
+      - dependabot[bot]
+  categories:
+    - title: New features
+      labels:
+        - enhancement
+        - feature
+    - title: Fixes
+      labels:
+        - bug
+        - fix
+    - title: Documentation
+      labels:
+        - documentation
+    - title: Other important changes
+      labels:
+        - "*"
