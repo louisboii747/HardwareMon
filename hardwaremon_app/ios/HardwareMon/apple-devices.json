@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "devices": [
+    {
+      "identifier": "iPhone15,4",
+      "marketingName": "iPhone 15",
+      "family": "iPhone",
+      "soc": "Apple A16 Bionic",
+      "architecture": "arm64",
+      "cpu": { "cores": 6, "performanceCores": 2, "efficiencyCores": 4 },
+      "gpu": { "cores": 5 },
+      "memoryBytes": 6442450944,
+      "display": { "diagonalInches": 6.1, "nativeWidth": 1179, "nativeHeight": 2556, "maximumRefreshRate": 60 },
+      "neuralEngineCores": 16
+    },
+    {
+      "identifier": "iPhone15,5",
+      "marketingName": "iPhone 15 Plus",
+      "family": "iPhone",
+      "soc": "Apple A16 Bionic",
+      "architecture": "arm64",
+      "cpu": { "cores": 6, "performanceCores": 2, "efficiencyCores": 4 },
+      "gpu": { "cores": 5 },
+      "memoryBytes": 6442450944,
+      "display": { "diagonalInches": 6.7, "nativeWidth": 1290, "nativeHeight": 2796, "maximumRefreshRate": 60 },
+      "neuralEngineCores": 16
+    },
+    {
+      "identifier": "iPad14,6",
+      "marketingName": "iPad Pro 12.9-inch (6th generation)",
+      "family": "iPad",
+      "soc": "Apple M2",
+      "architecture": "arm64",
+      "cpu": { "cores": 8, "performanceCores": 4, "efficiencyCores": 4 },
+      "gpu": { "cores": 10 },
+      "memoryBytes": null,
+      "display": { "diagonalInches": 12.9, "nativeWidth": 2048, "nativeHeight": 2732, "maximumRefreshRate": 120 },
+      "neuralEngineCores": 16
+    },
+    {
+      "identifier": "Mac15,12",
+      "marketingName": "MacBook Air",
+      "family": "Mac",
+      "soc": "Apple M3",
+      "architecture": "arm64",
+      "cpu": { "cores": 8, "performanceCores": 4, "efficiencyCores": 4 },
+      "gpu": { "cores": null },
+      "memoryBytes": null,
+      "display": null,
+      "neuralEngineCores": 16
+    }
+  ]
+}
