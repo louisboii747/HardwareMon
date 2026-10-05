@@ -45,7 +45,7 @@ dependencies:
   animations: ^3.0.0
   shared_preferences: ^2.5.3
   path_provider: ^2.1.6
-  package_info_plus: ^10.2.1
+  package_info_plus: ^10.2.2
   local_notifier: ^0.1.6
   tray_manager: ^0.7.0
   hotkey_manager: ^0.2.3
